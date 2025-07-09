@@ -45,6 +45,10 @@
     #   echo "Hello, ${config.home.username}!"
     # '')
   ];
+  imports = [
+    inputs.zen-browser.homeModules.beta
+  ];
+  programs.zen-browser.enable = true;
   programs.fish = {
     enable = true;
 

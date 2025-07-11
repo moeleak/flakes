@@ -29,6 +29,7 @@
     inputs.nixvim.packages.x86_64-linux.default
 
     pkgs.fish
+    pkgs.eza
     pkgs.starship
     pkgs.proxychains-ng
 
@@ -53,8 +54,17 @@
     enable = true;
 
     shellAbbrs = {
-      ll = "exa -l";
-      la = "exa -la";
+      l = "exa -l --git --icon";
+      la = "exa -la --git --icons";
+      ll = "exa -lgh --git --icons";
+    };
+  };
+
+  services.xcape = {
+    enable = true;
+    timeout = 200;
+    mapExpression = {
+        "Control_L" = "Escape";
     };
   };
 

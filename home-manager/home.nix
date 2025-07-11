@@ -33,6 +33,9 @@
     pkgs.starship
     pkgs.proxychains-ng
 
+    # For self-use
+    # pkgs.conda
+
     # # It is sometimes useful to fine-tune packages, for example, by applying
     # # overrides. You can do that directly here, just don't forget the
     # # parentheses. Maybe you want to install Nerd Fonts with a limited number of
@@ -57,8 +60,21 @@
       l = "exa -l --git --icon";
       la = "exa -la --git --icons";
       ll = "exa -lgh --git --icons";
+      tree = "eza --tree";
     };
+    # For company's conda env
+    # interactiveShellInit = ''
+    #   if test -f /opt/miniconda3/etc/fish/conf.d/conda.fish
+    #     source /opt/miniconda3/etc/fish/conf.d/conda.fish
+    #   end
+    # ''
   };
+
+  # For self-use
+  # programs.conda = {
+  #   enable = true;
+  #   autoActivateBase = true;
+  # };
 
   services.xcape = {
     enable = true;

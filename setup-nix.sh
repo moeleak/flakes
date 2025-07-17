@@ -45,7 +45,7 @@ export PATH=\$PATH:\$HOME/.local/bin
 
 if [ -z "\$__NIX_PORTABLE_ACTIVATED" ]; then
         export __NIX_PORTABLE_ACTIVATED=1
-        NP_RUNTIME=bwrap nix-portable nix run nixpkgs#bashInteractive --offline
+        NP_RUNTIME=bwrap nix-portable nix run nixpkgs#bashInteractive
         exit
 else
         . \$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh

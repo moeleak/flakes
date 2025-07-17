@@ -26,7 +26,7 @@
     # # Adds the 'hello' command to your environment. It prints a friendly
     # # "Hello, world!" when run.
     # pkgs.hello
-    inputs.nixvim.packages.x86_64-linux.default
+    inputs.nvix.packages.${pkgs.system}.default
 
     pkgs.fish
     pkgs.eza

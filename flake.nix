@@ -42,5 +42,20 @@
           ];
         };
       };
+      nixosConfigurations = {
+        "LoliIsland-Laptop-Nix" = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = { inherit inputs; };
+          modules = [
+            ./hosts/x86_64_linux/LoliIsland-Laptop-Nix
+            ./system/nix.nix
+            ./system/network.nix
+            ./system/bluetooth.nix
+            ./system/users.nix
+            ./system/packages.nix
+            home-manager.nixosModules.default
+          ];
+        };
+      };
     };
 }

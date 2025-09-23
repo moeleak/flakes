@@ -2,10 +2,10 @@
 {
   imports = [
     ./hardware-configuration.nix
+    ./keyd.nix
     ../../../system/boot.nix
     ../../../desktop.nix
     ../../../environment-variables.nix
-    ../../../programs/keyd.nix
     ../../../programs/mihomo.nix
     ../../../programs/ollama.nix
     ../../../programs/openssh.nix
@@ -42,4 +42,3 @@
 
   };
 }
-

@@ -34,6 +34,7 @@
           modules = [
             ./hosts/x86_64_linux/LoliIsland-PC-Nix
             ./system/nix.nix
+            ./system/virtualization.nix
             ./system/network.nix
             ./system/bluetooth.nix
             ./system/users.nix
@@ -49,6 +50,7 @@
           modules = [
             ./hosts/x86_64_linux/LoliIsland-Laptop-Nix
             ./system/nix.nix
+            ./system/virtualization.nix
             ./system/network.nix
             ./system/bluetooth.nix
             ./system/users.nix

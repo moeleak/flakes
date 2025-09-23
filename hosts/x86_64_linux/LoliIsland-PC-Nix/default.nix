@@ -13,6 +13,7 @@
     ../../../programs/shell.nix
     ../../../programs/steam.nix
     ../../../programs/tailscale.nix
+    ../../../programs/tmux.nix
     ../../../programs/xkb.nix
     ../../../zone/fonts.nix
     ../../../zone/locale.nix

@@ -61,6 +61,7 @@
     pkgs.eza # A modern replacement for ‘ls’
     pkgs.fzf # A command-line fuzzy finder
     pkgs.tmux
+    pkgs.gitmux
     pkgs.wl-clipboard # command line clipboard utilities for wayland
 
     # networking tools

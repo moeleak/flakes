@@ -1,129 +1,142 @@
 {
   config,
   pkgs,
+  pkgs-5a07111,
   inputs,
   ...
 }:
-
+let
+  system = "x86_64-linux";
+in
 {
-  # Home Manager needs a bit of information about you and the paths it should
-  # manage.
   home.username = "moeleak";
   home.homeDirectory = "/home/moeleak";
 
-  # This value determines the Home Manager release that your configuration is
-  # compatible with. This helps avoid breakage when a new Home Manager release
-  # introduces backwards incompatible changes.
-  #
-  # You should not change this value, even if you update Home Manager. If you do
-  # want to update the value, then make sure to first check the Home Manager
-  # release notes.
-  home.stateVersion = "25.05"; # Please read the comment before changing.
-
-  # The home.packages option allows you to install Nix packages into your
-  # environment.
-  home.packages = [
-    # # Adds the 'hello' command to your environment. It prints a friendly
-    # # "Hello, world!" when run.
-    # pkgs.hello
-    inputs.nvix.packages.${pkgs.system}.default
-
-    pkgs.fish
-    pkgs.eza
-    pkgs.starship
-    pkgs.proxychains-ng
-
-    # For self-use
-    # pkgs.conda
-
-    # # It is sometimes useful to fine-tune packages, for example, by applying
-    # # overrides. You can do that directly here, just don't forget the
-    # # parentheses. Maybe you want to install Nerd Fonts with a limited number of
-    # # fonts?
-    # (pkgs.nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
-
-    # # You can also create simple shell scripts directly inside your
-    # # configuration. For example, this adds a command 'my-hello' to your
-    # # environment:
-    # (pkgs.writeShellScriptBin "my-hello" ''
-    #   echo "Hello, ${config.home.username}!"
-    # '')
-  ];
   imports = [
     inputs.zen-browser.homeModules.beta
   ];
   programs.zen-browser.enable = true;
-  programs.fish = {
-    enable = true;
 
-    shellAbbrs = {
-      l = "exa -l --git --icon";
-      la = "exa -la --git --icons";
-      ll = "exa -lgh --git --icons";
-      tree = "eza --tree";
-    };
-    # For company's conda env
-    # interactiveShellInit = ''
-    #   if test -f /opt/miniconda3/etc/fish/conf.d/conda.fish
-    #     source /opt/miniconda3/etc/fish/conf.d/conda.fish
-    #   end
-    # ''
+  xdg.configFile."ghostty/config".text = ''
+    keybind = ctrl+t=new_tab
+    cursor-style = bar
+    cursor-style-blink = false
+    shell-integration = none
+  '';
+
+  home.packages = [
+    #inputs.nvix.packages.${system}.default
+    inputs.khanelivim.packages.${system}.default
+    inputs.go-musicfox.packages.${system}.default
+
+    pkgs-5a07111.ghostty
+    pkgs.fastfetch
+    pkgs.audacious
+
+    # python
+    pkgs.uv
+
+    # gaming
+    pkgs.moonlight-qt
+    pkgs.hmcl
+
+    # cplusplus coding
+    pkgs.cmake
+    pkgs.ccls
+    pkgs.gnumake
+
+    # chat
+    pkgs._64gram
+    #pkgs.wechat
+
+    # office
+    pkgs.libreoffice
+
+    # archives
+    pkgs.zip
+    pkgs.xz
+    pkgs.unzip
+    pkgs.p7zip
+
+    # utils
+    pkgs.ripgrep # recursively searches directories for a regex pattern
+    pkgs.jq # A lightweight and flexible command-line JSON processor
+    pkgs.yq-go # yaml processor https://github.com/mikefarah/yq
+    pkgs.eza # A modern replacement for ‘ls’
+    pkgs.fzf # A command-line fuzzy finder
+    pkgs.tmux
+    pkgs.wl-clipboard # command line clipboard utilities for wayland
+
+    # networking tools
+    pkgs.mtr # A network diagnostic tool
+    pkgs.iperf3
+    pkgs.dnsutils # `dig` + `nslookup`
+    pkgs.ldns # replacement of `dig`, it provide the command `drill`
+    pkgs.aria2 # A lightweight multi-protocol & multi-source command-line download utility
+    pkgs.socat # replacement of openbsd-netcat
+    pkgs.nmap # A utility for network discovery and security auditing
+    pkgs.ipcalc # it is a calculator for the IPv4/v6 addresses
+
+    # misc
+    pkgs.cowsay
+    pkgs.file
+    pkgs.which
+    pkgs.tree
+    pkgs.gnused
+    pkgs.gnutar
+    pkgs.gawk
+    pkgs.zstd
+    pkgs.gnupg
+
+    # nix related
+    #
+    # it provides the command `nom` works just like `nix`
+    # with more details log output
+    pkgs.nix-output-monitor
+
+    # productivity
+    pkgs.glow # markdown previewer in terminal
+
+    pkgs.btop # replacement of htop/nmon
+    pkgs.iotop # io monitoring
+    pkgs.iftop # network monitoring
+
+    # system call monitoring
+    pkgs.strace # system call monitoring
+    pkgs.ltrace # library call monitoring
+    pkgs.lsof # list open files
+
+    # system tools
+    pkgs.sysstat
+    pkgs.lm_sensors # for `sensors` command
+    pkgs.ethtool
+    pkgs.pciutils # lspci
+    pkgs.usbutils # lsusb
+  ];
+
+  # basic configuration of git, please change to your own
+  programs.git = {
+    enable = true;
+    userName = "MoeLeak";
+    userEmail = "i@leak.moe";
   };
 
-  # For self-use
-  # programs.conda = {
-  #   enable = true;
-  #   autoActivateBase = true;
-  # };
-
-  services.xcape = {
-    enable = true;
-    timeout = 200;
-    mapExpression = {
-        "Control_L" = "Escape";
-    };
-  };
-
+  # starship - an customizable prompt for any shell
   programs.starship = {
     enable = true;
   };
 
-  # Home Manager is pretty good at managing dotfiles. The primary way to manage
-  # plain files is through 'home.file'.
-  home.file = {
-    # # Building this configuration will create a copy of 'dotfiles/screenrc' in
-    # # the Nix store. Activating the configuration will then make '~/.screenrc' a
-    # # symlink to the Nix store copy.
-    # ".screenrc".source = dotfiles/screenrc;
-
-    # # You can also set the file content immediately.
-    # ".gradle/gradle.properties".text = ''
-    #   org.gradle.console=verbose
-    #   org.gradle.daemon.idletimeout=3600000
-    # '';
+  programs.fish = {
+    enable = true;
   };
 
-  # Home Manager can also manage your environment variables through
-  # 'home.sessionVariables'. These will be explicitly sourced when using a
-  # shell provided by Home Manager. If you don't want to manage your shell
-  # through Home Manager then you have to manually source 'hm-session-vars.sh'
-  # located at either
+  # This value determines the home Manager release that your
+  # configuration is compatible with. This helps avoid breakage
+  # when a new home Manager release introduces backwards
+  # incompatible changes.
   #
-  #  ~/.nix-profile/etc/profile.d/hm-session-vars.sh
-  #
-  # or
-  #
-  #  ~/.local/state/nix/profiles/profile/etc/profile.d/hm-session-vars.sh
-  #
-  # or
-  #
-  #  /etc/profiles/per-user/moeleak/etc/profile.d/hm-session-vars.sh
-  #
-  home.sessionVariables = {
-    PATH = "$HOME/.nix-profile/bin:$PATH";
-    EDITOR = "nvim";
-  };
-
-  # Let Home Manager install and manage itself.
-  programs.home-manager.enable = true;
+  # You can update home Manager without changing this value. See
+  # the home Manager release notes for a list of state version
+  # changes in each release.
+  home.stateVersion = "25.11";
 }

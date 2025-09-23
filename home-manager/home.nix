@@ -5,9 +5,6 @@
   inputs,
   ...
 }:
-let
-  system = "x86_64-linux";
-in
 {
   home.username = "moeleak";
   home.homeDirectory = "/home/moeleak";
@@ -25,9 +22,9 @@ in
   '';
 
   home.packages = [
-    #inputs.nvix.packages.${system}.default
-    inputs.khanelivim.packages.${system}.default
-    inputs.go-musicfox.packages.${system}.default
+    #inputs.nvix.packages.${pkgs.system}.default
+    inputs.khanelivim.packages.${pkgs.system}.default
+    inputs.go-musicfox.packages.${pkgs.system}.default
 
     pkgs-5a07111.ghostty
     pkgs.fastfetch

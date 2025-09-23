@@ -1,4 +1,5 @@
 { pkgs, ... }:
+
 {
   systemd.timers.NVFanControl = {
     wantedBy = [ "timers.target" ];

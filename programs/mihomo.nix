@@ -1,4 +1,5 @@
 { config, pkgs, ... }:
+
 {
   services.mihomo = {
     enable = true;

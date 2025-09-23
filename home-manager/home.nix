@@ -22,7 +22,6 @@
   '';
 
   home.packages = [
-    #inputs.nvix.packages.${pkgs.system}.default
     inputs.khanelivim.packages.${pkgs.system}.default
     inputs.go-musicfox.packages.${pkgs.system}.default
 
@@ -116,6 +115,9 @@
     enable = true;
     userName = "MoeLeak";
     userEmail = "i@leak.moe";
+    extraConfig = {
+      init.defaultBranch = "main";
+    };
   };
 
   # starship - an customizable prompt for any shell

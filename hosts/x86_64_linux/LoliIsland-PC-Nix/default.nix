@@ -37,6 +37,7 @@
         import inputs.nixpkgs-5a07111 {
           system = "x86_64-linux";
           config.allowUnfree = true;
+          config.cudaSupport = true;
         }
       );
     };

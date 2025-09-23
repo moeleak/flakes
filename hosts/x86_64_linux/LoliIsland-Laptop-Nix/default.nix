@@ -1,4 +1,9 @@
-{ lib, inputs, ... }:
+{
+  lib,
+  inputs,
+  pkgs,
+  ...
+}:
 {
   imports = [
     ./hardware-configuration.nix
@@ -20,6 +25,17 @@
   ];
 
   networking.hostName = "LoliIsland-Laptop-Nix"; # Define your hostname.
+
+  hardware.graphics = {
+    enable = true;
+    enable32Bit = true;
+    extraPackages = with pkgs; [
+      intel-media-driver
+      vaapiIntel
+      vaapiVdpau
+      libvdpau-va-gl
+    ];
+  };
 
   # make home-manager as a module of nixos
   # so that home-manager configuration will be deployed automatically when executing `nixos-rebuild switch`

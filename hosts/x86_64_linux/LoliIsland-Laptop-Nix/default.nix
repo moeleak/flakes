@@ -26,6 +26,17 @@
 
   networking.hostName = "LoliIsland-Laptop-Nix"; # Define your hostname.
 
+  boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelModules = [ "snd_hda_intel" ];
+  boot.extraModprobeConfig = ''
+    options snd-intel-dspcfg dsp_driver=1
+    options snd-hda-intel model=auto
+    options snd-hda-intel dmic_detect=0
+  '';
+  hardware.firmware = [
+    pkgs.sof-firmware
+  ];
+
   hardware.graphics = {
     enable = true;
     enable32Bit = true;

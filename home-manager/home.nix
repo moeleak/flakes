@@ -27,10 +27,12 @@
 
     pkgs-5a07111.ghostty
     pkgs.fastfetch
-    pkgs.audacious
 
-    # python
-    pkgs.uv
+    pkgs.direnv
+
+    # hifi
+
+    pkgs.audacious
 
     # gaming
     pkgs.moonlight-qt

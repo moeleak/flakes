@@ -1,4 +1,9 @@
-{ lib, inputs, ... }:
+{
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 {
   imports = [
     ./hardware-configuration.nix
@@ -22,6 +27,16 @@
   ];
 
   networking.hostName = "LoliIsland-PC-Nix"; # Define your hostname.
+
+  boot.kernelModules = [ "snd_hda_intel" ];
+  boot.extraModprobeConfig = ''
+    options snd-intel-dspcfg dsp_driver=1
+    options snd-hda-intel model=auto
+    options snd-hda-intel dmic_detect=0
+  '';
+  hardware.firmware = [
+    pkgs.sof-firmware
+  ];
 
   # make home-manager as a module of nixos
   # so that home-manager configuration will be deployed automatically when executing `nixos-rebuild switch`

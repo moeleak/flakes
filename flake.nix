@@ -8,6 +8,10 @@
     nvix.url = "github:moeleak/nvix";
     khanelivim.url = "github:moeleak/khanelivim";
     go-musicfox.url = "github:go-musicfox/go-musicfox";
+    lanzaboote = {
+      url = "github:nix-community/lanzaboote/v0.4.2";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     # home-manager, used for managing user configuration
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -24,6 +28,7 @@
       nixpkgs,
       nixpkgs-5a07111,
       home-manager,
+      lanzaboote,
       ...
     }@inputs:
     {
@@ -40,6 +45,29 @@
             ./system/users.nix
             ./system/packages.nix
             home-manager.nixosModules.default
+            lanzaboote.nixosModules.lanzaboote
+
+            (
+              { pkgs, lib, ... }:
+              {
+
+                environment.systemPackages = [
+                  # For debugging and troubleshooting Secure Boot.
+                  pkgs.sbctl
+                ];
+
+                # Lanzaboote currently replaces the systemd-boot module.
+                # This setting is usually set to true in configuration.nix
+                # generated at installation time. So we force it to false
+                # for now.
+                boot.loader.systemd-boot.enable = lib.mkForce false;
+
+                boot.lanzaboote = {
+                  enable = true;
+                  pkiBundle = "/var/lib/sbctl";
+                };
+              }
+            )
           ];
         };
       };

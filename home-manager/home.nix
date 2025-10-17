@@ -119,6 +119,23 @@
     lfs.enable = true;
     userName = "MoeLeak";
     userEmail = "i@leak.moe";
+    aliases = {
+      st = "status";
+    };
+    ignores = [
+      ".cache/"
+      ".DS_Store"
+      ".idea/"
+      "*.swp"
+      "built-in-stubs.jar"
+      "dumb.rdb"
+      ".elixir_ls/"
+      ".vscode/"
+      "npm-debug.log"
+      "shell.nix"
+      ".direnv"
+      ".envrc"
+    ];
     extraConfig = {
       init.defaultBranch = "main";
     };

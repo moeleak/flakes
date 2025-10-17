@@ -29,6 +29,7 @@
 
       #set-option utf8-default on
       #set-option -g mouse-select-pane
+      set-option -g mouse on
 
       set -g status-left-length 85
       set -g status-left "working on#[fg=colour135] #S"

@@ -20,6 +20,7 @@
     ../../../programs/tailscale.nix
     ../../../programs/tmux.nix
     ../../../programs/xkb.nix
+    ../../../programs/llama.nix
     ../../../zone/fonts.nix
     ../../../zone/locale.nix
     ../../../hardware/NV.nix

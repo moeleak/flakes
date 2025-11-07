@@ -12,7 +12,6 @@
     ../../../desktop.nix
     ../../../environment-variables.nix
     ../../../programs/mihomo.nix
-    ../../../programs/ollama.nix
     ../../../programs/openssh.nix
     ../../../programs/rime.nix
     ../../../programs/shell.nix
@@ -42,8 +41,8 @@
     enable32Bit = true;
     extraPackages = with pkgs; [
       intel-media-driver
-      vaapiIntel
-      vaapiVdpau
+      intel-vaapi-driver
+      libva-vdpau-driver
       libvdpau-va-gl
     ];
   };
@@ -57,10 +56,10 @@
     users.moeleak = import ../../../home-manager/home.nix;
     extraSpecialArgs = {
       inherit inputs;
-      system = "x86_64-linux";
+      stdenv.hostPlatform.system = "x86_64-linux";
       pkgs-5a07111 = (
         import inputs.nixpkgs-5a07111 {
-          system = "x86_64-linux";
+          stdenv.hostPlatform.system = "x86_64-linux";
           config.allowUnfree = true;
         }
       );

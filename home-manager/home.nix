@@ -22,10 +22,10 @@
   '';
 
   home.packages = [
-    inputs.khanelivim.packages.${pkgs.system}.default
-    inputs.go-musicfox.packages.${pkgs.system}.default
+    inputs.khanelivim.packages.${pkgs.stdenv.hostPlatform.system}.default
+    inputs.go-musicfox.packages.${pkgs.stdenv.hostPlatform.system}.default
 
-    pkgs-5a07111.ghostty
+    pkgs.ghostty
     pkgs.fastfetch
 
     pkgs.direnv
@@ -117,11 +117,6 @@
   programs.git = {
     enable = true;
     lfs.enable = true;
-    userName = "MoeLeak";
-    userEmail = "i@leak.moe";
-    aliases = {
-      st = "status";
-    };
     ignores = [
       ".cache/"
       ".DS_Store"
@@ -136,7 +131,12 @@
       ".direnv"
       ".envrc"
     ];
-    extraConfig = {
+    settings = {
+      user.name = "MoeLeak";
+      user.email = "i@leak.moe";
+      alias = {
+        st = "status";
+      };
       init.defaultBranch = "main";
     };
   };

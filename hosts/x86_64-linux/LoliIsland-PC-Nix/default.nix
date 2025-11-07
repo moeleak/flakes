@@ -38,10 +38,10 @@
     users.moeleak = import ../../../home-manager/home.nix;
     extraSpecialArgs = {
       inherit inputs;
-      system = "x86_64-linux";
+      stdenv.hostPlatform.system = "x86_64-linux";
       pkgs-5a07111 = (
         import inputs.nixpkgs-5a07111 {
-          system = "x86_64-linux";
+          stdenv.hostPlatform.system = "x86_64-linux";
           config.allowUnfree = true;
           config.cudaSupport = true;
         }

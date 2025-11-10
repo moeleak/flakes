@@ -8,6 +8,10 @@
     nvix.url = "github:moeleak/nvix";
     khanelivim.url = "github:moeleak/khanelivim";
     go-musicfox.url = "github:go-musicfox/go-musicfox";
+    winboat = {
+      url = "github:TibixDev/winboat";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     lanzaboote = {
       url = "github:nix-community/lanzaboote/v0.4.2";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -39,7 +43,8 @@
           modules = [
             ./hosts/x86_64-linux/LoliIsland-PC-Nix
             ./system/nix.nix
-            ./system/virtualization.nix
+            ./system/virtualization/docker.nix
+            ./system/virtualization/winboat.nix
             ./system/network.nix
             ./system/bluetooth.nix
             ./system/users.nix
@@ -78,7 +83,7 @@
           modules = [
             ./hosts/x86_64-linux/LoliIsland-Laptop-Nix
             ./system/nix.nix
-            ./system/virtualization.nix
+            ./system/virtualization/docker.nix
             ./system/network.nix
             ./system/bluetooth.nix
             ./system/users.nix

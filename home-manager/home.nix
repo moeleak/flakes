@@ -28,6 +28,7 @@
     pkgs.ghostty
     pkgs.fastfetch
 
+    pkgs.devenv
     pkgs.direnv
 
     # hifi

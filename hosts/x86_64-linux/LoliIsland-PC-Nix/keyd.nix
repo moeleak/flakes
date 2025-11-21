@@ -14,6 +14,7 @@
         #    #leftmeta = "overload(alt, meta)";
         #  };
         #};
+        settings.global.overload_tap_timeout = 200;
         extraConfig = ''
           [main]
 

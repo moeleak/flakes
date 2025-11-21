@@ -130,7 +130,6 @@
       "npm-debug.log"
       "shell.nix"
       ".direnv"
-      ".envrc"
     ];
     settings = {
       user.name = "MoeLeak";
@@ -139,6 +138,8 @@
         st = "status";
       };
       init.defaultBranch = "main";
+      push.autoSetupRemote = true;
+      pull.rebase = true;
     };
   };
 

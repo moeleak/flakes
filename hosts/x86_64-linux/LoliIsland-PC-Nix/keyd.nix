@@ -26,6 +26,7 @@
 
           # The 'meta_mac' modifier layer; inherits from the 'Ctrl' modifier layer
           [meta_mac:C]
+          space = M-space
 
           # Switch directly to an open tab (e.g., Firefox, VS Code)
           1 = A-1

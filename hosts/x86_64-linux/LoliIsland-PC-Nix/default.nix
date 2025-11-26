@@ -29,6 +29,16 @@
 
   networking.hostName = "LoliIsland-PC-Nix"; # Define your hostname.
 
+  users.users.moeleak = {
+    isNormalUser = true;
+    description = "moeleak";
+    home = "/home/moeleak";
+    extraGroups = [
+      "networkmanager"
+      "wheel"
+    ];
+  };
+
   # make home-manager as a module of nixos
   # so that home-manager configuration will be deployed automatically when executing `nixos-rebuild switch`
   home-manager = {
@@ -50,4 +60,8 @@
     };
 
   };
+
+  programs.nix-ld.enable = true;
+
+  system.stateVersion = "25.05"; # Did you read the comment?
 }

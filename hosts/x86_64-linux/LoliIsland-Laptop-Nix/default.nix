@@ -25,6 +25,16 @@
 
   networking.hostName = "LoliIsland-Laptop-Nix"; # Define your hostname.
 
+  users.users.moeleak = {
+    isNormalUser = true;
+    description = "moeleak";
+    home = "/home/moeleak";
+    extraGroups = [
+      "networkmanager"
+      "wheel"
+    ];
+  };
+
   boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.kernelModules = [ "snd_hda_intel" ];
   boot.extraModprobeConfig = ''
@@ -67,4 +77,7 @@
     };
 
   };
+
+  programs.nix-ld.enable = true;
+  system.stateVersion = "25.05";
 }

@@ -7,13 +7,19 @@
   inputs,
   ...
 }:
+let
+  isDarwin = pkgs.stdenv.isDarwin;
+  isLinux = pkgs.stdenv.isLinux;
+
+  host = lib.attrByPath [ "networking" "hostName" ] "" osConfig;
+in
 {
   imports = [
     inputs.zen-browser.homeModules.beta
   ];
 
   config = lib.mkMerge [
-    (lib.mkIf (osConfig.networking.hostName == "LoliIsland-PC-Nix") {
+    (lib.optionalAttrs (isLinux && host == "LoliIsland-PC-Nix") {
       programs.plasma = {
         enable = true;
         shortcuts = {
@@ -23,62 +29,17 @@
       };
     })
 
-    {
+    (lib.mkIf isLinux {
       home.username = "moeleak";
       home.homeDirectory = "/home/moeleak";
-
       programs.zen-browser.enable = true;
-
-      xdg.configFile."ghostty/config".text = ''
-        keybind = ctrl+t=new_tab
-        cursor-style = bar
-        cursor-style-blink = false
-        shell-integration = none
-      '';
-
       home.packages = [
-        inputs.khanelivim.packages.${pkgs.stdenv.hostPlatform.system}.default
-        inputs.go-musicfox.packages.${pkgs.stdenv.hostPlatform.system}.default
-
         pkgs.ghostty
-        pkgs.fastfetch
-
-        pkgs.devenv
-        pkgs.direnv
-
-        # hifi
+        pkgs.libreoffice
+        pkgs._64gram
         pkgs.audacious
-
-        # gaming
         pkgs.moonlight-qt
         pkgs.hmcl
-
-        # cplusplus coding
-        pkgs.cmake
-        pkgs.ccls
-        pkgs.gnumake
-
-        # chat
-        pkgs._64gram
-        #pkgs.wechat
-
-        # office
-        pkgs.libreoffice
-
-        # archives
-        pkgs.zip
-        pkgs.xz
-        pkgs.unzip
-        pkgs.p7zip
-
-        # utils
-        pkgs.ripgrep
-        pkgs.jq
-        pkgs.yq-go
-        pkgs.eza
-        pkgs.fzf
-        pkgs.tmux
-        pkgs.gitmux
         pkgs.wl-clipboard
 
         # networking tools
@@ -124,8 +85,65 @@
         pkgs.pciutils
         pkgs.usbutils
       ];
+    })
 
-      # basic configuration of git
+    (lib.mkIf isDarwin {
+      home.username = "lolimaster";
+      home.homeDirectory = "/Users/lolimaster";
+      programs = {
+        fish.enable = true;
+        fish.shellInit = ''
+          for p in /run/current-system/sw/bin /etc/profiles/per-user/$USER/bin
+            if not contains $p $fish_user_paths
+              set -g fish_user_paths $p $fish_user_paths
+            end
+          end
+        '';
+      };
+
+    })
+
+    {
+      xdg.configFile."ghostty/config".text = ''
+        keybind = ctrl+t=new_tab
+        cursor-style = bar
+        cursor-style-blink = false
+        shell-integration = none
+      '';
+
+      home.packages = [
+        inputs.moevim.packages.${pkgs.stdenv.hostPlatform.system}.default
+
+        pkgs.fastfetch
+
+        pkgs.yazi
+        pkgs.devenv
+        pkgs.direnv
+
+        # cplusplus coding
+        pkgs.cmake
+        pkgs.ccls
+        pkgs.gnumake
+
+        # chat
+        #pkgs.wechat
+
+        # archives
+        pkgs.zip
+        pkgs.xz
+        pkgs.unzip
+        pkgs.p7zip
+
+        # utils
+        pkgs.ripgrep
+        pkgs.jq
+        pkgs.yq-go
+        pkgs.eza
+        pkgs.fzf
+        pkgs.tmux
+        pkgs.gitmux
+      ];
+
       programs.git = {
         enable = true;
         lfs.enable = true;
@@ -154,14 +172,8 @@
         };
       };
 
-      # starship
-      programs.starship = {
-        enable = true;
-      };
-
-      programs.fish = {
-        enable = true;
-      };
+      programs.fish.enable = true;
+      programs.starship.enable = true;
 
       home.stateVersion = "25.11";
     }

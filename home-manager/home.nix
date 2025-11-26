@@ -16,6 +16,7 @@ in
 {
   imports = [
     inputs.zen-browser.homeModules.beta
+    inputs.plasma-manager.homeModules.plasma-manager
   ];
 
   config = lib.mkMerge [

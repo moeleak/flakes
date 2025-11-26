@@ -62,11 +62,10 @@
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
-    sharedModules = [ inputs.plasma-manager.homeModules.plasma-manager ];
 
     users.moeleak = import ../../../home-manager/home.nix;
     extraSpecialArgs = {
-      inherit inputs;
+      inherit inputs pkgs;
       stdenv.hostPlatform.system = "x86_64-linux";
       pkgs-5a07111 = (
         import inputs.nixpkgs-5a07111 {

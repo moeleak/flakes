@@ -26,6 +26,7 @@
   networking.hostName = "LoliIsland-Laptop-Nix"; # Define your hostname.
 
   users.users.moeleak = {
+    shell = pkgs.fish;
     isNormalUser = true;
     description = "moeleak";
     home = "/home/moeleak";

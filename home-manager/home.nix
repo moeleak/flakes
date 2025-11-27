@@ -122,6 +122,9 @@ in
         pkgs.direnv
 
         # cplusplus coding
+        pkgs.clang-tools
+        pkgs.clang
+        pkgs.llvm
         pkgs.cmake
         pkgs.ccls
         pkgs.gnumake

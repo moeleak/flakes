@@ -94,6 +94,7 @@ in
       programs = {
         fish.enable = true;
         fish.shellInit = ''
+          source /Users/lolimaster/miniconda3/etc/fish/conf.d/conda.fish
           for p in /run/current-system/sw/bin /etc/profiles/per-user/$USER/bin
             if not contains $p $fish_user_paths
               set -g fish_user_paths $p $fish_user_paths

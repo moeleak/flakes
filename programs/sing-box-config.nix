@@ -7,17 +7,28 @@ let
 in
 {
   log = {
-    level = "info";
+    level = "debug";
   };
 
   experimental = {
     cache_file = {
-      enabled = true;
+      enabled = false;
     };
   };
 
   dns = {
     servers = [
+      {
+        type = "local";
+        tag = "dns-local";
+      }
+      {
+        type = "tcp";
+        server = "8.8.8.8";
+        server_port = 53;
+        tag = "dns-remote";
+        detour = "proxy";
+      }
       {
         type = "https";
         tag = "doh-cn";
@@ -58,6 +69,10 @@ in
         server = "doh-proxy";
       }
       {
+        domain_regex = "(^|\\.)dn42$";
+        server = "dns-remote";
+      }
+      {
         rule_set = [ "gfwlist" ];
         server = "doh-proxy";
       }
@@ -68,15 +83,17 @@ in
     ];
 
     final = "doh-proxy";
-    strategy = "prefer_ipv4";
+    strategy = "prefer_ipv6";
   };
 
   inbounds = [
     {
       type = "tun";
       tag = "tun-in";
-      interface_name = "utun233";
-      address = [ "172.19.0.1/30" ];
+      address = [
+        "172.19.0.1/30"
+        "fdfe:dcba:9876::1/126"
+      ];
       mtu = 9000;
       auto_route = true;
       strict_route = true;
@@ -157,7 +174,7 @@ in
 
   route = {
     default_domain_resolver = {
-      server = "doh-cn";
+      server = "dns-local";
     };
 
     rule_set = [
@@ -191,6 +208,10 @@ in
           "example.net"
         ];
         outbound = "proxy";
+      }
+      {
+        protocol = "dns";
+        action = "hijack-dns";
       }
       {
         rule_set = [ "gfwlist" ];

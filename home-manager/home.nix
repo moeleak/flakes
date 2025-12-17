@@ -70,7 +70,6 @@ in
         # productivity
         pkgs.glow
 
-        pkgs.btop
         pkgs.iotop
         pkgs.iftop
 
@@ -146,6 +145,7 @@ in
         pkgs.eza
         pkgs.fzf
         pkgs.tmux
+        pkgs.btop
         pkgs.gitmux
       ];
 

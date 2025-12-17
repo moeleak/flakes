@@ -6,7 +6,7 @@
     nixpkgs-5a07111.url = "github:nixos/nixpkgs/5a0711127cd8b916c3d3128f473388c8c79df0da";
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
     moevim.url = "github:moeleak/moevim";
-    
+
     lanzaboote = {
       url = "github:nix-community/lanzaboote/v0.4.3";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -27,6 +27,11 @@
       url = "github:nix-darwin/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -37,6 +42,7 @@
       home-manager,
       lanzaboote,
       nix-darwin,
+      sops-nix,
       ...
     }@inputs:
     {
@@ -52,16 +58,20 @@
             ./system/network.nix
             ./system/bluetooth.nix
             ./system/packages.nix
+            sops-nix.nixosModules.sops
             home-manager.nixosModules.default
             lanzaboote.nixosModules.lanzaboote
-            ({ pkgs, lib, ... }: {
-              environment.systemPackages = [ pkgs.sbctl ];
-              boot.loader.systemd-boot.enable = lib.mkForce false;
-              boot.lanzaboote = {
-                enable = true;
-                pkiBundle = "/var/lib/sbctl";
-              };
-            })
+            (
+              { pkgs, lib, ... }:
+              {
+                environment.systemPackages = [ pkgs.sbctl ];
+                boot.loader.systemd-boot.enable = lib.mkForce false;
+                boot.lanzaboote = {
+                  enable = true;
+                  pkiBundle = "/var/lib/sbctl";
+                };
+              }
+            )
           ];
         };
 
@@ -75,17 +85,19 @@
             ./system/network.nix
             ./system/bluetooth.nix
             ./system/packages.nix
+            sops-nix.nixosModules.sops
             home-manager.nixosModules.default
           ];
         };
       };
 
       darwinConfigurations = {
-        "LoliIsland-Mac" = nix-darwin.lib.darwinSystem { 
+        "LoliIsland-Mac" = nix-darwin.lib.darwinSystem {
           system = "aarch64-darwin";
           specialArgs = { inherit inputs; };
           modules = [
             ./hosts/aarch64-darwin/LoliIsland-Mac
+            sops-nix.darwinModules.sops
             home-manager.darwinModules.default
           ];
         };

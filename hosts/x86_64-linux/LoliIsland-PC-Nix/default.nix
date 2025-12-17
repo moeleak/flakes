@@ -11,7 +11,7 @@
     ../../../system/boot.nix
     ../../../desktop.nix
     ../../../environment-variables.nix
-    ../../../programs/mihomo.nix
+    ../../../programs/sing-box.nix
     ../../../programs/ollama.nix
     ../../../programs/openssh.nix
     ../../../programs/rime.nix

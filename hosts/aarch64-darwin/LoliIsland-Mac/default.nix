@@ -9,6 +9,7 @@
     ../../../environment-variables.nix
     ../../../system/nix.nix
     ../../../programs/shell.nix
+    ../../../programs/sing-box.nix
     ../../../programs/tmux.nix
   ];
 

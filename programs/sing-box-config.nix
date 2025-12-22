@@ -26,8 +26,7 @@ in
         type = "tcp";
         server = "8.8.8.8";
         server_port = 53;
-        tag = "dns-remote";
-        detour = "proxy";
+        tag = "dns-google";
       }
       {
         type = "https";
@@ -174,7 +173,7 @@ in
 
   route = {
     default_domain_resolver = {
-      server = "dns-local";
+      server = "dns-google";
     };
 
     rule_set = [

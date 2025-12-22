@@ -58,8 +58,7 @@ in
         serviceConfig = {
           KeepAlive = true;
           RunAtLoad = true;
-          StandardOutPath = "/var/log/sing-box.out.log";
-          StandardErrorPath = "/var/log/sing-box.err.log";
+          StandardErrorPath = "/var/log/sing-box.log";
         };
       };
     })

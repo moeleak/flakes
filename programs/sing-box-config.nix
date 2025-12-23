@@ -57,23 +57,10 @@ in
         };
         detour = "proxy";
       }
-      {
-        type = "fakeip";
-        tag = "fakeip";
-        inet4_range = "198.18.0.0/15";
-        inet6_range = "fc00::/18";
-      }
 
     ];
 
     rules = [
-      {
-        query_type = [
-          "A"
-          "AAAA"
-        ];
-        server = "fakeip";
-      }
       {
         rule_set = [ "gfwlist" ];
         server = "doh-proxy";
@@ -213,16 +200,7 @@ in
         action = "sniff";
       }
       {
-        type = "logical";
-        mode = "or";
-        rules = [
-          {
-            port = 53;
-          }
-          {
-            protocol = "dns";
-          }
-        ];
+        protocol = "dns";
         action = "hijack-dns";
       }
       {

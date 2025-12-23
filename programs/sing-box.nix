@@ -45,6 +45,12 @@ in
 
     # macOS
     (lib.optionalAttrs (options ? launchd) {
+      networking.knownNetworkServices = [
+        "Wi-Fi"
+        "Ethernet Adaptor"
+        "Thunderbolt Ethernet"
+      ];
+      networking.dns = [ "127.0.0.1" ];
       launchd.daemons.sing-box = {
         script =
           let

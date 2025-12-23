@@ -57,19 +57,22 @@ in
         };
         detour = "proxy";
       }
+      {
+        type = "fakeip";
+        tag = "fakeip";
+        inet4_range = "198.18.0.0/15";
+        inet6_range = "fc00::/18";
+      }
+
     ];
 
     rules = [
       {
-        domain_suffix = [
-          "example.com"
-          "example.net"
+        query_type = [
+          "A"
+          "AAAA"
         ];
-        server = "doh-proxy";
-      }
-      {
-        domain_regex = "(^|\\.)dn42$";
-        server = "dns-remote";
+        server = "fakeip";
       }
       {
         rule_set = [ "gfwlist" ];
@@ -97,8 +100,13 @@ in
       auto_route = true;
       strict_route = true;
       stack = "system";
-      sniff = true;
-      sniff_override_destination = true;
+    }
+    {
+      type = "direct";
+      tag = "dns-in";
+      listen = "127.0.0.1";
+      listen_port = 53;
+      network = "udp";
     }
   ];
 
@@ -202,15 +210,27 @@ in
 
     rules = [
       {
+        action = "sniff";
+      }
+      {
+        type = "logical";
+        mode = "or";
+        rules = [
+          {
+            port = 53;
+          }
+          {
+            protocol = "dns";
+          }
+        ];
+        action = "hijack-dns";
+      }
+      {
         domain_suffix = [
           "example.com"
           "example.net"
         ];
         outbound = "proxy";
-      }
-      {
-        protocol = "dns";
-        action = "hijack-dns";
       }
       {
         rule_set = [ "gfwlist" ];

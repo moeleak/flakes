@@ -62,7 +62,7 @@ in
         serviceConfig = {
           KeepAlive = true;
           RunAtLoad = true;
-          StandardErrorPath = "/var/log/sing-box.log";
+          # StandardErrorPath = "/var/log/sing-box.log";
         };
       };
     })

@@ -1,5 +1,4 @@
 {
-  lib,
   inputs,
   pkgs,
   ...
@@ -10,7 +9,6 @@
     ./keyd.nix
     ../../../system/boot.nix
     ../../../desktop.nix
-    ../../../environment-variables.nix
     ../../../programs/sing-box.nix
     ../../../programs/openssh.nix
     ../../../programs/rime.nix

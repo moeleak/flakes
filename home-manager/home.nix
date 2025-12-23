@@ -105,6 +105,10 @@ in
     })
 
     {
+      home.sessionVariables = {
+        EDITOR = "nvim";
+      };
+
       xdg.configFile."ghostty/config".text = ''
         keybind = ctrl+t=new_tab
         cursor-style = bar

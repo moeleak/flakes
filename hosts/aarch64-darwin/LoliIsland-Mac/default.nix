@@ -1,12 +1,10 @@
 {
-  lib,
   inputs,
   pkgs,
   ...
 }:
 {
   imports = [
-    ../../../environment-variables.nix
     ../../../system/nix.nix
     ../../../programs/shell.nix
     ../../../programs/sing-box.nix

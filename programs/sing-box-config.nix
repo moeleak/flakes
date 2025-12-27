@@ -12,8 +12,13 @@ in
 
   experimental = {
     cache_file = {
-      enabled = false;
+      enabled = true;
     };
+    # clash_api = rec {
+    #   external_controller = "127.0.0.1:9000";
+    #   # external_ui = pkgs.metacubexd;
+    #   access_control_allow_origin = [ "http://${external_controller}" ];
+    # };
   };
 
   dns = {
@@ -21,6 +26,12 @@ in
       {
         type = "local";
         tag = "dns-local";
+      }
+      {
+        type = "fakeip";
+        tag = "fakeip";
+        inet4_range = "198.18.0.0/15";
+        # inet6_range = "fc00::/18";
       }
       {
         type = "tcp";
@@ -62,6 +73,14 @@ in
 
     rules = [
       {
+        query_type = [
+          "A"
+          "AAAA"
+        ];
+        server = "fakeip";
+      }
+
+      {
         rule_set = [ "gfwlist" ];
         server = "doh-proxy";
       }
@@ -72,7 +91,7 @@ in
     ];
 
     final = "doh-proxy";
-    strategy = "prefer_ipv6";
+    strategy = "ipv4_only";
   };
 
   inbounds = [
@@ -81,7 +100,7 @@ in
       tag = "tun-in";
       address = [
         "172.19.0.1/30"
-        "fdfe:dcba:9876::1/126"
+        # "fdfe:dcba:9876::1/126"
       ];
       mtu = 9000;
       auto_route = true;

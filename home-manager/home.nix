@@ -174,6 +174,7 @@ in
           user.email = "i@leak.moe";
           alias = {
             st = "status";
+            lg = "log --oneline --graph --all --decorate";
           };
           init.defaultBranch = "main";
           push.autoSetupRemote = true;

@@ -26,6 +26,19 @@ in
         shortcuts = {
           "services/org.kde.krunner.desktop"._launch = [ "Meta+Space" ];
           "services/org.kde.spectacle.desktop"._launch = [ "Alt+@" ];
+          "services/org.kde.spectacle.desktop".FullScreenScreenShot = [ "Alt+!" ];
+          "services/org.kde.spectacle.desktop".ActiveWindowScreenShot = [ "Alt+#" ];
+        };
+      };
+    })
+
+    (lib.optionalAttrs (isLinux && host == "LoliIsland-Laptop-Nix") {
+      programs.plasma = {
+        enable = true;
+        shortcuts = {
+          "services/org.kde.spectacle.desktop"._launch = [ "Alt+@" ];
+          "services/org.kde.spectacle.desktop".FullScreenScreenShot = [ "Alt+!" ];
+          "services/org.kde.spectacle.desktop".ActiveWindowScreenShot = [ "Alt+#" ];
         };
       };
     })

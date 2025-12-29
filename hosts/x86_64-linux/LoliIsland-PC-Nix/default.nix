@@ -15,7 +15,6 @@
     ../../../programs/rime.nix
     ../../../programs/shell.nix
     ../../../programs/steam.nix
-    ../../../programs/tailscale.nix
     ../../../programs/tmux.nix
     ../../../programs/xkb.nix
     ../../../programs/llama.nix

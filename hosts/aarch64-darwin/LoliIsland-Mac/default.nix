@@ -11,6 +11,8 @@
     ../../../programs/tmux.nix
   ];
 
+  networking.hostName = "LoliIsland-Mac";
+
   users.users.lolimaster = {
     home = "/Users/lolimaster";
     shell = pkgs.fish;

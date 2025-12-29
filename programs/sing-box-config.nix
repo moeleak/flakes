@@ -7,7 +7,7 @@ let
 in
 {
   log = {
-    level = "debug";
+    level = "info";
   };
 
   experimental = {
@@ -26,6 +26,12 @@ in
       {
         type = "local";
         tag = "dns-local";
+      }
+      {
+        type = "tailscale";
+        tag = "dns-tailscale";
+        endpoint = "tailscale-endpoint";
+        accept_default_resolvers = false;
       }
       {
         type = "fakeip";
@@ -79,7 +85,10 @@ in
         ];
         server = "fakeip";
       }
-
+      {
+        ip_accept_any = true;
+        server = "dns-tailscale";
+      }
       {
         rule_set = [ "gfwlist" ];
         server = "doh-proxy";
@@ -94,6 +103,14 @@ in
     strategy = "ipv4_only";
   };
 
+  endpoints = [
+    {
+      type = "tailscale";
+      tag = "tailscale-endpoint";
+      auth_key = "";
+      hostname = config.networking.hostName;
+    }
+  ];
   inbounds = [
     {
       type = "tun";
@@ -228,6 +245,12 @@ in
           "example.net"
         ];
         outbound = "proxy";
+      }
+      {
+        ip_cidr = [
+          "100.64.0.0/10"
+        ];
+        outbound = "tailscale-endpoint";
       }
       {
         rule_set = [ "gfwlist" ];

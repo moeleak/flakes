@@ -267,6 +267,12 @@ in
         outbound = "direct";
       }
       {
+        ip_cidr = [
+          "103.97.201.87"
+        ];
+        outbound = "direct";
+      }
+      {
         rule_set = [ "geosite-cn" ];
         outbound = "direct";
       }

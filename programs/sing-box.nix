@@ -7,7 +7,7 @@
 }:
 
 let
-  singBoxSettings = import ./sing-box-config.nix { inherit config; };
+  singBoxSettings = config.programs.sing-box.settings;
 
   userHome =
     if config.users.users ? lolimaster then
@@ -18,8 +18,13 @@ let
       null;
 in
 {
+  imports = [ ./sing-box-config.nix ];
+
   config = lib.mkMerge [
     {
+      programs.sing-box.mode =
+        if config.networking.hostName == "LoliIsland-PC-Nix" then "http" else "tun";
+
       environment.systemPackages = [ pkgs.sing-box ];
 
       sops = lib.mkIf (userHome != null) {
@@ -34,6 +39,17 @@ in
         };
       };
     }
+
+    (lib.optionalAttrs
+      (options ? networking && options.networking ? proxy)
+      {
+        networking.proxy = lib.mkIf
+          (config.networking.hostName == "LoliIsland-PC-Nix")
+          {
+            httpProxy = "http://127.0.0.1:1080/";
+            httpsProxy = "http://127.0.0.1:1080/";
+          };
+      })
 
     # Linux
     (lib.optionalAttrs (options.services ? sing-box) {

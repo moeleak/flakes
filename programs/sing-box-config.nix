@@ -1,117 +1,20 @@
-{ config, ... }:
+{ config, lib, ... }:
 
 let
   secret = name: {
     _secret = config.sops.secrets.${name}.path;
   };
-in
-{
-  log = {
-    level = "info";
-  };
 
-  experimental = {
-    cache_file = {
-      enabled = true;
-    };
-    # clash_api = rec {
-    #   external_controller = "127.0.0.1:9000";
-    #   # external_ui = pkgs.metacubexd;
-    #   access_control_allow_origin = [ "http://${external_controller}" ];
-    # };
-  };
-
-  dns = {
-    servers = [
-      {
-        type = "local";
-        tag = "dns-local";
-      }
-      {
-        type = "tailscale";
-        tag = "dns-tailscale";
-        endpoint = "tailscale-endpoint";
-        accept_default_resolvers = false;
-      }
-      {
-        type = "fakeip";
-        tag = "fakeip";
-        inet4_range = "198.18.0.0/15";
-        # inet6_range = "fc00::/18";
-      }
-      {
-        type = "tcp";
-        server = "8.8.8.8";
-        server_port = 53;
-        tag = "dns-google";
-      }
-      {
-        type = "https";
-        tag = "doh-cn";
-        server = "223.5.5.5";
-        server_port = 443;
-        path = "/dns-query";
-        headers = {
-          Host = "dns.alidns.com";
-        };
-        tls = {
-          enabled = true;
-          server_name = "dns.alidns.com";
-        };
-      }
-      {
-        type = "https";
-        tag = "doh-proxy";
-        server = "1.1.1.1";
-        server_port = 443;
-        path = "/dns-query";
-        headers = {
-          Host = "cloudflare-dns.com";
-        };
-        tls = {
-          enabled = true;
-          server_name = "cloudflare-dns.com";
-        };
-        detour = "proxy";
-      }
-
-    ];
-
-    rules = [
-      {
-        query_type = [
-          "A"
-          "AAAA"
-        ];
-        server = "fakeip";
-      }
-      {
-        ip_accept_any = true;
-        server = "dns-tailscale";
-      }
-      {
-        rule_set = [ "gfwlist" ];
-        server = "doh-proxy";
-      }
-      {
-        rule_set = [ "geosite-cn" ];
-        server = "doh-cn";
-      }
-    ];
-
-    final = "doh-proxy";
-    strategy = "ipv4_only";
-  };
-
-  endpoints = [
+  httpInbounds = [
     {
-      type = "tailscale";
-      tag = "tailscale-endpoint";
-      auth_key = "";
-      hostname = config.networking.hostName;
+      type = "http";
+      tag = "http-in";
+      listen = "127.0.0.1";
+      listen_port = 1080;
     }
   ];
-  inbounds = [
+
+  tunInbounds = [
     {
       type = "tun";
       tag = "tun-in";
@@ -133,144 +36,276 @@ in
     }
   ];
 
-  outbounds = [
-    {
-      type = "selector";
-      tag = "proxy";
-      outbounds = [
-        "lax0"
-        "tyo0"
-        "tyo1"
-      ];
-      default = "lax0";
-    }
-    {
-      type = "direct";
-      tag = "direct";
-    }
-    {
-      type = "block";
-      tag = "block";
-    }
-    {
-      type = "vless";
-      tag = "lax0";
-      server = secret "sing-box-lax0-server";
-      server_port = 27253;
-      uuid = secret "sing-box-vless-uuid";
-      flow = "xtls-rprx-vision";
-      tls = {
-        enabled = true;
-        server_name = secret "sing-box-lax0-server";
-        utls = {
-          enabled = true;
-          fingerprint = "chrome";
-        };
-      };
-    }
-    {
-      type = "vless";
-      tag = "tyo0";
-      server = secret "sing-box-tyo0-server";
-      server_port = 27253;
-      uuid = secret "sing-box-vless-uuid";
-      flow = "xtls-rprx-vision";
-      tls = {
-        enabled = true;
-        server_name = secret "sing-box-tyo0-server";
-        utls = {
-          enabled = true;
-          fingerprint = "chrome";
-        };
-      };
-    }
-    {
-      type = "vless";
-      tag = "tyo1";
-      server = secret "sing-box-tyo1-server";
-      server_port = 27253;
-      uuid = secret "sing-box-vless-uuid";
-      flow = "xtls-rprx-vision";
-      tls = {
-        enabled = true;
-        server_name = secret "sing-box-tyo1-server";
-        utls = {
-          enabled = true;
-          fingerprint = "chrome";
-        };
-      };
-    }
-  ];
-
-  route = {
-    default_domain_resolver = {
-      server = "dns-google";
+  settings = {
+    log = {
+      level = "info";
     };
 
-    rule_set = [
+    experimental = {
+      cache_file = {
+        enabled = true;
+      };
+      # clash_api = rec {
+      #   external_controller = "127.0.0.1:9000";
+      #   # external_ui = pkgs.metacubexd;
+      #   access_control_allow_origin = [ "http://${external_controller}" ];
+      # };
+    };
+
+    dns = {
+      servers = [
+        {
+          type = "local";
+          tag = "dns-local";
+        }
+        {
+          type = "tailscale";
+          tag = "dns-tailscale";
+          endpoint = "tailscale-endpoint";
+          accept_default_resolvers = false;
+        }
+        {
+          type = "fakeip";
+          tag = "fakeip";
+          inet4_range = "198.18.0.0/15";
+          # inet6_range = "fc00::/18";
+        }
+        {
+          type = "tcp";
+          server = "8.8.8.8";
+          server_port = 53;
+          tag = "dns-google";
+        }
+        {
+          type = "https";
+          tag = "doh-cn";
+          server = "223.5.5.5";
+          server_port = 443;
+          path = "/dns-query";
+          headers = {
+            Host = "dns.alidns.com";
+          };
+          tls = {
+            enabled = true;
+            server_name = "dns.alidns.com";
+          };
+        }
+        {
+          type = "https";
+          tag = "doh-proxy";
+          server = "1.1.1.1";
+          server_port = 443;
+          path = "/dns-query";
+          headers = {
+            Host = "cloudflare-dns.com";
+          };
+          tls = {
+            enabled = true;
+            server_name = "cloudflare-dns.com";
+          };
+          detour = "proxy";
+        }
+
+      ];
+
+      rules = [
+        {
+          query_type = [
+            "A"
+            "AAAA"
+          ];
+          server = "fakeip";
+        }
+        {
+          ip_accept_any = true;
+          server = "dns-tailscale";
+        }
+        {
+          rule_set = [ "gfwlist" ];
+          server = "doh-proxy";
+        }
+        {
+          rule_set = [ "geosite-cn" ];
+          server = "doh-cn";
+        }
+      ];
+
+      final = "doh-proxy";
+      strategy = "ipv4_only";
+    };
+
+    endpoints = [
       {
-        type = "remote";
-        tag = "geosite-cn";
-        format = "binary";
-        url = "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs";
-        download_detour = "proxy";
-      }
-      {
-        type = "remote";
-        tag = "geoip-cn";
-        format = "binary";
-        url = "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs";
-        download_detour = "proxy";
-      }
-      {
-        type = "remote";
-        tag = "gfwlist";
-        format = "binary";
-        url = "https://raw.githubusercontent.com/KaringX/karing-ruleset/sing/ACL4SSR/ProxyGFWlist.srs";
-        download_detour = "proxy";
+        type = "tailscale";
+        tag = "tailscale-endpoint";
+        auth_key = "";
+        hostname = config.networking.hostName;
       }
     ];
 
-    rules = [
+    inbounds =
+      if config.programs.sing-box.mode == "http" then
+        httpInbounds
+      else
+        tunInbounds;
+
+    outbounds = [
       {
-        action = "sniff";
-      }
-      {
-        protocol = "dns";
-        action = "hijack-dns";
-      }
-      {
-        domain_suffix = [
-          "example.com"
-          "example.net"
+        type = "selector";
+        tag = "proxy";
+        outbounds = [
+          "lax0"
+          "tyo0"
+          "tyo1"
         ];
-        outbound = "proxy";
+        default = "lax0";
       }
       {
-        ip_cidr = [
-          "100.64.0.0/10"
-        ];
-        outbound = "tailscale-endpoint";
+        type = "direct";
+        tag = "direct";
       }
       {
-        rule_set = [ "gfwlist" ];
-        outbound = "proxy";
+        type = "block";
+        tag = "block";
       }
       {
-        ip_is_private = true;
-        outbound = "direct";
+        type = "vless";
+        tag = "lax0";
+        server = secret "sing-box-lax0-server";
+        server_port = 27253;
+        uuid = secret "sing-box-vless-uuid";
+        flow = "xtls-rprx-vision";
+        tls = {
+          enabled = true;
+          server_name = secret "sing-box-lax0-server";
+          utls = {
+            enabled = true;
+            fingerprint = "chrome";
+          };
+        };
       }
       {
-        rule_set = [ "geosite-cn" ];
-        outbound = "direct";
+        type = "vless";
+        tag = "tyo0";
+        server = secret "sing-box-tyo0-server";
+        server_port = 27253;
+        uuid = secret "sing-box-vless-uuid";
+        flow = "xtls-rprx-vision";
+        tls = {
+          enabled = true;
+          server_name = secret "sing-box-tyo0-server";
+          utls = {
+            enabled = true;
+            fingerprint = "chrome";
+          };
+        };
       }
       {
-        rule_set = [ "geoip-cn" ];
-        outbound = "direct";
+        type = "vless";
+        tag = "tyo1";
+        server = secret "sing-box-tyo1-server";
+        server_port = 27253;
+        uuid = secret "sing-box-vless-uuid";
+        flow = "xtls-rprx-vision";
+        tls = {
+          enabled = true;
+          server_name = secret "sing-box-tyo1-server";
+          utls = {
+            enabled = true;
+            fingerprint = "chrome";
+          };
+        };
       }
     ];
 
-    final = "proxy";
-    auto_detect_interface = true;
+    route = {
+      default_domain_resolver = {
+        server = "dns-google";
+      };
+
+      rule_set = [
+        {
+          type = "remote";
+          tag = "geosite-cn";
+          format = "binary";
+          url = "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs";
+          download_detour = "proxy";
+        }
+        {
+          type = "remote";
+          tag = "geoip-cn";
+          format = "binary";
+          url = "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs";
+          download_detour = "proxy";
+        }
+        {
+          type = "remote";
+          tag = "gfwlist";
+          format = "binary";
+          url = "https://raw.githubusercontent.com/KaringX/karing-ruleset/sing/ACL4SSR/ProxyGFWlist.srs";
+          download_detour = "proxy";
+        }
+      ];
+
+      rules = [
+        {
+          action = "sniff";
+        }
+        {
+          protocol = "dns";
+          action = "hijack-dns";
+        }
+        {
+          domain_suffix = [
+            "example.com"
+            "example.net"
+          ];
+          outbound = "proxy";
+        }
+        {
+          ip_cidr = [
+            "100.64.0.0/10"
+          ];
+          outbound = "tailscale-endpoint";
+        }
+        {
+          rule_set = [ "gfwlist" ];
+          outbound = "proxy";
+        }
+        {
+          ip_is_private = true;
+          outbound = "direct";
+        }
+        {
+          rule_set = [ "geosite-cn" ];
+          outbound = "direct";
+        }
+        {
+          rule_set = [ "geoip-cn" ];
+          outbound = "direct";
+        }
+      ];
+
+      final = "proxy";
+      auto_detect_interface = true;
+    };
   };
+in
+{
+  options.programs.sing-box = {
+    mode = lib.mkOption {
+      type = lib.types.enum [
+        "http"
+        "tun"
+      ];
+      default = "tun";
+      description = "Select sing-box inbound mode.";
+    };
+    settings = lib.mkOption {
+      type = lib.types.attrsOf lib.types.anything;
+      description = "Resolved sing-box configuration settings.";
+    };
+  };
+
+  config.programs.sing-box.settings = settings;
 }

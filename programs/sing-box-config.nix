@@ -14,11 +14,6 @@ in
     cache_file = {
       enabled = true;
     };
-    # clash_api = rec {
-    #   external_controller = "127.0.0.1:9000";
-    #   # external_ui = pkgs.metacubexd;
-    #   access_control_allow_origin = [ "http://${external_controller}" ];
-    # };
   };
 
   dns = {
@@ -31,7 +26,6 @@ in
         type = "tailscale";
         tag = "dns-tailscale";
         endpoint = "tailscale-endpoint";
-        accept_default_resolvers = false;
       }
       {
         type = "fakeip";
@@ -90,6 +84,10 @@ in
         server = "dns-tailscale";
       }
       {
+        domain_suffix = [ "ts.net" ];
+        server = "dns-tailscale";
+      }
+      {
         rule_set = [ "gfwlist" ];
         server = "doh-proxy";
       }
@@ -109,6 +107,9 @@ in
       tag = "tailscale-endpoint";
       auth_key = "";
       hostname = config.networking.hostName;
+      domain_resolver = {
+        server = "doh-proxy";
+      };
     }
   ];
   inbounds = [
@@ -249,10 +250,15 @@ in
       {
         domain_suffix = [
           "frp-mad.com"
-          "ts.net"
           "nixos.org"
         ];
         outbound = "direct";
+      }
+      {
+        domain_suffix = [
+          "ts.net"
+        ];
+        outbound = "tailscale-endpoint";
       }
       {
         ip_cidr = [
@@ -260,6 +266,7 @@ in
         ];
         outbound = "tailscale-endpoint";
       }
+
       {
         rule_set = [ "gfwlist" ];
         outbound = "proxy";

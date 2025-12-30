@@ -37,6 +37,8 @@ in
 
     # Linux
     (lib.optionalAttrs (options.services ? sing-box) {
+      networking.nameservers = [ "127.0.0.1 " ];
+      networking.search = [ "tailf5f129.ts.net" ];
       services.sing-box = {
         enable = true;
         settings = singBoxSettings;
@@ -49,6 +51,7 @@ in
         "Wi-Fi"
       ];
       networking.dns = [ "127.0.0.1" ];
+      networking.search = [ "tailf5f129.ts.net" ];
       launchd.daemons.sing-box = {
         script =
           let

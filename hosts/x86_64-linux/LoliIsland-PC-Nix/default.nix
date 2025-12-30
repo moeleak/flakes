@@ -9,6 +9,7 @@
     ./keyd.nix
     ../../../system/boot.nix
     # ../../../desktop.nix
+    ../../../system/samba.nix
     ../../../programs/sing-box.nix
     ../../../programs/ollama.nix
     ../../../programs/openssh.nix

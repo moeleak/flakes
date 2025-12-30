@@ -142,7 +142,7 @@ in
         "tyo0"
         "tyo1"
       ];
-      default = "lax0";
+      default = "tyo1";
     }
     {
       type = "direct";
@@ -250,7 +250,6 @@ in
         domain_suffix = [
           "frp-mad.com"
           "ts.net"
-          "github.com"
           "nixos.org"
         ];
         outbound = "direct";

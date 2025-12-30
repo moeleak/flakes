@@ -249,6 +249,9 @@ in
       {
         domain_suffix = [
           "frp-mad.com"
+          "ts.net"
+          "github.com"
+          "nixos.org"
         ];
         outbound = "direct";
       }
@@ -269,6 +272,7 @@ in
       {
         ip_cidr = [
           "103.97.201.87"
+          "131.143.240.18"
         ];
         outbound = "direct";
       }
@@ -282,7 +286,7 @@ in
       }
     ];
 
-    final = "proxy";
+    final = "direct";
     auto_detect_interface = true;
   };
 }

@@ -112,6 +112,7 @@ in
               set -g fish_user_paths $p $fish_user_paths
             end
           end
+
         '';
       };
 
@@ -137,6 +138,8 @@ in
         pkgs.yazi
         pkgs.devenv
         pkgs.direnv
+
+        pkgs.codex
 
         # cplusplus coding
         pkgs.clang-tools
@@ -165,6 +168,8 @@ in
         pkgs.btop
         pkgs.gitmux
       ];
+
+      programs.direnv.enable = true;
 
       programs.git = {
         enable = true;

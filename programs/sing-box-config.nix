@@ -143,7 +143,7 @@ in
         "tyo0"
         "tyo1"
       ];
-      default = "tyo1";
+      default = "lax0";
     }
     {
       type = "direct";
@@ -250,6 +250,7 @@ in
       {
         domain_suffix = [
           "frp-mad.com"
+          "hk.leak.moe"
           "nixos.org"
         ];
         outbound = "direct";
@@ -292,7 +293,7 @@ in
       }
     ];
 
-    final = "direct";
+    final = "proxy";
     auto_detect_interface = true;
   };
 }

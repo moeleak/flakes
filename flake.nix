@@ -91,6 +91,28 @@
         };
       };
 
+      homeConfigurations = let
+        username = "moeleak";
+        system = "x86_64-linux";
+        pkgs = nixpkgs.legacyPackages.${system};
+        pkgs-5a07111 = import nixpkgs-5a07111 {
+          stdenv.hostPlatform.system = system;
+          config.allowUnfree = true;
+          config.cudaSupport = true;
+        };
+      in {
+        ${username} = home-manager.lib.homeManagerConfiguration {
+          inherit pkgs;
+          modules = [ ./home-manager/home.nix ];
+          extraSpecialArgs = {
+            inherit inputs;
+            osConfig = { };
+            pkgs-5a07111 = pkgs-5a07111;
+            stdenv.hostPlatform.system = system;
+          };
+        };
+      };
+
       darwinConfigurations = {
         "LoliIsland-Mac" = nix-darwin.lib.darwinSystem {
           system = "aarch64-darwin";

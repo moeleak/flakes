@@ -17,6 +17,7 @@ in
   imports = [
     inputs.zen-browser.homeModules.beta
     inputs.plasma-manager.homeModules.plasma-manager
+    ../programs/neovim-minimum.nix
   ];
 
   home.username = if isLinux then "moeleak" else "lolimaster";
@@ -28,7 +29,8 @@ in
 
   home.packages =
     [
-      inputs.moevim.packages.${pkgs.stdenv.hostPlatform.system}.default
+      # inputs.moevim.packages.${pkgs.stdenv.hostPlatform.system}.default
+      pkgs.openssh
       pkgs.fastfetch
       pkgs.yazi
       pkgs.devenv

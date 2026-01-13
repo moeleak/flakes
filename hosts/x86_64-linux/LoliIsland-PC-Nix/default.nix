@@ -1,7 +1,6 @@
-{
-  pkgs,
-  inputs,
-  ...
+{ pkgs
+, inputs
+, ...
 }:
 {
   imports = [
@@ -13,6 +12,7 @@
     ../../../programs/sing-box.nix
     ../../../programs/ollama.nix
     ../../../programs/openssh.nix
+    ../../../programs/gnupg.nix
     ../../../programs/rime.nix
     ../../../programs/shell.nix
     ../../../programs/steam.nix

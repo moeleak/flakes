@@ -1,11 +1,10 @@
-{
-  config,
-  pkgs,
-  lib,
-  osConfig,
-  pkgs-5a07111,
-  inputs,
-  ...
+{ config
+, pkgs
+, lib
+, osConfig
+, pkgs-5a07111
+, inputs
+, ...
 }:
 let
   isDarwin = pkgs.stdenv.isDarwin;
@@ -30,7 +29,10 @@ in
   home.packages =
     [
       # inputs.moevim.packages.${pkgs.stdenv.hostPlatform.system}.default
+      pkgs.thunderbird
+      pkgs.ffmpeg
       pkgs.openssh
+      pkgs.gnupg
       pkgs.fastfetch
       pkgs.yazi
       pkgs.devenv
@@ -100,7 +102,6 @@ in
       pkgs.gnutar
       pkgs.gawk
       pkgs.zstd
-      pkgs.gnupg
     ]);
 
   programs.zen-browser.enable = isLinux;
@@ -117,6 +118,7 @@ in
         "services/org.kde.krunner.desktop"._launch = [ "Meta+Space" ];
       });
   };
+
 
   programs.git = {
     enable = true;

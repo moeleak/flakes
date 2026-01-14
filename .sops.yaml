@@ -1,6 +1,6 @@
 keys:
   - &loliIsland age1kfzd6saww8rsfhe5zs7gky2pyk6yl5jkew9gypyrk00qmadw7p3qdkdlys
-  - &loliIslandCanokey age1yubikey1q22vww87asvpmmske96ennv8ucteqw9jl7seuggyztcs48n955ep7jq9hg8
+  - &loliIslandCanokey age1yubikey1qdt7dcx4973y9gj98yety02xf5dp9q4xpmkrp9tdwcntmc0t0sz8vvuywml
 
 creation_rules:
   - path_regex: ^secrets/.*\.ya?ml$

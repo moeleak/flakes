@@ -27,10 +27,13 @@ in
         gnupg.sshKeyPaths = [ ];
         age.sshKeyPaths = [ "${userHome}/.ssh/id_ed25519" ];
         secrets = {
-          "sing-box-vless-uuid" = { };
-          "sing-box-lax0-server" = { };
-          "sing-box-tyo0-server" = { };
-          "sing-box-tyo1-server" = { };
+          "sing-box-guanran-uuid" = { };
+          "sing-box-guanran-lax0-server" = { };
+          "sing-box-guanran-tyo0-server" = { };
+          "sing-box-moeleak-lax-server" = { };
+          "sing-box-moeleak-lax-uuid" = { };
+          "sing-box-moeleak-lax-public-key" = { };
+          "sing-box-moeleak-lax-short-id" = { };
         };
       };
     }

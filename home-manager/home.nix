@@ -30,6 +30,7 @@ in
     [
       # inputs.moevim.packages.${pkgs.stdenv.hostPlatform.system}.default
       pkgs.thunderbird
+      pkgs.pass
       pkgs.ffmpeg
       pkgs.openssh
       pkgs.gnupg

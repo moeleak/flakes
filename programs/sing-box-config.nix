@@ -139,11 +139,11 @@ in
       type = "selector";
       tag = "proxy";
       outbounds = [
-        "lax0"
-        "tyo0"
-        "tyo1"
+        "guanran-lax"
+        "guanran-tyo"
+        "moeleak-lax"
       ];
-      default = "lax0";
+      default = "guanran-tyo";
     }
     {
       type = "direct";
@@ -155,14 +155,14 @@ in
     }
     {
       type = "vless";
-      tag = "lax0";
-      server = secret "sing-box-lax0-server";
+      tag = "guanran-lax";
+      server = secret "sing-box-guanran-lax0-server";
       server_port = 27253;
-      uuid = secret "sing-box-vless-uuid";
+      uuid = secret "sing-box-guanran-uuid";
       flow = "xtls-rprx-vision";
       tls = {
         enabled = true;
-        server_name = secret "sing-box-lax0-server";
+        server_name = secret "sing-box-guanran-lax0-server";
         utls = {
           enabled = true;
           fingerprint = "chrome";
@@ -171,14 +171,14 @@ in
     }
     {
       type = "vless";
-      tag = "tyo0";
-      server = secret "sing-box-tyo0-server";
+      tag = "guanran-tyo";
+      server = secret "sing-box-guanran-tyo0-server";
       server_port = 27253;
-      uuid = secret "sing-box-vless-uuid";
+      uuid = secret "sing-box-guanran-uuid";
       flow = "xtls-rprx-vision";
       tls = {
         enabled = true;
-        server_name = secret "sing-box-tyo0-server";
+        server_name = secret "sing-box-guanran-tyo0-server";
         utls = {
           enabled = true;
           fingerprint = "chrome";
@@ -186,20 +186,31 @@ in
       };
     }
     {
-      type = "vless";
-      tag = "tyo1";
-      server = secret "sing-box-tyo1-server";
-      server_port = 27253;
-      uuid = secret "sing-box-vless-uuid";
+      domain_resolver = {
+        server = "dns-local";
+        strategy = "prefer_ipv4";
+      };
       flow = "xtls-rprx-vision";
+      packet_encoding = "";
+      server = secret "sing-box-moeleak-lax-server";
+      server_port = 11451;
       tls = {
         enabled = true;
-        server_name = secret "sing-box-tyo1-server";
+        insecure = false;
+        reality = {
+          enabled = true;
+          public_key = secret "sing-box-moeleak-lax-public-key";
+          short_id = secret "sing-box-moeleak-lax-short-id";
+        };
+        server_name = "www.microsoft.com";
         utls = {
           enabled = true;
           fingerprint = "chrome";
         };
       };
+      uuid = secret "sing-box-moeleak-lax-uuid";
+      tag = "moeleak-lax";
+      type = "vless";
     }
   ];
 
@@ -250,6 +261,7 @@ in
       {
         domain_suffix = [
           "frp-mad.com"
+          "sz.leak.moe"
           "hk.leak.moe"
           "nixos.org"
         ];

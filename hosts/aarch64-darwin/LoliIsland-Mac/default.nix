@@ -6,6 +6,7 @@
 {
   imports = [
     ../../../system/nix.nix
+    ../../../system/sops.nix
     ../../../programs/shell.nix
     ../../../programs/sing-box.nix
     ../../../programs/tmux.nix

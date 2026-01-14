@@ -1,8 +1,10 @@
 keys:
   - &loliIsland age1kfzd6saww8rsfhe5zs7gky2pyk6yl5jkew9gypyrk00qmadw7p3qdkdlys
+  - &loliIslandCanokey age1yubikey1q22vww87asvpmmske96ennv8ucteqw9jl7seuggyztcs48n955ep7jq9hg8
 
 creation_rules:
   - path_regex: ^secrets/.*\.ya?ml$
     key_groups:
       - age:
           - *loliIsland
+          - *loliIslandCanokey

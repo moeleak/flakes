@@ -1,41 +1,17 @@
-{
-  config,
-  lib,
-  pkgs,
-  options,
-  ...
+{ config
+, lib
+, pkgs
+, options
+, ...
 }:
 
 let
   singBoxSettings = import ./sing-box-config.nix { inherit config; };
-
-  userHome =
-    if config.users.users ? lolimaster then
-      config.users.users.lolimaster.home
-    else if config.users.users ? moeleak then
-      config.users.users.moeleak.home
-    else
-      null;
 in
 {
   config = lib.mkMerge [
     {
       environment.systemPackages = [ pkgs.sing-box ];
-
-      sops = lib.mkIf (userHome != null) {
-        defaultSopsFile = ../secrets/sing-box.yaml;
-        gnupg.sshKeyPaths = [ ];
-        age.sshKeyPaths = [ "${userHome}/.ssh/id_ed25519" ];
-        secrets = {
-          "sing-box-guanran-uuid" = { };
-          "sing-box-guanran-lax0-server" = { };
-          "sing-box-guanran-tyo0-server" = { };
-          "sing-box-moeleak-lax-server" = { };
-          "sing-box-moeleak-lax-uuid" = { };
-          "sing-box-moeleak-lax-public-key" = { };
-          "sing-box-moeleak-lax-short-id" = { };
-        };
-      };
     }
 
     # Linux

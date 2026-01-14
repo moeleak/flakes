@@ -6,6 +6,7 @@
   imports = [
     ./hardware-configuration.nix
     ../../../system/boot.nix
+    ../../../system/sops.nix
     ./audio.nix
     ./keyd.nix
     ../../../desktop.nix

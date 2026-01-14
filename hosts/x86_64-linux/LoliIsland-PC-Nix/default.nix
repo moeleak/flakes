@@ -7,6 +7,7 @@
     ./hardware-configuration.nix
     ./keyd.nix
     ../../../system/boot.nix
+    ../../../system/pcscd.nix
     ../../../system/sops.nix
     # ../../../desktop.nix
     ../../../system/samba.nix

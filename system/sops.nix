@@ -17,6 +17,7 @@ in
   environment.systemPackages = [ pkgs.age-plugin-yubikey ];
   sops = {
     defaultSopsFile = ../secrets/sing-box.yaml;
+    environment.PATH = lib.mkForce "/usr/bin:/bin:/usr/sbin:/sbin:${lib.makeBinPath [ pkgs.age-plugin-yubikey ]}";
     gnupg.sshKeyPaths = [ ];
     age.sshKeyPaths = [ ];
     age.keyFile = "${userHome}/.config/sops/age/keys.txt";
@@ -31,11 +32,13 @@ in
       "sing-box-moeleak-lax-short-id" = { };
     };
   };
-  system.activationScripts.setupYubikeyForSopsNix.text = ''
-    PATH=$PATH:${lib.makeBinPath [ pkgs.age-plugin-yubikey ] }
-    ${pkgs.runtimeShell} -c "mkdir -p /var/lib/pcsc && ln -sfn ${pkgs.ccid}/pcsc/drivers /var/lib/pcsc/drivers"
-    ${pkgs.toybox}/bin/pgrep pcscd > /dev/null && ${pkgs.toybox}/bin/pkill pcscd
-    ${pkgs.pcsclite}/bin/pcscd
-  '';
-  system.activationScripts.setupSecrets.deps = [ "setupYubikeyForSopsNix" ];
+  system.activationScripts = lib.optionalAttrs pkgs.stdenv.isLinux {
+    setupYubikeyForSopsNix.text = ''
+      PATH=$PATH:${lib.makeBinPath [ pkgs.age-plugin-yubikey ] }
+      ${pkgs.runtimeShell} -c "mkdir -p /var/lib/pcsc && ln -sfn ${pkgs.ccid}/pcsc/drivers /var/lib/pcsc/drivers"
+      ${pkgs.toybox}/bin/pgrep pcscd > /dev/null && ${pkgs.toybox}/bin/pkill pcscd
+      ${pkgs.pcsclite}/bin/pcscd
+    '';
+    setupSecrets.deps = [ "setupYubikeyForSopsNix" ];
+  };
 }

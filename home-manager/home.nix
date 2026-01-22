@@ -28,7 +28,10 @@ in
 
   home.packages =
     [
-      # inputs.moevim.packages.${pkgs.stdenv.hostPlatform.system}.default
+      pkgs.ibm-plex
+      pkgs.sarasa-gothic
+      pkgs.source-han-serif
+
       pkgs.thunderbird
       pkgs.pass
       pkgs.ffmpeg

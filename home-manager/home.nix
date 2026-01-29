@@ -31,6 +31,8 @@ in
       pkgs.ibm-plex
       pkgs.sarasa-gothic
       pkgs.source-han-serif
+      pkgs.noto-fonts
+      pkgs.noto-fonts-cjk-sans
 
       pkgs.thunderbird
       pkgs.pass

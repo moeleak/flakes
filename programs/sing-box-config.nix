@@ -216,7 +216,7 @@ in
 
   route = {
     default_domain_resolver = {
-      server = "dns-google";
+      server = "doh-cn";
     };
 
     rule_set = [

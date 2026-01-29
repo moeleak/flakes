@@ -1,5 +1,6 @@
 { config
 , lib
+, options
 , pkgs
 , ...
 }:
@@ -47,7 +48,7 @@ in
         setupSecrets.deps = [ "setupYubikeyForSopsNix" ];
       };
     })
-    (lib.mkIf pkgs.stdenv.isDarwin {
+    (lib.optionalAttrs (options ? launchd) {
       launchd.daemons.sops-install-secrets.serviceConfig = {
         # Retry on failure so secrets are decrypted after YubiKey is inserted.
         KeepAlive = lib.mkForce {

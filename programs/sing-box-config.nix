@@ -143,7 +143,7 @@ in
         "guanran-tyo"
         "moeleak-lax"
       ];
-      default = "guanran-tyo";
+      default = "moeleak-lax";
     }
     {
       type = "direct";
@@ -187,7 +187,7 @@ in
     }
     {
       domain_resolver = {
-        server = "dns-local";
+        server = "doh-cn";
         strategy = "prefer_ipv4";
       };
       flow = "xtls-rprx-vision";
@@ -253,17 +253,16 @@ in
       }
       {
         domain_suffix = [
-          "example.com"
-          "example.net"
+          "nixos.org"
         ];
         outbound = "proxy";
       }
       {
         domain_suffix = [
           "frp-mad.com"
-          "sz.leak.moe"
+          "lax.leak.moe"
+          "szh.leak.moe"
           "hk.leak.moe"
-          "nixos.org"
         ];
         outbound = "direct";
       }

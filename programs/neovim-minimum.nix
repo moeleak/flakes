@@ -37,7 +37,7 @@
       lspkind-nvim
     ];
 
-    extraLuaConfig = ''
+    initLua = ''
       -- ================= UI Basics =================
       vim.opt.expandtab = true
       vim.opt.shiftwidth = 2

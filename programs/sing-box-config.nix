@@ -259,7 +259,9 @@ in
       }
       {
         domain_suffix = [
-          "frp-mad.com"
+          "frp3.ccszxc.xin"
+          "ngb.leak.moe"
+          "play.leak.moe"
           "lax.leak.moe"
           "szh.leak.moe"
           "hk.leak.moe"

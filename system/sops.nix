@@ -19,7 +19,6 @@ in
     {
       environment.systemPackages = [ pkgs.age-plugin-yubikey ];
       sops = {
-        defaultSopsFile = ../secrets/sing-box.yaml;
         environment.PATH = lib.mkForce "/usr/bin:/bin:/usr/sbin:/sbin:${lib.makeBinPath [ pkgs.age-plugin-yubikey ]}";
         gnupg.sshKeyPaths = [ ];
         age.sshKeyPaths = [ ];
@@ -27,13 +26,13 @@ in
         age.keyFile = "${userHome}/.config/sops/age/keys.txt";
         age.plugins = [ pkgs.age-plugin-yubikey ];
         secrets = {
-          "sing-box-guanran-uuid" = { };
-          "sing-box-guanran-lax0-server" = { };
-          "sing-box-guanran-tyo0-server" = { };
-          "sing-box-moeleak-lax-server" = { };
-          "sing-box-moeleak-lax-uuid" = { };
-          "sing-box-moeleak-lax-public-key" = { };
-          "sing-box-moeleak-lax-short-id" = { };
+          "sing-box-guanran-uuid" = { sopsFile = ../secrets/sing-box.yaml; };
+          "sing-box-guanran-lax0-server" = { sopsFile = ../secrets/sing-box.yaml; };
+          "sing-box-guanran-tyo0-server" = { sopsFile = ../secrets/sing-box.yaml; };
+          "sing-box-moeleak-lax-server" = { sopsFile = ../secrets/sing-box.yaml; };
+          "sing-box-moeleak-lax-uuid" = { sopsFile = ../secrets/sing-box.yaml; };
+          "sing-box-moeleak-lax-public-key" = { sopsFile = ../secrets/sing-box.yaml; };
+          "sing-box-moeleak-lax-short-id" = { sopsFile = ../secrets/sing-box.yaml; };
         };
       };
     }

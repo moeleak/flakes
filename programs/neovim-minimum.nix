@@ -4,7 +4,7 @@
   home.packages = with pkgs; [
     nixd
     clang-tools
-    nixpkgs-fmt
+    nixfmt
     ripgrep
     yazi
     statix
@@ -56,7 +56,7 @@
       -- [New] Persistent Undo Settings
       -- Saves undo history to disk, allowing undo even after closing and reopening Vim
       vim.opt.undofile = true
-      
+
       -- ================= Theme: Catppuccin =================
       local cat_ok, catppuccin = pcall(require, "catppuccin")
       if cat_ok then
@@ -137,7 +137,7 @@
       -- ================= Functional Initialization =================
       require("nvim-autopairs").setup {}
       require("nvim-web-devicons").setup {}
-      
+
       require("yazi").setup({
         open_for_directories = false,
         keymaps = { show_help = '<f1>' },
@@ -150,12 +150,12 @@
 
       require("conform").setup({
         formatters_by_ft = {
-          nix = { "nixpkgs_fmt" },
+          nix = { "nixfmt" },
           cpp = { "clang_format" },
           c   = { "clang_format" },
           python = { "black" },
         },
-        format_on_save = { timeout_ms = 500, lsp_fallback = true },
+        format_on_save = { timeout_ms = 2000, lsp_fallback = true },
       })
 
       vim.diagnostic.config({
@@ -245,7 +245,7 @@
             cmd = { "nixd" },
             root_dir = root,
             capabilities = capabilities,
-            settings = { nixd = { formatting = { command = { "nixpkgs-fmt" } } } }
+            settings = { nixd = { formatting = { command = { "nixfmt" } } } }
           })
         end,
       })

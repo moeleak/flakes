@@ -1,16 +1,18 @@
-{ config
-, pkgs
-, lib
-, osConfig
-, pkgs-5a07111
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  osConfig,
+  pkgs-5a07111,
+  inputs,
+  ...
 }:
 let
   isDarwin = pkgs.stdenv.isDarwin;
   isLinux = pkgs.stdenv.isLinux;
 
   host = lib.attrByPath [ "networking" "hostName" ] "" osConfig;
+
 in
 {
   imports = [
@@ -26,105 +28,105 @@ in
     EDITOR = "nvim";
   };
 
-  home.packages =
-    [
-      pkgs.ibm-plex
-      pkgs.sarasa-gothic
-      pkgs.source-han-serif
-      pkgs.noto-fonts
-      pkgs.noto-fonts-cjk-sans
+  home.packages = [
+    pkgs.ibm-plex
+    pkgs.sarasa-gothic
+    pkgs.source-han-serif
+    pkgs.noto-fonts
+    pkgs.noto-fonts-cjk-sans
 
-      pkgs.thunderbird
-      pkgs.pass
-      pkgs.ffmpeg
-      pkgs.openssh
-      pkgs.gnupg
-      pkgs.fastfetch
-      pkgs.yazi
-      pkgs.devenv
-      pkgs.direnv
-      pkgs.codex
+    pkgs.thunderbird
+    pkgs.ffmpeg
+    pkgs.openssh
+    pkgs.gnupg
+    pkgs.fastfetch
+    pkgs.yazi
+    pkgs.devenv
+    pkgs.direnv
+    pkgs.codex
 
-      pkgs.clang-tools
-      pkgs.clang
-      pkgs.llvm
-      pkgs.cmake
-      pkgs.ccls
-      pkgs.gnumake
+    pkgs.clang-tools
+    pkgs.clang
+    pkgs.llvm
+    pkgs.cmake
+    pkgs.ccls
+    pkgs.gnumake
 
-      pkgs.zip
-      pkgs.xz
-      pkgs.unzip
-      pkgs.p7zip
+    pkgs.zip
+    pkgs.xz
+    pkgs.unzip
+    pkgs.p7zip
 
-      pkgs.iperf3
-      pkgs.mtr
-      pkgs.aria2
-      pkgs.nmap
+    pkgs.iperf3
+    pkgs.mtr
+    pkgs.aria2
+    pkgs.nmap
 
-      pkgs.file
-      pkgs.which
-      pkgs.tree
+    pkgs.file
+    pkgs.which
+    pkgs.tree
 
-      pkgs.ripgrep
-      pkgs.jq
-      pkgs.yq-go
-      pkgs.eza
-      pkgs.fzf
-      pkgs.tmux
-      pkgs.btop
-      pkgs.gitmux
-    ]
-    ++ (lib.optionals isLinux [
-      pkgs.ghostty
-      pkgs.libreoffice
-      pkgs._64gram
-      pkgs.audacious
-      pkgs.moonlight-qt
-      pkgs.hmcl
-      pkgs.wl-clipboard
+    pkgs.ripgrep
+    pkgs.jq
+    pkgs.yq-go
+    pkgs.eza
+    pkgs.fzf
+    pkgs.tmux
+    pkgs.btop
+    pkgs.gitmux
+  ]
+  ++ (lib.optionals isLinux [
+    pkgs.ghostty
+    pkgs.libreoffice
+    pkgs._64gram
+    pkgs.audacious
+    pkgs.moonlight-qt
+    pkgs.hmcl
+    pkgs.wl-clipboard
 
-      pkgs.dnsutils
-      pkgs.ldns
-      pkgs.socat
-      pkgs.ipcalc
+    pkgs.dnsutils
+    pkgs.ldns
+    pkgs.socat
+    pkgs.ipcalc
 
-      pkgs.strace
-      pkgs.ltrace
-      pkgs.lsof
-      pkgs.iotop
-      pkgs.iftop
-      pkgs.sysstat
-      pkgs.lm_sensors
-      pkgs.ethtool
-      pkgs.pciutils
-      pkgs.usbutils
+    pkgs.strace
+    pkgs.ltrace
+    pkgs.lsof
+    pkgs.iotop
+    pkgs.iftop
+    pkgs.sysstat
+    pkgs.lm_sensors
+    pkgs.ethtool
+    pkgs.pciutils
+    pkgs.usbutils
 
-      pkgs.nix-output-monitor
-      pkgs.glow
+    pkgs.nix-output-monitor
+    pkgs.glow
 
-      pkgs.cowsay
-      pkgs.gnused
-      pkgs.gnutar
-      pkgs.gawk
-      pkgs.zstd
-    ]);
+    pkgs.cowsay
+    pkgs.gnused
+    pkgs.gnutar
+    pkgs.gawk
+    pkgs.zstd
+  ]);
 
-  programs.zen-browser.enable = isLinux;
+  programs.zen-browser.enable = true;
 
   programs.plasma = lib.mkIf isLinux {
     enable = (host == "LoliIsland-PC-Nix" || host == "LoliIsland-Laptop-Nix");
-    shortcuts =
-      {
-        "services/org.kde.spectacle.desktop"._launch = [ "Alt+@" ];
-        "services/org.kde.spectacle.desktop".FullScreenScreenShot = [ "Alt+!" ];
-        "services/org.kde.spectacle.desktop".ActiveWindowScreenShot = [ "Alt+#" ];
-      }
-      // (lib.optionalAttrs (host == "LoliIsland-PC-Nix") {
-        "services/org.kde.krunner.desktop"._launch = [ "Meta+Space" ];
-      });
+    shortcuts = {
+      "services/org.kde.spectacle.desktop"._launch = [ "Alt+@" ];
+      "services/org.kde.spectacle.desktop".FullScreenScreenShot = [ "Alt+!" ];
+      "services/org.kde.spectacle.desktop".ActiveWindowScreenShot = [ "Alt+#" ];
+    }
+    // (lib.optionalAttrs (host == "LoliIsland-PC-Nix") {
+      "services/org.kde.krunner.desktop"._launch = [ "Meta+Space" ];
+    });
   };
 
+  programs.password-store = {
+    enable = true;
+  };
 
   programs.git = {
     enable = true;

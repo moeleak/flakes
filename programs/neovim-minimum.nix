@@ -10,6 +10,8 @@
     statix
     pyright
     black
+    rust-analyzer
+    rustfmt
   ];
 
   programs.neovim = {
@@ -154,6 +156,7 @@
           cpp = { "clang_format" },
           c   = { "clang_format" },
           python = { "black" },
+          rust = { "rustfmt" },
         },
         format_on_save = { timeout_ms = 2000, lsp_fallback = true },
       })
@@ -273,6 +276,36 @@
             root_dir = root,
             capabilities = capabilities,
             settings = { python = { analysis = { autoSearchPaths = true, diagnosticMode = "workspace", useLibraryCodeForTypes = true } } },
+          })
+        end,
+      })
+
+      local original_show_message = vim.lsp.handlers["window/showMessage"]
+      vim.lsp.handlers["window/showMessage"] = function(err, result, ctx, config)
+        local client = ctx and ctx.client_id and vim.lsp.get_client_by_id(ctx.client_id)
+        if client and client.name == "rust-analyzer" and result and result.message then
+          if result.message:match("^Failed to discover workspace") then
+            return
+          end
+        end
+        return original_show_message(err, result, ctx, config)
+      end
+
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = "rust",
+        callback = function(args)
+          local project = vim.fs.find({ 'Cargo.toml', 'rust-project.json' }, { path = args.file, upward = true })[1]
+          local root = project and vim.fs.dirname(project) or vim.fs.dirname(args.file)
+          local settings = nil
+          if project then
+            settings = { ["rust-analyzer"] = { linkedProjects = { project } } }
+          end
+          vim.lsp.start({
+            name = "rust-analyzer",
+            cmd = { "rust-analyzer" },
+            root_dir = root,
+            capabilities = capabilities,
+            settings = settings,
           })
         end,
       })

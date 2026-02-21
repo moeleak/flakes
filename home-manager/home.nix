@@ -46,6 +46,8 @@ in
     pkgs.codex
 
     pkgs.clang-tools
+    pkgs.cargo
+    pkgs.rustc
     pkgs.clang
     pkgs.llvm
     pkgs.cmake

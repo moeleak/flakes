@@ -45,9 +45,11 @@ in
     pkgs.direnv
     pkgs.codex
 
-    pkgs.clang-tools
     pkgs.cargo
     pkgs.rustc
+    pkgs.rustfmt
+
+    pkgs.clang-tools
     pkgs.clang
     pkgs.llvm
     pkgs.cmake
@@ -110,6 +112,9 @@ in
     pkgs.gnutar
     pkgs.gawk
     pkgs.zstd
+  ])
+  ++ (lib.optionals isDarwin [
+    pkgs.apple-sdk
   ]);
 
   programs.zen-browser.enable = true;

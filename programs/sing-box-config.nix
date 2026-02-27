@@ -143,7 +143,7 @@ in
         "guanran-tyo"
         "moeleak-lax"
       ];
-      default = "moeleak-lax";
+      default = "guanran-tyo";
     }
     {
       type = "direct";

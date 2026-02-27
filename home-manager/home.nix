@@ -35,6 +35,7 @@ in
     pkgs.noto-fonts
     pkgs.noto-fonts-cjk-sans
 
+    pkgs._64gram
     pkgs.thunderbird
     pkgs.ffmpeg
     pkgs.openssh
@@ -82,7 +83,6 @@ in
   ++ (lib.optionals isLinux [
     pkgs.ghostty
     pkgs.libreoffice
-    pkgs._64gram
     pkgs.audacious
     pkgs.moonlight-qt
     pkgs.hmcl

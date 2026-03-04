@@ -11,6 +11,9 @@ in
   };
 
   experimental = {
+    #external_controller = "0.0.0.0:9090";
+    #external_ui = "dashboard";
+    #external_ui_download_detour = "proxy";
     cache_file = {
       enabled = true;
     };
@@ -306,7 +309,7 @@ in
       }
     ];
 
-    final = "proxy";
+    final = "direct";
     auto_detect_interface = true;
   };
 }

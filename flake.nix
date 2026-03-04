@@ -46,6 +46,10 @@
       ...
     }@inputs:
     {
+      overlays = {
+        obs-bilibili-stream = import ./overlays/obs-bilibili-stream.nix;
+      };
+
       nixosConfigurations = {
         "LoliIsland-PC-Nix" = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
@@ -72,6 +76,7 @@
                 };
               }
             )
+            ({ ... }: { nixpkgs.overlays = [ self.overlays.obs-bilibili-stream ]; })
           ];
         };
 
@@ -87,6 +92,7 @@
             ./system/packages.nix
             sops-nix.nixosModules.sops
             home-manager.nixosModules.default
+            ({ ... }: { nixpkgs.overlays = [ self.overlays.obs-bilibili-stream ]; })
           ];
         };
       };
@@ -95,7 +101,7 @@
         let
           username = "moeleak";
           system = "x86_64-linux";
-          pkgs = nixpkgs.legacyPackages.${system};
+          pkgs = nixpkgs.legacyPackages.${system}.extend self.overlays.obs-bilibili-stream;
           pkgs-5a07111 = import nixpkgs-5a07111 {
             stdenv.hostPlatform.system = system;
             config.allowUnfree = true;

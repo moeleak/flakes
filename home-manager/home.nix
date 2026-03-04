@@ -20,6 +20,7 @@ in
     inputs.plasma-manager.homeModules.plasma-manager
     ../programs/neovim-minimum.nix
   ];
+  programs.zen-browser.suppressXdgMigrationWarning = true;
 
   home.username = if isLinux then "moeleak" else "lolimaster";
   home.homeDirectory = if isLinux then "/home/moeleak" else "/Users/lolimaster";
@@ -129,6 +130,25 @@ in
     // (lib.optionalAttrs (host == "LoliIsland-PC-Nix") {
       "services/org.kde.krunner.desktop"._launch = [ "Meta+Space" ];
     });
+  };
+
+  programs.obs-studio = lib.mkIf (isLinux && host == "LoliIsland-PC-Nix") {
+    enable = true;
+
+    package = (
+      pkgs.obs-studio.override {
+        cudaSupport = true;
+      }
+    );
+
+    plugins = with pkgs.obs-studio-plugins; [
+      wlrobs
+      obs-backgroundremoval
+      obs-pipewire-audio-capture
+      obs-gstreamer
+      obs-vkcapture
+      obs-bilibili-stream
+    ];
   };
 
   programs.password-store = {

@@ -1,0 +1,59 @@
+diff --git a/src/plugin-main.cpp b/src/plugin-main.cpp
+index b8e1571..d56ca70 100644
+--- a/src/plugin-main.cpp
++++ b/src/plugin-main.cpp
+@@ -1,6 +1,7 @@
+ #include <obs-data.h>
+ #include <obs-module.h>
+ #include <obs-frontend-api.h>
++#include <util/platform.h>
+ #include <QMainWindow>
+ #include <QAction>
+ #include <QMenuBar>
+@@ -35,6 +36,7 @@ public:
+ 	{
+ 		menuBar = parent->menuBar();
+ 		setupMenu();
++		createConfigFolder();
+ 		loadConfig();
+ 		onLoginStatusTriggered();
+ 		if (config.streaming) {
+@@ -54,6 +56,19 @@ private:
+ 	QAction *loginStatusAction = nullptr;
+ 	QAction *streamAction = nullptr;
+ 
++	void createConfigFolder()
++	{
++		char *config_folder_path = obs_module_config_path(NULL);
++		if (!config_folder_path) {
++			obs_log(LOG_ERROR, "Failed to get config folder path");
++			return;
++		}
++		if (os_mkdirs(config_folder_path) != 0) {
++			obs_log(LOG_ERROR, "Failed to create config folder: %s", config_folder_path);
++		}
++		bfree(config_folder_path);
++	}
++
+ 	void openLiveRoom()
+ 	{
+ 		if (config.room_id.empty()) {
+@@ -89,7 +104,7 @@ private:
+ 	void loadConfig()
+ 	{
+ 		std::string message;
+-		char *config_file = obs_module_file("config.json");
++		char *config_file = obs_module_config_path("config.json");
+ 		if (config_file) {
+ 			obs_data_t *settings = obs_data_create_from_json_file(config_file);
+ 			if (settings) {
+@@ -128,7 +143,8 @@ private:
+ 
+ 	void saveConfig()
+ 	{
+-		char *config_file = obs_module_file("config.json");
++		createConfigFolder();
++		char *config_file = obs_module_config_path("config.json");
+ 		if (config_file) {
+ 			obs_data_t *settings = obs_data_create();
+ 			obs_data_set_string(settings, "room_id", config.room_id.c_str());

@@ -25,6 +25,10 @@ stdenv.mkDerivation rec {
         sha256 = "sha256-wyWZ7uXDCxXGpNWViafiBW5ApY6V5xm4INg84SaOc/U=";
       };
 
+  patches = [
+    ./obs-bilibili-stream-config-path.patch
+  ];
+
   nativeBuildInputs = [
     cmake
     pkg-config

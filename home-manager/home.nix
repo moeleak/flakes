@@ -35,6 +35,7 @@ in
     pkgs.source-han-serif
     pkgs.noto-fonts
     pkgs.noto-fonts-cjk-sans
+    pkgs.nerd-fonts.jetbrains-mono
 
     pkgs._64gram
     pkgs.thunderbird
@@ -82,7 +83,7 @@ in
     pkgs.gitmux
   ]
   ++ (lib.optionals isLinux [
-    pkgs.ghostty
+    pkgs.wechat
     pkgs.libreoffice
     pkgs.audacious
     pkgs.moonlight-qt
@@ -130,6 +131,17 @@ in
     // (lib.optionalAttrs (host == "LoliIsland-PC-Nix") {
       "services/org.kde.krunner.desktop"._launch = [ "Meta+Space" ];
     });
+  };
+
+  programs.kitty = {
+    enable = true;
+    settings = {
+      font_family = "JetBrainsMono Nerd Font";
+    };
+    extraConfig = ''
+      include ${pkgs.kitty-themes}/share/kitty-themes/themes/Nord.conf
+    '';
+
   };
 
   programs.obs-studio = lib.mkIf (isLinux && host == "LoliIsland-PC-Nix") {

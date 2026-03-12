@@ -127,6 +127,12 @@ in
       vimium
     ];
 
+  xdg.dataFile."applications/wechat.desktop".text = lib.optionalString isLinux ''
+    [Desktop Entry]
+    Exec=env QT_IM_MODULE=fcitx XMODIFIERS=@im=fcitx wechat %U
+    Icon=wechat
+  '';
+
   programs.plasma = lib.mkIf isLinux {
     enable = (host == "LoliIsland-PC-Nix" || host == "LoliIsland-Laptop-Nix");
     shortcuts = {
@@ -266,13 +272,6 @@ in
   programs.starship.enable = true;
   programs.direnv.enable = true;
   programs.direnv.nix-direnv.enable = true;
-
-  xdg.configFile."ghostty/config".text = ''
-    keybind = ctrl+t=new_tab
-    cursor-style = bar
-    cursor-style-blink = false
-    shell-integration = none
-  '';
 
   home.stateVersion = "25.11";
 }

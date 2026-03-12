@@ -141,14 +141,16 @@ in
 
   programs.kitty = {
     enable = true;
-    settings = {
-      font_family = "0xProto Nerd Font Mono";
-      font_size = if isDarwin then 18 else 16;
+    font.name = "0xProto Nerd Font Mono";
+    font.size = if isLinux then 12 else 18;
+    font.package = pkgs.nerd-fonts._0xproto;
+    settings.macos_option_as_alt = true;
+    themeFile = "Nord";
+    keybindings = lib.mkIf isLinux {
+      "ctrl+t" = "new_tab";
+      "ctrl+shift+[" = "previous_tab";
+      "ctrl+shift+]" = "next_tab";
     };
-    extraConfig = ''
-      include ${pkgs.kitty-themes}/share/kitty-themes/themes/Nord.conf
-    '';
-
   };
 
   programs.obs-studio = lib.mkIf (isLinux && host == "LoliIsland-PC-Nix") {

@@ -11,9 +11,12 @@ in
   };
 
   experimental = {
-    #external_controller = "0.0.0.0:9090";
-    #external_ui = "dashboard";
-    #external_ui_download_detour = "proxy";
+    clash_api = {
+      external_controller = "localhost:9090";
+      external_ui = "ui";
+      external_ui_download_url = "https://github.com/MetaCubeX/Yacd-meta/archive/gh-pages.zip";
+      external_ui_download_detour = "proxy";
+    };
     cache_file = {
       enabled = true;
     };
@@ -145,6 +148,7 @@ in
         "guanran-lax"
         "guanran-tyo"
         "moeleak-lax"
+        "direct"
       ];
       default = "moeleak-lax";
     }
@@ -309,7 +313,7 @@ in
       }
     ];
 
-    final = "direct";
+    final = "proxy";
     auto_detect_interface = true;
   };
 }

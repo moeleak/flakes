@@ -35,6 +35,7 @@ in
     pkgs.noto-fonts
     pkgs.noto-fonts-cjk-sans
     pkgs.nerd-fonts.jetbrains-mono
+    pkgs.nerd-fonts._0xproto
 
     pkgs._64gram
     pkgs.thunderbird
@@ -119,7 +120,8 @@ in
   ]);
 
   programs.zen-browser.enable = true;
-  programs.zen-browser.profiles.default.extensions.packages =
+
+  programs.zen-browser.profiles.main.extensions.packages =
     with inputs.firefox-addons.packages.${pkgs.stdenv.hostPlatform.system}; [
       ublock-origin
       vimium
@@ -140,7 +142,8 @@ in
   programs.kitty = {
     enable = true;
     settings = {
-      font_family = "JetBrainsMono Nerd Font";
+      font_family = "0xProto Nerd Font Mono";
+      font_size = if isDarwin then 18 else 16;
     };
     extraConfig = ''
       include ${pkgs.kitty-themes}/share/kitty-themes/themes/Nord.conf

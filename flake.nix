@@ -7,6 +7,11 @@
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
     moevim.url = "github:moeleak/moevim";
 
+    firefox-addons = {
+      url = "gitlab:rycee/nur-expressions?dir=pkgs/firefox-addons";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     lanzaboote = {
       url = "github:nix-community/lanzaboote/v0.4.3";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -76,7 +81,12 @@
                 };
               }
             )
-            ({ ... }: { nixpkgs.overlays = [ self.overlays.obs-bilibili-stream ]; })
+            (
+              { ... }:
+              {
+                nixpkgs.overlays = [ self.overlays.obs-bilibili-stream ];
+              }
+            )
           ];
         };
 
@@ -92,7 +102,12 @@
             ./system/packages.nix
             sops-nix.nixosModules.sops
             home-manager.nixosModules.default
-            ({ ... }: { nixpkgs.overlays = [ self.overlays.obs-bilibili-stream ]; })
+            (
+              { ... }:
+              {
+                nixpkgs.overlays = [ self.overlays.obs-bilibili-stream ];
+              }
+            )
           ];
         };
       };

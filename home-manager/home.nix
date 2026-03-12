@@ -20,7 +20,6 @@ in
     inputs.plasma-manager.homeModules.plasma-manager
     ../programs/neovim-minimum.nix
   ];
-  programs.zen-browser.suppressXdgMigrationWarning = true;
 
   home.username = if isLinux then "moeleak" else "lolimaster";
   home.homeDirectory = if isLinux then "/home/moeleak" else "/Users/lolimaster";
@@ -120,6 +119,11 @@ in
   ]);
 
   programs.zen-browser.enable = true;
+  programs.zen-browser.profiles.default.extensions.packages =
+    with inputs.firefox-addons.packages.${pkgs.stdenv.hostPlatform.system}; [
+      ublock-origin
+      vimium
+    ];
 
   programs.plasma = lib.mkIf isLinux {
     enable = (host == "LoliIsland-PC-Nix" || host == "LoliIsland-Laptop-Nix");

@@ -143,6 +143,15 @@ in
     // (lib.optionalAttrs (host == "LoliIsland-PC-Nix") {
       "services/org.kde.krunner.desktop"._launch = [ "Meta+Space" ];
     });
+    configFile = {
+      kwinrc.Wayland = {
+        InputMethod = {
+          value = "/run/current-system/sw/share/applications/org.fcitx.Fcitx5.desktop";
+          shellExpand = true;
+        };
+        VirtualKeyboardEnabled = true;
+      };
+    };
   };
 
   programs.kitty = {
@@ -152,11 +161,17 @@ in
     font.package = pkgs.nerd-fonts._0xproto;
     settings.macos_option_as_alt = true;
     themeFile = "Nord";
-    keybindings = lib.mkIf isLinux {
-      "ctrl+t" = "new_tab";
-      "ctrl+shift+[" = "previous_tab";
-      "ctrl+shift+]" = "next_tab";
-    };
+    keybindings =
+      lib.optionalAttrs (host == "LoliIsland-PC-Nix") {
+        "ctrl+t" = "new_tab";
+        "ctrl+shift+[" = "previous_tab";
+        "ctrl+shift+]" = "next_tab";
+      }
+      // (lib.optionalAttrs (host == "LoliIsland-Laptop-Nix")) {
+        "alt+t" = "new_tab";
+        "alt+shift+[" = "previous_tab";
+        "alt+shift+]" = "next_tab";
+      };
   };
 
   programs.obs-studio = lib.mkIf (isLinux && host == "LoliIsland-PC-Nix") {

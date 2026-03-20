@@ -129,6 +129,7 @@ in
 
   xdg.dataFile."applications/wechat.desktop".text = lib.optionalString isLinux ''
     [Desktop Entry]
+    Name=Weixin
     Exec=env QT_IM_MODULE=fcitx XMODIFIERS=@im=fcitx wechat %U
     Icon=wechat
   '';

@@ -116,7 +116,13 @@
         let
           username = "moeleak";
           system = "x86_64-linux";
-          pkgs = nixpkgs.legacyPackages.${system}.extend self.overlays.obs-bilibili-stream;
+          pkgs = import nixpkgs {
+            inherit system;
+            config.allowUnfree = true;
+            overlays = [
+              self.overlays.obs-bilibili-stream
+            ];
+          };
           pkgs-5a07111 = import nixpkgs-5a07111 {
             stdenv.hostPlatform.system = system;
             config.allowUnfree = true;

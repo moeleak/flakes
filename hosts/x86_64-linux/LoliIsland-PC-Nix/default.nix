@@ -13,6 +13,7 @@
     ../../../desktop.nix
     ../../../system/samba.nix
     ../../../programs/sing-box.nix
+    ../../../programs/sunshine.nix
     ../../../programs/ollama.nix
     ../../../programs/openssh.nix
     ../../../programs/gnupg.nix

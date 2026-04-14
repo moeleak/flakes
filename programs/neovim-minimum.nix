@@ -240,6 +240,23 @@
       })
 
       local capabilities = require('cmp_nvim_lsp').default_capabilities()
+      local default_publish_diagnostics = vim.lsp.handlers["textDocument/publishDiagnostics"]
+
+      local function is_clangd_ignored_header(uri)
+        local filename = vim.uri_to_fname(uri or "")
+        return filename:match("%.h$") ~= nil or filename:match("%.hpp$") ~= nil
+      end
+
+      local function ignore_header_diagnostics(err, result, ctx, config)
+        if result and is_clangd_ignored_header(result.uri) then
+          if ctx and ctx.client_id and vim.lsp.diagnostic and vim.lsp.diagnostic.get_namespace then
+            vim.diagnostic.reset(vim.lsp.diagnostic.get_namespace(ctx.client_id), vim.uri_to_bufnr(result.uri))
+          end
+          return
+        end
+
+        return default_publish_diagnostics(err, result, ctx, config)
+      end
 
       vim.api.nvim_create_autocmd("FileType", {
         pattern = "nix",
@@ -264,6 +281,9 @@
             cmd = { "clangd" },
             root_dir = root,
             capabilities = capabilities,
+            handlers = {
+              ["textDocument/publishDiagnostics"] = ignore_header_diagnostics,
+            },
           })
         end,
       })

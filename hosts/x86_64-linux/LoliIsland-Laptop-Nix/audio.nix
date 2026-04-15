@@ -8,7 +8,10 @@
 let
   alsa-ucm-conf-cros =
     with pkgs;
-    alsa-ucm-conf.overrideAttrs {
+    alsa-ucm-conf.overrideAttrs (_oldAttrs: {
+      # The ChromeOS UCM source layout diverges from nixpkgs' stock alsa-ucm-conf
+      # source, so inherited upstream patches can no longer be applied safely.
+      patches = [ ];
       wttsrc = fetchFromGitHub {
         owner = "WeirdTreeThing";
         repo = "alsa-ucm-conf-cros";
@@ -29,7 +32,7 @@ let
         cp -r alsa-ucm*/ucm2 $out/share/alsa
         runHook postInstall
       '';
-    };
+    });
 in
 {
 

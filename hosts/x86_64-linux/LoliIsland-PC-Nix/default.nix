@@ -29,6 +29,8 @@
     ../../../hardware/NVFanControl.nix
   ];
 
+  boot.kernelPackages = pkgs.linuxPackages_latest;
+
   networking.hostName = "LoliIsland-PC-Nix"; # Define your hostname.
 
   users.users.moeleak = {

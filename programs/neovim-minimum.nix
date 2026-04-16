@@ -351,6 +351,9 @@
       vim.keymap.set('n', '<leader>e', function() require('yazi').yazi() end, { desc = "Yazi" })
       vim.keymap.set('n', '<Tab>', '<Cmd>BufferLineCycleNext<CR>', { desc = "Next Buf" })
       vim.keymap.set('n', '<S-Tab>', '<Cmd>BufferLineCyclePrev<CR>', { desc = "Prev Buf" })
+      for i = 1, 9 do
+        vim.keymap.set('n', '<leader>' .. i, '<Cmd>BufferLineGoToBuffer ' .. i .. '<CR>', { desc = "Go to buffer " .. i })
+      end
       vim.keymap.set('n', '<leader>f', function() require("conform").format({ lsp_fallback = true }) end, { desc = "Format" })
 
       vim.api.nvim_create_autocmd('LspAttach', {

@@ -22,6 +22,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nixos-licheepi4a.url = "github:ryan4yin/nixos-licheepi4a";
+
     plasma-manager = {
       url = "github:nix-community/plasma-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -46,10 +48,29 @@
       nixpkgs-5a07111,
       home-manager,
       lanzaboote,
+      nixos-licheepi4a,
       nix-darwin,
       sops-nix,
       ...
     }@inputs:
+    let
+      lp4aSystem = "x86_64-linux";
+      lp4aSpecialArgs = {
+        inherit inputs;
+        nixpkgs = nixos-licheepi4a.inputs.nixpkgs;
+        pkgsKernel = nixos-licheepi4a.packages.${lp4aSystem}.pkgsKernelCross;
+      };
+      lp4aModules = [
+        {
+          nixpkgs.crossSystem = {
+            system = "riscv64-linux";
+          };
+        }
+        (nixos-licheepi4a + "/modules/licheepi4a.nix")
+        (nixos-licheepi4a + "/modules/sd-image/sd-image-lp4a.nix")
+        ./hosts/riscv64-linux/lp4a
+      ];
+    in
     {
       overlays = {
         obs-bilibili-stream = import ./overlays/obs-bilibili-stream.nix;
@@ -109,6 +130,27 @@
               }
             )
           ];
+        };
+
+        lp4a = nixos-licheepi4a.inputs.nixpkgs.lib.nixosSystem {
+          system = lp4aSystem;
+          specialArgs = lp4aSpecialArgs;
+          modules = lp4aModules;
+        };
+      };
+
+      colmena = {
+        meta = {
+          nixpkgs = import nixos-licheepi4a.inputs.nixpkgs {
+            system = lp4aSystem;
+          };
+          specialArgs = lp4aSpecialArgs;
+        };
+
+        lp4a = { ... }: {
+          deployment.targetHost = "192.168.123.127";
+          deployment.targetUser = "root";
+          imports = lp4aModules;
         };
       };
 

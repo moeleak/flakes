@@ -105,6 +105,7 @@ in
     pkgs.ethtool
     pkgs.pciutils
     pkgs.usbutils
+    pkgs.e2fsprogs
 
     pkgs.nix-output-monitor
     pkgs.glow

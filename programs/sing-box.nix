@@ -7,7 +7,9 @@
 }:
 
 let
-  singBoxSettings = import ./sing-box-config.nix { inherit config; };
+  singBoxSettings = import ./sing-box-config.nix {
+    inherit config lib pkgs;
+  };
 in
 {
   config = lib.mkMerge [

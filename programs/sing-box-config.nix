@@ -1,4 +1,9 @@
-{ config, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   secret = name: {
@@ -119,7 +124,7 @@ in
     }
   ];
   inbounds = [
-    {
+    ({
       type = "tun";
       tag = "tun-in";
       address = [
@@ -127,11 +132,12 @@ in
         # "fdfe:dcba:9876::1/126"
       ];
       mtu = 9000;
-      auto_redirect = true;
       auto_route = true;
       strict_route = true;
       stack = "system";
-    }
+    } // lib.optionalAttrs pkgs.stdenv.isLinux {
+      auto_redirect = true;
+    })
     {
       type = "direct";
       tag = "dns-in";

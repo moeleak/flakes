@@ -6,6 +6,8 @@
 {
   imports = [
     ./user-group.nix
+    ../../../system/sops.nix
+    ../../../programs/sing-box.nix
   ];
 
   time.timeZone = "Asia/Shanghai";
@@ -25,9 +27,9 @@
   nix.nixPath = [ "/etc/nix/inputs" ];
 
   environment.systemPackages = with pkgs; [
-    neovim
-    tailscale
-    neofetch
+    openjdk25_headless
+    vim
+    fastfetch
     mtr
     iperf3
     nmap
@@ -67,7 +69,7 @@
   };
 
   networking = {
-    wireless.enable = false;
+    wireless.enable = true;
     firewall.enable = false;
 
     interfaces.end0 = {

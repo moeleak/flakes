@@ -47,6 +47,7 @@ in
     pkgs.devenv
     pkgs.direnv
     pkgs.codex
+    pkgs.colmena
 
     pkgs.cargo
     pkgs.rustc

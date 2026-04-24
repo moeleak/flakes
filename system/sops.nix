@@ -7,6 +7,13 @@
 }:
 
 let
+  hostName = config.networking.hostName or "";
+  sshKeyHosts = [
+    "LoliIsland-PC-Nix"
+    "lp4a"
+  ];
+  useSshKey = builtins.elem hostName sshKeyHosts;
+  useKeyFile = userHome != null && !useSshKey;
   userHome =
     if config.users.users ? lolimaster then
       config.users.users.lolimaster.home
@@ -18,16 +25,11 @@ in
 {
   config = lib.mkMerge [
     {
-      environment.systemPackages = [ pkgs.age-plugin-yubikey ];
       sops = {
-        environment.PATH = lib.mkForce "/usr/bin:/bin:/usr/sbin:/sbin:${
-          lib.makeBinPath [ pkgs.age-plugin-yubikey ]
-        }";
         gnupg.sshKeyPaths = [ ];
-        age.sshKeyPaths = [ ];
-        # age.sshKeyPaths = [ "${userHome}/.ssh/id_ed25519" ];
-        age.keyFile = "${userHome}/.config/sops/age/keys.txt";
-        age.plugins = [ pkgs.age-plugin-yubikey ];
+        age.sshKeyPaths = lib.mkForce (
+          lib.optionals (useSshKey && userHome != null) [ "${userHome}/.ssh/id_ed25519" ]
+        );
         secrets = {
           "sing-box-guanran-uuid" = {
             sopsFile = ../secrets/sing-box.yaml;
@@ -53,7 +55,17 @@ in
         };
       };
     }
-    (lib.mkIf pkgs.stdenv.isLinux {
+    (lib.mkIf useKeyFile {
+      environment.systemPackages = [ pkgs.age-plugin-yubikey ];
+      sops = {
+        environment.PATH = lib.mkForce "/usr/bin:/bin:/usr/sbin:/sbin:${
+          lib.makeBinPath [ pkgs.age-plugin-yubikey ]
+        }";
+        age.keyFile = "${userHome}/.config/sops/age/keys.txt";
+        age.plugins = [ pkgs.age-plugin-yubikey ];
+      };
+    })
+    (lib.mkIf (pkgs.stdenv.isLinux && useKeyFile) {
       system.activationScripts = {
         setupYubikeyForSopsNix.text = ''
           PATH=$PATH:${lib.makeBinPath [ pkgs.age-plugin-yubikey ]}
@@ -65,7 +77,7 @@ in
       };
     })
     (lib.optionalAttrs (options ? launchd) {
-      launchd.daemons.sops-install-secrets.serviceConfig = {
+      launchd.daemons.sops-install-secrets.serviceConfig = lib.mkIf useKeyFile {
         # Retry on failure so secrets are decrypted after YubiKey is inserted.
         KeepAlive = lib.mkForce {
           SuccessfulExit = false;

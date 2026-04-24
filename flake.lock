@@ -231,15 +231,16 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1721481969,
-        "narHash": "sha256-KTHUwzTmZCdS7FUghKvjjMm1WgwnHfS/LKZqT8MLohw=",
-        "owner": "ryan4yin",
+        "lastModified": 1777025512,
+        "narHash": "sha256-Y3rZi4iwAc6PQj8QQE+gbQU9Ymt41z3ITpRhIJyffiw=",
+        "owner": "moeleak",
         "repo": "nixos-licheepi4a",
-        "rev": "0fb4b65137de445de543ed8532d4aac6ecc27271",
+        "rev": "c44b7011580382cffb2bc5230a4440c911efe677",
         "type": "github"
       },
       "original": {
-        "owner": "ryan4yin",
+        "owner": "moeleak",
+        "ref": "unstable-revy-linux",
         "repo": "nixos-licheepi4a",
         "type": "github"
       }
@@ -293,16 +294,16 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1691280485,
-        "narHash": "sha256-/8Ct9092OC1TTNzHgbcE9ejQdS2QxZYGqrWXEwUxdtQ=",
+        "lastModified": 1776548001,
+        "narHash": "sha256-ZSK0NL4a1BwVbbTBoSnWgbJy9HeZFXLYQizjb2DPF24=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "240472b7e47a641e9e7675f58b64d3626ca7824d",
+        "rev": "b12141ef619e0a9c1c84dc8c684040326f27cdcc",
         "type": "github"
       },
       "original": {
         "owner": "nixos",
-        "ref": "nixos-23.05-small",
+        "ref": "nixos-unstable",
         "repo": "nixpkgs",
         "type": "github"
       }

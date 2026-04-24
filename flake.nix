@@ -22,7 +22,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    nixos-licheepi4a.url = "github:ryan4yin/nixos-licheepi4a";
+    nixos-licheepi4a.url = "github:moeleak/nixos-licheepi4a/unstable-revy-linux";
 
     plasma-manager = {
       url = "github:nix-community/plasma-manager";
@@ -68,6 +68,7 @@
         }
         (nixos-licheepi4a + "/modules/licheepi4a.nix")
         (nixos-licheepi4a + "/modules/sd-image/sd-image-lp4a.nix")
+        sops-nix.nixosModules.sops
         ./hosts/riscv64-linux/lp4a
       ];
     in
@@ -147,11 +148,13 @@
           specialArgs = lp4aSpecialArgs;
         };
 
-        lp4a = { ... }: {
-          deployment.targetHost = "192.168.123.127";
-          deployment.targetUser = "root";
-          imports = lp4aModules;
-        };
+        lp4a =
+          { ... }:
+          {
+            deployment.targetHost = "192.168.123.127";
+            deployment.targetUser = "root";
+            imports = lp4aModules;
+          };
       };
 
       homeConfigurations =

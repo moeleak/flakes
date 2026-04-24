@@ -55,6 +55,18 @@
     }@inputs:
     let
       lp4aSystem = "x86_64-linux";
+      lp4aNixpkgs = import nixos-licheepi4a.inputs.nixpkgs {
+        system = lp4aSystem;
+      };
+      lp4aColmenaNixpkgs = {
+        inherit (lp4aNixpkgs)
+          config
+          lib
+          overlays
+          ;
+        path = nixos-licheepi4a.inputs.nixpkgs.outPath;
+        system = lp4aSystem;
+      };
       lp4aSpecialArgs = {
         inherit inputs;
         nixpkgs = nixos-licheepi4a.inputs.nixpkgs;
@@ -142,9 +154,7 @@
 
       colmena = {
         meta = {
-          nixpkgs = import nixos-licheepi4a.inputs.nixpkgs {
-            system = lp4aSystem;
-          };
+          nixpkgs = lp4aColmenaNixpkgs;
           specialArgs = lp4aSpecialArgs;
         };
 

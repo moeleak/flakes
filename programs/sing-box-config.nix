@@ -124,20 +124,23 @@ in
     }
   ];
   inbounds = [
-    ({
-      type = "tun";
-      tag = "tun-in";
-      address = [
-        "172.19.0.1/30"
-        # "fdfe:dcba:9876::1/126"
-      ];
-      mtu = 9000;
-      auto_route = true;
-      strict_route = true;
-      stack = "system";
-    } // lib.optionalAttrs pkgs.stdenv.isLinux {
-      auto_redirect = true;
-    })
+    (
+      {
+        type = "tun";
+        tag = "tun-in";
+        address = [
+          "172.19.0.1/30"
+          # "fdfe:dcba:9876::1/126"
+        ];
+        mtu = 9000;
+        auto_route = true;
+        strict_route = true;
+        stack = "system";
+      }
+      // lib.optionalAttrs pkgs.stdenv.isLinux {
+        auto_redirect = true;
+      }
+    )
     {
       type = "direct";
       tag = "dns-in";
@@ -157,7 +160,7 @@ in
         "moeleak-lax"
         "direct"
       ];
-      default = "moeleak-lax";
+      default = "guanran-lax";
     }
     {
       type = "direct";

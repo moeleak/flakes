@@ -27,7 +27,7 @@
   nix.nixPath = [ "/etc/nix/inputs" ];
 
   environment.systemPackages = with pkgs; [
-    openjdk25_headless
+    e2fsprogs
     vim
     fastfetch
     mtr

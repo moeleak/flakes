@@ -161,7 +161,7 @@
         lp4a =
           { ... }:
           {
-            deployment.targetHost = "192.168.123.127";
+            deployment.targetHost = "192.168.123.39";
             deployment.targetUser = "root";
             imports = lp4aModules;
           };

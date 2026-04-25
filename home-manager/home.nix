@@ -220,6 +220,11 @@ in
     settings = {
       user.name = "MoeLeak";
       user.email = "i@leak.moe";
+      sendemail.smtpserver = "smtp.gmail.com";
+      sendemail.smtpserverport = 587;
+      sendemail.smtpencryption = "tls";
+      sendemail.smtpuser = "moeleaking@gmail.com";
+
       alias = {
         st = "status";
         lg = "log --oneline --graph --all --decorate";

@@ -27,6 +27,8 @@
   nix.nixPath = [ "/etc/nix/inputs" ];
 
   environment.systemPackages = with pkgs; [
+    vulkan-tools
+    mesa-demos
     e2fsprogs
     vim
     fastfetch
@@ -53,9 +55,16 @@
 
   environment.variables.EDITOR = "nvim";
 
-  virtualisation.docker = {
+  programs.sway.enable = true;
+
+  services.greetd = {
     enable = true;
-    enableOnBoot = true;
+    settings = {
+      default_session = {
+        command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd sway";
+        user = "greeter";
+      };
+    };
   };
 
   services.minecraft-server = {

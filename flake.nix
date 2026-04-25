@@ -2,7 +2,7 @@
   description = "NixOS and macOS configuration";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:moeleak/nixpkgs/nixos-unstable";
     nixpkgs-5a07111.url = "github:nixos/nixpkgs/5a0711127cd8b916c3d3128f473388c8c79df0da";
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
     moevim.url = "github:moeleak/moevim";
@@ -22,7 +22,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    nixos-licheepi4a.url = "github:moeleak/nixos-licheepi4a/unstable-revy-linux";
+    nixos-licheepi4a = {
+      url = "github:moeleak/nixos-licheepi4a/unstable-revy-linux";
+    };
 
     plasma-manager = {
       url = "github:nix-community/plasma-manager";

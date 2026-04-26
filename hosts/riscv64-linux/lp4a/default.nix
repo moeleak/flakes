@@ -1,6 +1,8 @@
 {
+  lib,
   nixpkgs,
   pkgs,
+  pkgsKernel,
   ...
 }:
 {
@@ -27,6 +29,14 @@
   nix.nixPath = [ "/etc/nix/inputs" ];
 
   environment.systemPackages = with pkgs; [
+    firefox
+    btop
+    (prismlauncher.override {
+      additionalPrograms = [ ffmpeg ];
+      jdks = [
+        openjdk25_headless
+      ];
+    })
     vulkan-tools
     mesa-demos
     e2fsprogs
@@ -54,6 +64,24 @@
   ];
 
   environment.variables.EDITOR = "nvim";
+
+  boot.kernelPackages = lib.mkForce (
+    pkgsKernel.linuxPackages_thead.extend (
+      _: super: {
+        kernel = super.kernel.override (old: {
+          kernelPatches = (old.kernelPatches or [ ]) ++ [
+            {
+              name = "builtin-pstore-for-efi-vars-pstore";
+              patch = null;
+              structuredExtraConfig = with lib.kernel; {
+                PSTORE = yes;
+              };
+            }
+          ];
+        });
+      }
+    )
+  );
 
   programs.sway.enable = true;
 

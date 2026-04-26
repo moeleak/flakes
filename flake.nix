@@ -23,7 +23,8 @@
     };
 
     nixos-licheepi4a = {
-      url = "github:moeleak/nixos-licheepi4a/unstable-revy-linux";
+      url = "github:moeleak/nixos-licheepi4a/unstable-revy-linux-2026-04-26";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     plasma-manager = {

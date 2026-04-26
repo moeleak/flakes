@@ -229,7 +229,7 @@
     "nixos-licheepi4a": {
       "inputs": {
         "nixpkgs": [
-          "nixpkgs"
+          "nixpkgs-licheepi4a"
         ]
       },
       "locked": {
@@ -279,6 +279,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-licheepi4a": {
+      "locked": {
+        "lastModified": 1777214155,
+        "narHash": "sha256-P5gteyzBVSROZ/KgzRkg7Yjp9BOXTLg05XE48lG9yf8=",
+        "owner": "moeleak",
+        "repo": "nixpkgs",
+        "rev": "56243681fa1d9e2a01a17f23f5f0c9be17163722",
+        "type": "github"
+      },
+      "original": {
+        "owner": "moeleak",
+        "ref": "nixos-licheepi4a-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nixpkgs-master": {
       "locked": {
         "lastModified": 1752373047,
@@ -296,15 +312,15 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1777183560,
-        "narHash": "sha256-7kJTtmcXXbZhSBwTEx9diDkZpylzHYdJQk+D/yqXZHs=",
-        "owner": "moeleak",
+        "lastModified": 1776877367,
+        "narHash": "sha256-EHq1/OX139R1RvBzOJ0aMRT3xnWyqtHBRUBuO1gFzjI=",
+        "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "3920f065d6478daf7e8bd95d78fa1e2b55803521",
+        "rev": "0726a0ecb6d4e08f6adced58726b95db924cef57",
         "type": "github"
       },
       "original": {
-        "owner": "moeleak",
+        "owner": "nixos",
         "ref": "nixos-unstable",
         "repo": "nixpkgs",
         "type": "github"
@@ -429,6 +445,7 @@
         "nixos-licheepi4a": "nixos-licheepi4a",
         "nixpkgs": "nixpkgs_2",
         "nixpkgs-5a07111": "nixpkgs-5a07111",
+        "nixpkgs-licheepi4a": "nixpkgs-licheepi4a",
         "plasma-manager": "plasma-manager",
         "sops-nix": "sops-nix",
         "zen-browser": "zen-browser"

@@ -37,6 +37,8 @@
         openjdk25_headless
       ];
     })
+    vkpeak
+    gnumake
     vulkan-tools
     mesa-demos
     e2fsprogs

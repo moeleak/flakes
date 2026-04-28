@@ -12,6 +12,7 @@ in
       "networkmanager"
       "wheel"
       "docker"
+      "video"
     ];
     openssh.authorizedKeys.keys = [ publicKey ];
   };

@@ -173,6 +173,7 @@
           { ... }:
           {
             deployment.targetHost = "100.123.43.22";
+            deployment.targetPort = 2333;
             deployment.targetUser = "root";
             imports = lp4aModules;
           };

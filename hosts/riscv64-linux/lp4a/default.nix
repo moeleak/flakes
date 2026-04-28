@@ -37,12 +37,14 @@
         openjdk25_headless
       ];
     })
+    waypipe
     vkpeak
     gnumake
+    ncurses.dev
     vulkan-tools
     mesa-demos
     e2fsprogs
-    vim
+    neovim
     fastfetch
     mtr
     iperf3
@@ -116,6 +118,7 @@
 
   services.openssh = {
     enable = true;
+    ports = [ 2333 ];
     settings = {
       X11Forwarding = true;
       PermitRootLogin = "prohibit-password";
@@ -123,6 +126,8 @@
     };
     openFirewall = true;
   };
+
+  virtualisation.docker.enable = true;
 
   networking.networkmanager.enable = true;
 

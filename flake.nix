@@ -90,6 +90,7 @@
     in
     {
       overlays = {
+        direnv = import ./overlays/direnv.nix;
         obs-bilibili-stream = import ./overlays/obs-bilibili-stream.nix;
       };
 
@@ -122,7 +123,10 @@
             (
               { ... }:
               {
-                nixpkgs.overlays = [ self.overlays.obs-bilibili-stream ];
+                nixpkgs.overlays = [
+                  self.overlays.direnv
+                  self.overlays.obs-bilibili-stream
+                ];
               }
             )
           ];
@@ -143,7 +147,10 @@
             (
               { ... }:
               {
-                nixpkgs.overlays = [ self.overlays.obs-bilibili-stream ];
+                nixpkgs.overlays = [
+                  self.overlays.direnv
+                  self.overlays.obs-bilibili-stream
+                ];
               }
             )
           ];
@@ -179,6 +186,7 @@
             inherit system;
             config.allowUnfree = true;
             overlays = [
+              self.overlays.direnv
               self.overlays.obs-bilibili-stream
             ];
           };
@@ -209,6 +217,15 @@
             ./hosts/aarch64-darwin/LoliIsland-Mac
             sops-nix.darwinModules.sops
             home-manager.darwinModules.default
+            (
+              { ... }:
+              {
+                nixpkgs.overlays = [
+                  self.overlays.direnv
+                  self.overlays.obs-bilibili-stream
+                ];
+              }
+            )
           ];
         };
       };

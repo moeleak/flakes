@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   nixpkgs,
   pkgs,
@@ -37,6 +38,7 @@
         openjdk25_headless
       ];
     })
+    cloudflared
     waypipe
     vkpeak
     gnumake
@@ -116,6 +118,16 @@
     jvmOpts = "-Xms4096M -Xmx4096M";
   };
 
+  services.cloudflared = {
+    enable = true;
+    tunnels = {
+      "a7c5fdd9-4569-4834-a23c-76f7b676eb8a" = {
+        credentialsFile = "/home/moeleak/.cloudflared/a7c5fdd9-4569-4834-a23c-76f7b676eb8a.json";
+        default = "http_status:404";
+      };
+    };
+  };
+
   services.openssh = {
     enable = true;
     ports = [ 2333 ];
@@ -125,6 +137,50 @@
       PasswordAuthentication = true;
     };
     openFirewall = true;
+  };
+
+  services.glances = {
+    enable = true;
+    port = 8000;
+  };
+
+  sops = {
+    secrets."frp-ngb-moeleak-token".sopsFile = ../../../secrets/frp.yaml;
+    templates."frp-ngb-moeleak.env" = {
+      content = ''
+        FRP_TOKEN=${config.sops.placeholder."frp-ngb-moeleak-token"}
+      '';
+      restartUnits = [ "frp-ngb-moeleak.service" ];
+    };
+  };
+
+  services.frp = {
+    instances."ngb-moeleak" = {
+      enable = true;
+      role = "client";
+      environmentFiles = [
+        config.sops.templates."frp-ngb-moeleak.env".path
+      ];
+      settings = {
+        serverAddr = "114.66.6.101";
+        serverPort = 7111;
+        transport.protocol = "quic";
+
+        auth = {
+          method = "token";
+          token = "{{ .Envs.FRP_TOKEN }}";
+        };
+
+        proxies = [
+          {
+            name = "tenet";
+            type = "tcp";
+            localPort = 22;
+            remotePort = 22;
+          }
+        ];
+      };
+    };
   };
 
   virtualisation.docker.enable = true;

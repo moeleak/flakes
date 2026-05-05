@@ -24,7 +24,7 @@
     };
 
     nixos-licheepi4a = {
-      url = "github:moeleak/nixos-licheepi4a/unstable-revy-linux-2026-04-26";
+      url = "github:moeleak/nixos-licheepi4a/unstable-revy-linux-2026-04-30";
       inputs.nixpkgs.follows = "nixpkgs-licheepi4a";
     };
 

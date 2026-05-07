@@ -238,6 +238,8 @@ in
   programs.fish = {
     enable = true;
 
+    completions.cargo = builtins.readFile "${pkgs.fish}/share/fish/completions/cargo.fish";
+
     shellInit = lib.mkIf isDarwin ''
       source /Users/lolimaster/miniconda3/etc/fish/conf.d/conda.fish
       for p in /run/current-system/sw/bin /etc/profiles/per-user/$USER/bin

@@ -19,7 +19,7 @@
     };
 
     home-manager = {
-      url = "github:nix-community/home-manager";
+      url = "github:moeleak/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

@@ -124,15 +124,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1777988791,
-        "narHash": "sha256-DtbtSW5+Hls7z+D9BfsAXvFuivt5iZ0OzUXjQ8d8lB8=",
-        "owner": "nix-community",
+        "lastModified": 1778083698,
+        "narHash": "sha256-6UHURCJl8cmO7JLLn1TjOtjv+l42LpRUxLZbeHNrYiY=",
+        "owner": "moeleak",
         "repo": "home-manager",
-        "rev": "d987617879f613053f6fdf4491fe28ce0283d543",
+        "rev": "0e4ebec15787d4758637361d96183caecd360e00",
         "type": "github"
       },
       "original": {
-        "owner": "nix-community",
+        "owner": "moeleak",
+        "ref": "master",
         "repo": "home-manager",
         "type": "github"
       }

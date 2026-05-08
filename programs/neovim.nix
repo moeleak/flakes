@@ -422,7 +422,6 @@ inputs.nixvim.legacyPackages.${pkgs.stdenv.hostPlatform.system}.makeNixvimWithMo
                 "fallback"
               ];
               "<Tab>" = [
-                "select_next"
                 "snippet_forward"
                 "fallback"
               ];

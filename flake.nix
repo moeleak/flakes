@@ -11,6 +11,11 @@
       url = "github:nix-community/nixvim";
     };
 
+    vscode-server = {
+      url = "github:nix-community/nixos-vscode-server";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     firefox-addons = {
       url = "gitlab:rycee/nur-expressions?dir=pkgs/firefox-addons";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -58,6 +63,7 @@
       nixos-licheepi4a,
       nix-darwin,
       sops-nix,
+      vscode-server,
       ...
     }@inputs:
     let
@@ -163,6 +169,24 @@
                 nixpkgs.overlays = [
                   self.overlays.direnv
                   self.overlays.obs-bilibili-stream
+                ];
+              }
+            )
+          ];
+        };
+
+        biuh-lab = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = { inherit inputs; };
+          modules = [
+            ./hosts/x86_64-linux/biuh-lab
+            sops-nix.nixosModules.sops
+            vscode-server.nixosModules.default
+            (
+              { ... }:
+              {
+                nixpkgs.overlays = [
+                  self.overlays.direnv
                 ];
               }
             )

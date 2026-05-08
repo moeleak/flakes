@@ -10,6 +10,7 @@ let
   hostName = config.networking.hostName or "";
   sshKeyHosts = [
     "LoliIsland-PC-Nix"
+    "biuh-lab"
     "lp4a"
   ];
   useSshKey = builtins.elem hostName sshKeyHosts;

@@ -88,6 +88,7 @@
         (nixos-licheepi4a + "/modules/licheepi4a.nix")
         (nixos-licheepi4a + "/modules/sd-image/sd-image-lp4a.nix")
         sops-nix.nixosModules.sops
+        home-manager.nixosModules.default
         ./hosts/riscv64-linux/lp4a
       ];
     in
@@ -184,8 +185,8 @@
         lp4a =
           { ... }:
           {
-            deployment.targetHost = "100.123.43.22";
-            deployment.targetPort = 2333;
+            deployment.targetHost = "10.52.4.27";
+            deployment.targetPort = 22;
             deployment.targetUser = "root";
             imports = lp4aModules;
           };

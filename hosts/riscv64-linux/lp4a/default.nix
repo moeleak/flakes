@@ -11,6 +11,8 @@
     ./user-group.nix
     ../../../system/sops.nix
     ../../../programs/sing-box.nix
+    ../../../programs/tmux.nix
+    ../../x86_64-linux/LoliIsland-PC-Nix/keyd.nix
   ];
 
   time.timeZone = "Asia/Shanghai";
@@ -39,9 +41,19 @@
       ];
     })
     cloudflared
+    stress
+    yazi
+    bear
+    nixd
     waypipe
     vkpeak
     gnumake
+    cmake
+    clang-tools
+    qemu
+    ninja
+    pkg-config
+    gdb
     ncurses.dev
     vulkan-tools
     mesa-demos
@@ -71,6 +83,33 @@
 
   environment.variables.EDITOR = "nvim";
 
+  home-manager = {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+    backupFileExtension = "hm-backup";
+
+    users.moeleak = {
+      home = {
+        stateVersion = "25.11";
+      };
+
+      programs.kitty = {
+        enable = true;
+        package = pkgs.kitty;
+        font.name = "0xProto Nerd Font Mono";
+        font.size = 12;
+        font.package = pkgs.nerd-fonts._0xproto;
+        settings.macos_option_as_alt = true;
+        themeFile = "Nord";
+        keybindings = {
+          "ctrl+t" = "new_tab";
+          "ctrl+shift+[" = "previous_tab";
+          "ctrl+shift+]" = "next_tab";
+        };
+      };
+    };
+  };
+
   boot.kernelPackages = lib.mkForce (
     pkgsKernel.linuxPackages_thead.extend (
       _: super: {
@@ -90,6 +129,8 @@
   );
 
   programs.sway.enable = true;
+
+  programs.starship.enable = true;
 
   services.greetd = {
     enable = true;
@@ -121,8 +162,8 @@
   services.cloudflared = {
     enable = true;
     tunnels = {
-      "a7c5fdd9-4569-4834-a23c-76f7b676eb8a" = {
-        credentialsFile = "/home/moeleak/.cloudflared/a7c5fdd9-4569-4834-a23c-76f7b676eb8a.json";
+      "6696bb8c-8412-4a77-8a09-7d4ae6cb5ea3" = {
+        credentialsFile = "/home/moeleak/.cloudflared/6696bb8c-8412-4a77-8a09-7d4ae6cb5ea3.json";
         default = "http_status:404";
       };
     };
@@ -136,7 +177,6 @@
       PermitRootLogin = "prohibit-password";
       PasswordAuthentication = true;
     };
-    openFirewall = true;
   };
 
   services.glances = {

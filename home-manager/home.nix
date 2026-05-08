@@ -18,7 +18,6 @@ in
   imports = [
     inputs.zen-browser.homeModules.beta
     inputs.plasma-manager.homeModules.plasma-manager
-    ../programs/neovim-minimum.nix
   ];
 
   home.username = if isLinux then "moeleak" else "lolimaster";
@@ -36,6 +35,8 @@ in
     pkgs.noto-fonts-cjk-sans
     pkgs.nerd-fonts.jetbrains-mono
     pkgs.nerd-fonts._0xproto
+
+    (import ../programs/neovim.nix { inherit pkgs inputs; })
 
     pkgs._64gram
     pkgs.thunderbird

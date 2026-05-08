@@ -6,7 +6,10 @@
     nixpkgs-licheepi4a.url = "github:moeleak/nixpkgs/nixos-licheepi4a-unstable";
     nixpkgs-5a07111.url = "github:nixos/nixpkgs/5a0711127cd8b916c3d3128f473388c8c79df0da";
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
-    moevim.url = "github:moeleak/moevim";
+
+    nixvim = {
+      url = "github:nix-community/nixvim";
+    };
 
     firefox-addons = {
       url = "gitlab:rycee/nur-expressions?dir=pkgs/firefox-addons";
@@ -93,6 +96,15 @@
         direnv = import ./overlays/direnv.nix;
         obs-bilibili-stream = import ./overlays/obs-bilibili-stream.nix;
       };
+
+      packages.x86_64-linux.neovim =
+        let
+          pkgs = import nixpkgs {
+            system = "x86_64-linux";
+            config.allowUnfree = true;
+          };
+        in
+        import ./programs/neovim.nix { inherit pkgs inputs; };
 
       nixosConfigurations = {
         "LoliIsland-PC-Nix" = nixpkgs.lib.nixosSystem {

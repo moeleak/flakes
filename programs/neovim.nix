@@ -43,7 +43,11 @@ inputs.nixvim.legacyPackages.${pkgs.stdenv.hostPlatform.system}.makeNixvimWithMo
           transparent_background = true;
           term_colors = true;
           integrations = {
-            cmp = true;
+            cmp = false;
+            blink_cmp = {
+              enabled = true;
+              style = "bordered";
+            };
             gitsigns = true;
             treesitter = true;
           };
@@ -182,7 +186,7 @@ inputs.nixvim.legacyPackages.${pkgs.stdenv.hostPlatform.system}.makeNixvimWithMo
         ];
 
         servers = {
-          "*".config.capabilities = mkRaw "require('cmp_nvim_lsp').default_capabilities()";
+          "*".config.capabilities = mkRaw "require('blink-cmp').get_lsp_capabilities()";
 
           nixd = {
             enable = true;
@@ -390,54 +394,122 @@ inputs.nixvim.legacyPackages.${pkgs.stdenv.hostPlatform.system}.makeNixvimWithMo
         };
 
         luasnip.enable = true;
-        lspkind = {
+        blink-cmp = {
           enable = true;
+          setupLspCapabilities = false;
           settings = {
-            mode = "symbol";
-            cmp = {
-              max_width = 50;
-              ellipsis_char = "...";
+            keymap = {
+              preset = "enter";
+              "<C-b>" = [
+                "scroll_documentation_up"
+                "fallback"
+              ];
+              "<C-f>" = [
+                "scroll_documentation_down"
+                "fallback"
+              ];
+              "<C-Space>" = [
+                "show"
+                "show_documentation"
+                "hide_documentation"
+              ];
+              "<C-p>" = [
+                "select_prev"
+                "fallback"
+              ];
+              "<C-n>" = [
+                "select_next"
+                "fallback"
+              ];
+              "<Tab>" = [
+                "select_next"
+                "snippet_forward"
+                "fallback"
+              ];
+              "<S-Tab>" = [
+                "select_prev"
+                "snippet_backward"
+                "fallback"
+              ];
             };
+            completion = {
+              list.selection = {
+                preselect = true;
+                auto_insert = false;
+              };
+              menu = {
+                max_height = 10;
+                border = "rounded";
+                draw.columns = [
+                  [ "kind_icon" ]
+                  {
+                    __unkeyed-1 = "label";
+                    __unkeyed-2 = "label_description";
+                    gap = 1;
+                  }
+                ];
+              };
+              documentation = {
+                auto_show = false;
+                window.border = "rounded";
+              };
+              accept.auto_brackets.enabled = true;
+            };
+            snippets = {
+              preset = "luasnip";
+              score_offset = -3;
+            };
+            sources = {
+              default = [
+                "lsp"
+                "snippets"
+                "path"
+              ];
+              providers = {
+                lsp = {
+                  max_items = 10;
+                  fallbacks = [ ];
+                };
+                snippets = {
+                  max_items = 5;
+                };
+                path.score_offset = 3;
+              };
+            };
+            cmdline.sources = [ ];
+            appearance = {
+              nerd_font_variant = "normal";
+              kind_icons = {
+                Text = "󰉿";
+                Method = "󰊕";
+                Function = "󰊕";
+                Constructor = "󰒓";
+                Field = "󰜢";
+                Variable = "󰆦";
+                Property = "󰖷";
+                Class = "󱡠";
+                Interface = "󱡠";
+                Struct = "󱡠";
+                Module = "󰅩";
+                Unit = "󰪚";
+                Value = "󰦨";
+                Enum = "󰦨";
+                EnumMember = "󰦨";
+                Keyword = "󰻾";
+                Constant = "󰏿";
+                Snippet = "󱄽";
+                Color = "󰏘";
+                File = "󰈔";
+                Reference = "󰬲";
+                Folder = "󰉋";
+                Event = "󱐋";
+                Operator = "󰪚";
+                TypeParameter = "󰬛";
+              };
+            };
+            signature.enabled = true;
           };
         };
-
-        cmp = {
-          enable = true;
-          autoEnableSources = false;
-          settings = {
-            snippet.expand = mkRaw ''function(args) require('luasnip').lsp_expand(args.body) end'';
-            window = {
-              completion = mkRaw "cmp.config.window.bordered({ max_height = 10 })";
-              documentation = mkRaw "cmp.config.window.bordered()";
-            };
-            mapping = mkRaw ''
-              cmp.mapping.preset.insert({
-                ['<C-b>'] = cmp.mapping.scroll_docs(-4),
-                ['<C-f>'] = cmp.mapping.scroll_docs(4),
-                ['<C-Space>'] = cmp.mapping.complete(),
-                ['<CR>'] = cmp.mapping.confirm({ select = true }),
-                ['<Tab>'] = cmp.mapping(function(fallback)
-                  if cmp.visible() then cmp.select_next_item() else fallback() end
-                end, { 'i', 's' }),
-                ['<S-Tab>'] = cmp.mapping(function(fallback)
-                  if cmp.visible() then cmp.select_prev_item() else fallback() end
-                end, { 'i', 's' }),
-              })
-            '';
-            sources = mkRaw ''
-              cmp.config.sources({
-                { name = 'nvim_lsp', max_item_count = 10 },
-                { name = 'luasnip', max_item_count = 5 },
-              }, {
-                { name = 'path' },
-              })
-            '';
-          };
-        };
-
-        cmp-nvim-lsp.enable = true;
-        cmp-path.enable = true;
-        cmp_luasnip.enable = true;
       };
     };
 }

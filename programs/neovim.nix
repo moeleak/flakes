@@ -414,6 +414,9 @@ inputs.nixvim.legacyPackages.${nixvimSystem}.makeNixvimWithModule {
             // lib.optionalAttrs enableRustfmt {
               rust = [ "rustfmt" ];
             };
+            formatters.clang_format.append_args = [
+              "--style={SortIncludes: Never}"
+            ];
             format_on_save = {
               timeout_ms = 2000;
               lsp_format = "fallback";

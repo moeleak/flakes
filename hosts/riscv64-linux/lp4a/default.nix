@@ -16,6 +16,7 @@ in
     ../../../system/sops.nix
     ../../../programs/sing-box.nix
     ../../../programs/tmux.nix
+    ./builder.nix
     ./keyd.nix
   ];
 

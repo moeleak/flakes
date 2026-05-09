@@ -8,13 +8,18 @@
       settings.global.overload_tap_timeout = 200;
       extraConfig = ''
         [main]
-
+        capslock = overload(control, esc)
         control = overload(control, esc)
         leftmeta = overload(meta_mac, leftmeta)
 
         [meta_mac]
         space = M-space
         enter = M-enter
+
+        h = M-h
+        j = M-j
+        k = M-k
+        l = M-l
 
         1 = M-1
         2 = M-2

@@ -158,8 +158,18 @@ inputs.nixvim.legacyPackages.${nixvimSystem}.makeNixvimWithModule {
         {
           mode = "n";
           key = "<leader>c";
-          action = mkRaw "function() vim.diagnostic.enable(false) end";
-          options.desc = "Disable Diagnostics";
+          action = mkRaw ''
+            function()
+              local enabled = vim.g.diagnostics_enabled
+              if enabled == nil then
+                enabled = not (vim.diagnostic.is_enabled and vim.diagnostic.is_enabled() == false)
+              end
+
+              vim.g.diagnostics_enabled = not enabled
+              vim.diagnostic.enable(not enabled)
+            end
+          '';
+          options.desc = "Toggle Diagnostics";
         }
       ]
       ++ (map (i: {

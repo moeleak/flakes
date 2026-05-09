@@ -1,11 +1,15 @@
 {
   config,
+  inputs,
   lib,
   nixpkgs,
   pkgs,
   pkgsKernel,
   ...
 }:
+let
+  configuredNeovim = import ../../../programs/neovim.nix { inherit pkgs inputs; };
+in
 {
   imports = [
     ./user-group.nix
@@ -54,11 +58,12 @@
     ninja
     pkg-config
     gdb
+    bc
     ncurses.dev
     vulkan-tools
     mesa-demos
     e2fsprogs
-    neovim
+    configuredNeovim
     fastfetch
     mtr
     iperf3
@@ -131,6 +136,8 @@
   programs.sway.enable = true;
 
   programs.starship.enable = true;
+
+  programs.direnv.enable = true;
 
   services.greetd = {
     enable = true;

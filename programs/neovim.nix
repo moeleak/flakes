@@ -1,6 +1,22 @@
 { pkgs, inputs, ... }:
 
-inputs.nixvim.legacyPackages.${pkgs.stdenv.hostPlatform.system}.makeNixvimWithModule {
+let
+  hostSystem = pkgs.stdenv.hostPlatform.system;
+  buildSystem = pkgs.stdenv.buildPlatform.system;
+  isCross = hostSystem != buildSystem;
+  nixvimSystem =
+    if builtins.hasAttr hostSystem inputs.nixvim.legacyPackages then hostSystem else buildSystem;
+  lualinePackage =
+    if isCross then
+      pkgs.vimUtils.buildVimPlugin {
+        pname = "lualine.nvim";
+        version = pkgs.vimPlugins.lualine-nvim.version;
+        src = pkgs.vimPlugins.lualine-nvim.src;
+      }
+    else
+      pkgs.vimPlugins.lualine-nvim;
+in
+inputs.nixvim.legacyPackages.${nixvimSystem}.makeNixvimWithModule {
   inherit pkgs;
 
   module =
@@ -11,6 +27,7 @@ inputs.nixvim.legacyPackages.${pkgs.stdenv.hostPlatform.system}.makeNixvimWithMo
     {
       viAlias = true;
       vimAlias = true;
+      enableMan = builtins.hasAttr hostSystem (inputs.nixvim.packages or { });
       withRuby = true;
       withPython3 = true;
 
@@ -135,6 +152,12 @@ inputs.nixvim.legacyPackages.${pkgs.stdenv.hostPlatform.system}.makeNixvimWithMo
           key = "<leader>f";
           action = mkRaw ''function() require("conform").format({ lsp_format = "fallback" }) end'';
           options.desc = "Format";
+        }
+        {
+          mode = "n";
+          key = "<leader>c";
+          action = mkRaw "function() vim.diagnostic.enable(false) end";
+          options.desc = "Disable Diagnostics";
         }
       ]
       ++ (map (i: {
@@ -327,6 +350,7 @@ inputs.nixvim.legacyPackages.${pkgs.stdenv.hostPlatform.system}.makeNixvimWithMo
 
         lualine = {
           enable = true;
+          package = lualinePackage;
           settings = {
             options = {
               theme = "auto";

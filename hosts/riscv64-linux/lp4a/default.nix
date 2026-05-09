@@ -4,19 +4,19 @@
   lib,
   nixpkgs,
   pkgs,
-  pkgsKernel,
   ...
 }:
 let
   configuredNeovim = import ../../../programs/neovim.nix { inherit pkgs inputs; };
 in
 {
+
   imports = [
     ./user-group.nix
     ../../../system/sops.nix
     ../../../programs/sing-box.nix
     ../../../programs/tmux.nix
-    ../../x86_64-linux/LoliIsland-PC-Nix/keyd.nix
+    ./keyd.nix
   ];
 
   time.timeZone = "Asia/Shanghai";
@@ -47,6 +47,7 @@ in
     cloudflared
     stress
     yazi
+    keyd
     bear
     nixd
     waypipe
@@ -80,6 +81,7 @@ in
     file
     which
     tree
+    ripgrep
     gnused
     gawk
     tmux
@@ -98,42 +100,23 @@ in
         stateVersion = "25.11";
       };
 
-      programs.kitty = {
+      programs.foot = {
         enable = true;
-        package = pkgs.kitty;
-        font.name = "0xProto Nerd Font Mono";
-        font.size = 12;
-        font.package = pkgs.nerd-fonts._0xproto;
-        settings.macos_option_as_alt = true;
-        themeFile = "Nord";
-        keybindings = {
-          "ctrl+t" = "new_tab";
-          "ctrl+shift+[" = "previous_tab";
-          "ctrl+shift+]" = "next_tab";
+        package = pkgs.foot;
+        settings = {
+          main.font = "0xProto Nerd Font Mono:size=12";
         };
       };
+
     };
   };
 
-  boot.kernelPackages = lib.mkForce (
-    pkgsKernel.linuxPackages_thead.extend (
-      _: super: {
-        kernel = super.kernel.override (old: {
-          kernelPatches = (old.kernelPatches or [ ]) ++ [
-            {
-              name = "builtin-pstore-for-efi-vars-pstore";
-              patch = null;
-              structuredExtraConfig = with lib.kernel; {
-                PSTORE = yes;
-              };
-            }
-          ];
-        });
-      }
-    )
-  );
-
   programs.sway.enable = true;
+
+  fonts.packages = lib.mkAfter [
+    pkgs.nerd-fonts._0xproto
+    pkgs.noto-fonts-cjk-sans
+  ];
 
   programs.starship.enable = true;
 

@@ -6,6 +6,8 @@ let
   isCross = hostSystem != buildSystem;
   nixvimSystem =
     if builtins.hasAttr hostSystem inputs.nixvim.legacyPackages then hostSystem else buildSystem;
+  nixFormatter = if isCross && hostSystem == "riscv64-linux" then "alejandra" else "nixfmt";
+  enableRustfmt = !(isCross && hostSystem == "riscv64-linux");
   lualinePackage =
     if isCross then
       pkgs.vimUtils.buildVimPlugin {
@@ -220,7 +222,7 @@ inputs.nixvim.legacyPackages.${nixvimSystem}.makeNixvimWithModule {
                 "flake.nix"
                 ".git"
               ];
-              settings.nixd.formatting.command = [ "nixfmt" ];
+              settings.nixd.formatting.command = [ nixFormatter ];
             };
           };
 
@@ -404,10 +406,12 @@ inputs.nixvim.legacyPackages.${nixvimSystem}.makeNixvimWithModule {
           autoInstall.enable = true;
           settings = {
             formatters_by_ft = {
-              nix = [ "nixfmt" ];
+              nix = [ nixFormatter ];
               cpp = [ "clang_format" ];
               c = [ "clang_format" ];
               python = [ "black" ];
+            }
+            // lib.optionalAttrs enableRustfmt {
               rust = [ "rustfmt" ];
             };
             format_on_save = {

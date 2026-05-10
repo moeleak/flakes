@@ -71,16 +71,22 @@ lib.mkMerge [
 
     services.greetd = {
       enable = true;
+      useTextGreeter = true;
       settings = {
+        terminal.vt = lib.mkForce 7;
         default_session = {
           command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd sway";
           user = "greeter";
         };
       };
     };
+    systemd.services.greetd.serviceConfig.TTYPath = lib.mkForce "/dev/tty7";
   }
 
   (lib.mkIf fcitx5Enabled {
+    i18n.inputMethod.fcitx5.settings.globalOptions."Behavior/DisabledAddons"."0" =
+      "notificationitem";
+
     programs.sway.extraSessionCommands = lib.mkAfter ''
       export XMODIFIERS=@im=fcitx
       export GTK_IM_MODULE=fcitx

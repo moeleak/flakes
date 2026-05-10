@@ -10,7 +10,7 @@
     ../../../system/boot.nix
     ../../../system/pcscd.nix
     ../../../system/sops.nix
-    ../../../desktop.nix
+    ../../../desktop/plasma.nix
     ../../../system/samba.nix
     ../../../programs/sing-box.nix
     ../../../programs/sunshine.nix

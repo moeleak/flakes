@@ -11,7 +11,7 @@
     ../../../system/sops.nix
     ./audio.nix
     ./keyd.nix
-    ../../../desktop.nix
+    ../../../desktop/sway.nix
     ../../../programs/sing-box.nix
     ../../../programs/gnupg.nix
     ../../../programs/openssh.nix

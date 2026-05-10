@@ -1,7 +1,6 @@
 {
   config,
   inputs,
-  lib,
   nixpkgs,
   pkgs,
   ...
@@ -14,6 +13,7 @@ in
   imports = [
     ./user-group.nix
     ../../../system/sops.nix
+    ../../../desktop/sway.nix
     ../../../programs/sing-box.nix
     ../../../programs/tmux.nix
     ./builder.nix
@@ -101,37 +101,12 @@ in
         stateVersion = "25.11";
       };
 
-      programs.foot = {
-        enable = true;
-        package = pkgs.foot;
-        settings = {
-          main.font = "0xProto Nerd Font Mono:size=12";
-        };
-      };
-
     };
   };
-
-  programs.sway.enable = true;
-
-  fonts.packages = lib.mkAfter [
-    pkgs.nerd-fonts._0xproto
-    pkgs.noto-fonts-cjk-sans
-  ];
 
   programs.starship.enable = true;
 
   programs.direnv.enable = true;
-
-  services.greetd = {
-    enable = true;
-    settings = {
-      default_session = {
-        command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd sway";
-        user = "greeter";
-      };
-    };
-  };
 
   services.minecraft-server = {
     enable = true;

@@ -93,7 +93,7 @@ let
       append_part "$(${pkgs.coreutils}/bin/date +'%Y-%m-%d %H:%M')"
 
       printf '%s\n' "$line"
-      ${pkgs.coreutils}/bin/sleep 5
+      ${pkgs.coreutils}/bin/sleep 1
     done
   '';
   swayConfig = pkgs.runCommand "sway-config" { } ''
@@ -104,7 +104,13 @@ let
 in
 lib.mkMerge [
   {
-    programs.sway.enable = true;
+    programs.sway = {
+      enable = true;
+      extraSessionCommands = lib.mkBefore ''
+        export XDG_DATA_DIRS="/run/current-system/sw/share''${XDG_DATA_DIRS:+:}''${XDG_DATA_DIRS:-}"
+      '';
+      wrapperFeatures.gtk = true;
+    };
 
     fonts.packages = lib.mkAfter [
       pkgs.nerd-fonts._0xproto

@@ -8,6 +8,7 @@
 let
   fcitx5Enabled =
     config.i18n.inputMethod.enable && config.i18n.inputMethod.type == "fcitx5";
+  quietBoot = pkgs.stdenv.hostPlatform.system != "riscv64-linux";
   pipewireEnabled = config.services.pipewire.enable;
   swayStatus = pkgs.writeShellScript "sway-status" ''
     ${lib.optionalString pipewireEnabled ''
@@ -134,21 +135,34 @@ lib.mkMerge [
         natural_scroll enabled
       }
     '';
+    environment.etc."sway/config.d/30-brightness.conf".text = ''
+      bindsym --locked $mod+F5 exec ${pkgs.brightnessctl}/bin/brightnessctl set 5%-
+      bindsym --locked $mod+F6 exec ${pkgs.brightnessctl}/bin/brightnessctl set 5%+
+    '';
     environment.etc."sway/config".source = lib.mkForce swayConfig;
 
     services.greetd = {
       enable = true;
       useTextGreeter = true;
       settings = {
-        terminal.vt = lib.mkForce 7;
         default_session = {
           command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd sway";
           user = "greeter";
         };
       };
     };
-    systemd.services.greetd.serviceConfig.TTYPath = lib.mkForce "/dev/tty7";
   }
+
+  (lib.mkIf quietBoot {
+    boot = {
+      consoleLogLevel = 0;
+      initrd.verbose = false;
+      kernelParams = lib.mkAfter [
+        "quiet"
+        "udev.log_level=3"
+      ];
+    };
+  })
 
   (lib.mkIf fcitx5Enabled {
     programs.sway.extraSessionCommands = lib.mkAfter ''
@@ -165,7 +179,7 @@ lib.mkMerge [
   })
 
   (lib.mkIf pipewireEnabled {
-    environment.etc."sway/config.d/30-volume.conf".text = ''
+    environment.etc."sway/config.d/40-volume.conf".text = ''
       bindsym --locked $mod+F8 exec ${pkgs.wireplumber}/bin/wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
       bindsym --locked $mod+F9 exec ${pkgs.wireplumber}/bin/wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
       bindsym --locked $mod+F10 exec ${pkgs.wireplumber}/bin/wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+

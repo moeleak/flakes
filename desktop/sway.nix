@@ -10,6 +10,44 @@ let
     config.i18n.inputMethod.enable && config.i18n.inputMethod.type == "fcitx5";
   pipewireEnabled = config.services.pipewire.enable;
   swayStatus = pkgs.writeShellScript "sway-status" ''
+    ${lib.optionalString pipewireEnabled ''
+      volume_status() {
+        output=$(${pkgs.wireplumber}/bin/wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null || true)
+        [ -n "$output" ] || return 1
+
+        volume=$(printf '%s\n' "$output" | ${pkgs.gawk}/bin/awk '$1 == "Volume:" && $2 ~ /^[0-9.]+$/ { printf "%d", ($2 * 100) + 0.5 }')
+        [ -n "$volume" ] || return 1
+
+        case "$output" in
+          *"[MUTED]"*) printf 'VOL mute' ;;
+          *) printf 'VOL %s%%' "$volume" ;;
+        esac
+      }
+    ''}
+    ${lib.optionalString (!pipewireEnabled) ''
+      volume_status() {
+        return 1
+      }
+    ''}
+
+    brightness_status() {
+      for brightness in /sys/class/backlight/*/brightness; do
+        [ -e "$brightness" ] || continue
+
+        dir=''${brightness%/brightness}
+        current=$(${pkgs.coreutils}/bin/cat "$brightness" 2>/dev/null || true)
+        max=$(${pkgs.coreutils}/bin/cat "$dir/max_brightness" 2>/dev/null || true)
+
+        [ "$max" -gt 0 ] 2>/dev/null || continue
+
+        percent=$(( (current * 100 + max / 2) / max ))
+        printf 'BRI %s%%' "$percent"
+        return 0
+      done
+
+      return 1
+    }
+
     battery_status() {
       for capacity in /sys/class/power_supply/BAT*/capacity; do
         [ -e "$capacity" ] || continue
@@ -30,19 +68,38 @@ let
       return 1
     }
 
-    while :; do
-      if battery=$(battery_status); then
-        printf '%s | %s\n' "$battery" "$(${pkgs.coreutils}/bin/date +'%Y-%m-%d %H:%M')"
+    append_part() {
+      [ -n "$1" ] || return 0
+
+      if [ -n "$line" ]; then
+        line="$line | $1"
       else
-        ${pkgs.coreutils}/bin/date +'%Y-%m-%d %H:%M'
+        line="$1"
       fi
-      ${pkgs.coreutils}/bin/sleep 30
+    }
+
+    while :; do
+      line=
+
+      if volume=$(volume_status); then
+        append_part "$volume"
+      fi
+      if brightness=$(brightness_status); then
+        append_part "$brightness"
+      fi
+      if battery=$(battery_status); then
+        append_part "$battery"
+      fi
+      append_part "$(${pkgs.coreutils}/bin/date +'%Y-%m-%d %H:%M')"
+
+      printf '%s\n' "$line"
+      ${pkgs.coreutils}/bin/sleep 5
     done
   '';
   swayConfig = pkgs.runCommand "sway-config" { } ''
     substitute ${config.programs.sway.package}/etc/sway/config $out \
       --replace-fail "status_command while date +'%Y-%m-%d %X'; do sleep 1; done" \
-                     "status_command ${swayStatus}"
+                     "icon_theme Adwaita"$'\n'"    status_command ${swayStatus}"
   '';
 in
 lib.mkMerge [
@@ -52,6 +109,10 @@ lib.mkMerge [
     fonts.packages = lib.mkAfter [
       pkgs.nerd-fonts._0xproto
       pkgs.noto-fonts-cjk-sans
+    ];
+
+    environment.systemPackages = lib.mkAfter [
+      pkgs.adwaita-icon-theme
     ];
 
     home-manager.users.moeleak.programs.foot = {
@@ -84,9 +145,6 @@ lib.mkMerge [
   }
 
   (lib.mkIf fcitx5Enabled {
-    i18n.inputMethod.fcitx5.settings.globalOptions."Behavior/DisabledAddons"."0" =
-      "notificationitem";
-
     programs.sway.extraSessionCommands = lib.mkAfter ''
       export XMODIFIERS=@im=fcitx
       export GTK_IM_MODULE=fcitx

@@ -144,6 +144,10 @@ lib.mkMerge [
       bindsym --locked alt+shift+2 exec ${pkgs.flameshot}/bin/flameshot
     '';
 
+    environment.etc."sway/config.d/50-dpi.conf".text = ''
+      output eDP-1 scale 1.25
+    '';
+
     environment.etc."sway/config".source = lib.mkForce swayConfig;
 
     services.greetd = {

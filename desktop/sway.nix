@@ -6,9 +6,7 @@
 }:
 
 let
-  fcitx5Enabled =
-    config.i18n.inputMethod.enable && config.i18n.inputMethod.type == "fcitx5";
-  quietBoot = pkgs.stdenv.hostPlatform.system != "riscv64-linux";
+  fcitx5Enabled = config.i18n.inputMethod.enable && config.i18n.inputMethod.type == "fcitx5";
   pipewireEnabled = config.services.pipewire.enable;
   swayStatus = pkgs.writeShellScript "sway-status" ''
     ${lib.optionalString pipewireEnabled ''
@@ -152,17 +150,6 @@ lib.mkMerge [
       };
     };
   }
-
-  (lib.mkIf quietBoot {
-    boot = {
-      consoleLogLevel = 0;
-      initrd.verbose = false;
-      kernelParams = lib.mkAfter [
-        "quiet"
-        "udev.log_level=3"
-      ];
-    };
-  })
 
   (lib.mkIf fcitx5Enabled {
     programs.sway.extraSessionCommands = lib.mkAfter ''

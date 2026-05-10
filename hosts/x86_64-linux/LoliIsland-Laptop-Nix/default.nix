@@ -1,6 +1,7 @@
 {
   inputs,
   pkgs,
+  lib,
   ...
 }:
 {
@@ -37,7 +38,13 @@
     ];
   };
 
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot = {
+    initrd.verbose = false;
+    kernelParams = lib.mkAfter [
+      "nosgx"
+    ];
+    kernelPackages = pkgs.linuxPackages_latest;
+  };
 
   hardware.graphics = {
     enable = true;

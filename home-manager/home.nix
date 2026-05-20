@@ -1,9 +1,7 @@
 {
-  config,
   pkgs,
   lib,
   osConfig,
-  pkgs-5a07111,
   inputs,
   ...
 }:
@@ -12,31 +10,6 @@ let
   isLinux = pkgs.stdenv.isLinux;
 
   host = lib.attrByPath [ "networking" "hostName" ] "" osConfig;
-
-  fzfPreview = pkgs.writeShellScriptBin "fzf-preview" ''
-    set -efu
-
-    target=''${1-}
-    [ -n "$target" ] || exit 0
-
-    case "$target" in
-      *:*)
-        path=''${target%%:*}
-        line=''${target#*:}
-        line=''${line%%:*}
-        if [ -f "$path" ] && [ "$line" -eq "$line" ] 2>/dev/null; then
-          start=$((line > 8 ? line - 8 : 1))
-          exec ${pkgs.bat}/bin/bat --style=numbers --color=always --highlight-line "$line" --line-range "$start:" -- "$path"
-        fi
-        ;;
-    esac
-
-    if [ -d "$target" ]; then
-      exec ${pkgs.eza}/bin/eza --tree --color=always --icons=always --level=2 -- "$target"
-    elif [ -f "$target" ]; then
-      exec ${pkgs.bat}/bin/bat --style=numbers --color=always --line-range=:500 -- "$target"
-    fi
-  '';
 
 in
 {
@@ -327,15 +300,6 @@ in
   programs.fzf = {
     enable = true;
     enableFishIntegration = true;
-    defaultCommand = "${pkgs.fd}/bin/fd --hidden --follow --exclude .git";
-    defaultOptions = [
-      "--preview='${fzfPreview}/bin/fzf-preview {}'"
-      "--preview-window=right,60%,border-left"
-      "--bind=ctrl-/:toggle-preview"
-    ];
-    fileWidgetCommand = "${pkgs.fd}/bin/fd --hidden --follow --exclude .git";
-    changeDirWidgetCommand = "${pkgs.fd}/bin/fd --type d --hidden --follow --exclude .git";
-    historyWidgetOptions = [ "--preview-window=hidden" ];
   };
 
   programs.starship.enable = true;

@@ -2,7 +2,7 @@
   description = "NixOS and macOS configuration";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:moeleak/nixpkgs/nixos-unstable";
     nixpkgs-licheepi4a.url = "github:moeleak/nixpkgs/nixos-licheepi4a-unstable";
     nixpkgs-5a07111.url = "github:nixos/nixpkgs/5a0711127cd8b916c3d3128f473388c8c79df0da";
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
@@ -12,7 +12,7 @@
     };
 
     vscode-server = {
-      url = "github:nix-community/nixos-vscode-server";
+      url = "github:moeleak/nixos-vscode-server";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

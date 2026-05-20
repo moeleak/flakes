@@ -19,6 +19,8 @@
     shell = pkgs.fish;
   };
 
+  programs.fish.enable = true;
+
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;

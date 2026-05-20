@@ -25,6 +25,10 @@ let
       isNormalUser = true;
       shell = pkgs.bash;
     };
+    junhaochen = {
+      isNormalUser = true;
+      shell = pkgs.bash;
+    };
     guanranwang = {
       isNormalUser = true;
       shell = pkgs.fish;

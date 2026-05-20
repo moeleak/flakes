@@ -118,7 +118,6 @@ lib.mkMerge [
 
     environment.systemPackages = lib.mkAfter [
       pkgs.adwaita-icon-theme
-      pkgs.flameshot
     ];
 
     home-manager.users.moeleak.programs.foot = {
@@ -138,10 +137,6 @@ lib.mkMerge [
     environment.etc."sway/config.d/30-brightness.conf".text = ''
       bindsym --locked $mod+F5 exec ${pkgs.brightnessctl}/bin/brightnessctl set 5%-
       bindsym --locked $mod+F6 exec ${pkgs.brightnessctl}/bin/brightnessctl set 5%+
-    '';
-
-    environment.etc."sway/config.d/40-screenshot.conf".text = ''
-      bindsym --locked alt+shift+2 exec ${pkgs.flameshot}/bin/flameshot
     '';
 
     environment.etc."sway/config.d/50-dpi.conf".text = ''

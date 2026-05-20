@@ -21,6 +21,7 @@ in
   ];
 
   time.timeZone = "Asia/Shanghai";
+  services.timesyncd.enable = true;
   i18n.defaultLocale = "en_US.UTF-8";
 
   nix.settings = {

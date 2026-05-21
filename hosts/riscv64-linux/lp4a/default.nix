@@ -67,7 +67,9 @@ in
     mesa-demos
     e2fsprogs
     configuredNeovim
-    fastfetch
+    (fastfetch.override {
+      enlightenmentSupport = false;
+    })
     mtr
     iperf3
     nmap

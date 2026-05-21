@@ -293,11 +293,11 @@
     },
     "nixpkgs-licheepi4a": {
       "locked": {
-        "lastModified": 1778914294,
-        "narHash": "sha256-gfGhhcErP1+rhTfPGT1UdjvGzJmbZiA4z/aWHU3eSk0=",
+        "lastModified": 1779339632,
+        "narHash": "sha256-YlMgirIbHP0O7TEYSv7dOydyE+BHj3xw50LLKGE4t8I=",
         "owner": "moeleak",
         "repo": "nixpkgs",
-        "rev": "df7cc673b46c5e9edfa33d376bb3b8566b041e55",
+        "rev": "2eb0a3e3ce5d3f38e633f3dd6af7dcadd4f4efcf",
         "type": "github"
       },
       "original": {

@@ -33,14 +33,6 @@ in
     ];
   };
 
-  nixpkgs.overlays = [
-    (final: prev: {
-      fastfetch = prev.fastfetch.override {
-        enlightenmentSupport = false;
-      };
-    })
-  ];
-
   nix.registry.nixpkgs.flake = nixpkgs;
   environment.etc."nix/inputs/nixpkgs".source = "${nixpkgs}";
   nix.nixPath = [ "/etc/nix/inputs" ];

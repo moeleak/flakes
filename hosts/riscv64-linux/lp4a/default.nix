@@ -33,6 +33,14 @@ in
     ];
   };
 
+  nixpkgs.overlays = [
+    (final: prev: {
+      fastfetch = prev.fastfetch.override {
+        enlightenmentSupport = false;
+      };
+    })
+  ];
+
   nix.registry.nixpkgs.flake = nixpkgs;
   environment.etc."nix/inputs/nixpkgs".source = "${nixpkgs}";
   nix.nixPath = [ "/etc/nix/inputs" ];
@@ -67,9 +75,7 @@ in
     mesa-demos
     e2fsprogs
     configuredNeovim
-    (fastfetch.override {
-      enlightenmentSupport = false;
-    })
+    fastfetch
     mtr
     iperf3
     nmap

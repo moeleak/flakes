@@ -57,6 +57,9 @@ in
     gnumake
     cmake
     clang-tools
+    cargo
+    rustc
+    rust-analyzer
     qemu
     ninja
     pkg-config
@@ -129,8 +132,11 @@ in
   services.cloudflared = {
     enable = true;
     tunnels = {
-      "6696bb8c-8412-4a77-8a09-7d4ae6cb5ea3" = {
-        credentialsFile = "/home/moeleak/.cloudflared/6696bb8c-8412-4a77-8a09-7d4ae6cb5ea3.json";
+      "7f917902-fe32-4b56-b8e4-81532b5208e2" = {
+        credentialsFile = "/home/moeleak/.cloudflared/7f917902-fe32-4b56-b8e4-81532b5208e2.json";
+        ingress = {
+          "lp4a.leak.moe" = "http://localhost:8000";
+        };
         default = "http_status:404";
       };
     };

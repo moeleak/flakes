@@ -32,7 +32,7 @@
     };
 
     nixos-licheepi4a = {
-      url = "github:moeleak/nixos-licheepi4a/unstable-revy-linux-2026-04-30";
+      url = "github:moeleak/nixos-licheepi4a/unstable-revy-linux-2026-05-23";
       inputs.nixpkgs.follows = "nixpkgs-licheepi4a";
     };
 
@@ -209,8 +209,8 @@
         lp4a =
           { ... }:
           {
-            deployment.targetHost = "10.52.4.27";
-            deployment.targetPort = 22;
+            deployment.targetHost = "100.76.208.19";
+            deployment.targetPort = 2333;
             deployment.targetUser = "root";
             imports = lp4aModules;
           };

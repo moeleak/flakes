@@ -39,6 +39,7 @@ in
     pkgs._64gram
     pkgs.thunderbird
     pkgs.ffmpeg
+    pkgs.android-tools
     pkgs.openssh
     pkgs.gnupg
     pkgs.fastfetch

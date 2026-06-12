@@ -1,5 +1,4 @@
 {
-  config,
   inputs,
   lib,
   pkgs,
@@ -195,7 +194,7 @@ in
 
     openssh = {
       enable = true;
-      settings.PasswordAuthentication = true;
+      settings.PasswordAuthentication = false;
     };
 
     ollama = {
@@ -211,7 +210,7 @@ in
     };
 
     samba = {
-      enable = true;
+      enable = false;
       settings = {
         resources = {
           path = "/samba/resources";

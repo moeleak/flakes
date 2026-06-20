@@ -282,6 +282,8 @@ in
           "lax.leak.moe"
           "szh.leak.moe"
           "hk.leak.moe"
+          "upload.leak.moe"
+          "ts.cherr.cc"
         ];
         outbound = "direct";
       }

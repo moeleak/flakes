@@ -49,6 +49,7 @@ in
     pkgs.codex
     pkgs.colmena
     pkgs.gh
+    pkgs.openspec
 
     pkgs.cargo
     pkgs.rustc

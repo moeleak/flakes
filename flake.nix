@@ -4,7 +4,6 @@
   inputs = {
     nixpkgs.url = "github:moeleak/nixpkgs/nixos-unstable";
     nixpkgs-licheepi4a.url = "github:moeleak/nixpkgs/nixos-licheepi4a-unstable";
-    nixpkgs-5a07111.url = "github:nixos/nixpkgs/5a0711127cd8b916c3d3128f473388c8c79df0da";
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
 
     nixvim = {
@@ -57,7 +56,6 @@
     {
       self,
       nixpkgs,
-      nixpkgs-5a07111,
       home-manager,
       lanzaboote,
       nixos-licheepi4a,
@@ -181,6 +179,7 @@
           modules = [
             ./hosts/x86_64-linux/biuh-lab
             sops-nix.nixosModules.sops
+            home-manager.nixosModules.default
             vscode-server.nixosModules.default
             (
               { ... }:
@@ -228,11 +227,6 @@
               self.overlays.obs-bilibili-stream
             ];
           };
-          pkgs-5a07111 = import nixpkgs-5a07111 {
-            stdenv.hostPlatform.system = system;
-            config.allowUnfree = true;
-            config.cudaSupport = true;
-          };
         in
         {
           ${username} = home-manager.lib.homeManagerConfiguration {
@@ -241,7 +235,6 @@
             extraSpecialArgs = {
               inherit inputs;
               osConfig = { };
-              pkgs-5a07111 = pkgs-5a07111;
               stdenv.hostPlatform.system = system;
             };
           };

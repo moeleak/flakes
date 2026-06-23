@@ -67,12 +67,6 @@
     extraSpecialArgs = {
       inherit inputs pkgs;
       stdenv.hostPlatform.system = "x86_64-linux";
-      pkgs-5a07111 = (
-        import inputs.nixpkgs-5a07111 {
-          stdenv.hostPlatform.system = "x86_64-linux";
-          config.allowUnfree = true;
-        }
-      );
     };
 
   };

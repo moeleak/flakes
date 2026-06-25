@@ -8,7 +8,7 @@
     ../../../system/nix.nix
     ../../../system/sops.nix
     ../../../programs/shell.nix
-    ../../../programs/sing-box.nix
+    ../../../programs/sing-box
     ../../../programs/tmux.nix
   ];
 

@@ -14,7 +14,7 @@ in
     ./user-group.nix
     ../../../system/sops.nix
     ../../../desktop/sway.nix
-    ../../../programs/sing-box.nix
+    ../../../programs/sing-box
     ../../../programs/tmux.nix
     ./builder.nix
     ./keyd.nix

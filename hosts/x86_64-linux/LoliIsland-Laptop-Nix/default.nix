@@ -13,7 +13,7 @@
     ./audio.nix
     ./keyd.nix
     ../../../desktop/sway.nix
-    ../../../programs/sing-box.nix
+    ../../../programs/sing-box
     ../../../programs/gnupg.nix
     ../../../programs/openssh.nix
     ../../../programs/rime.nix

@@ -210,19 +210,13 @@ in
       flow = "xtls-rprx-vision";
       packet_encoding = "";
       server = secret "sing-box-moeleak-lax-server";
-      server_port = 11451;
+      server_port = 11452;
       tls = {
         enabled = true;
-        insecure = false;
-        reality = {
+        server_name = "lax.leak.moe";
+        ech = {
           enabled = true;
-          public_key = secret "sing-box-moeleak-lax-public-key";
-          short_id = secret "sing-box-moeleak-lax-short-id";
-        };
-        server_name = "www.microsoft.com";
-        utls = {
-          enabled = true;
-          fingerprint = "chrome";
+          config_path = ./ech.configs;
         };
       };
       uuid = secret "sing-box-moeleak-lax-uuid";

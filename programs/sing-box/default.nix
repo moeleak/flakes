@@ -7,7 +7,7 @@
 }:
 
 let
-  singBoxSettings = import ./sing-box-config.nix {
+  singBoxSettings = import ./config.nix {
     inherit config lib pkgs;
   };
 in

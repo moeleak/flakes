@@ -12,7 +12,7 @@
     ../../../system/sops.nix
     ../../../desktop/plasma.nix
     ../../../system/samba.nix
-    ../../../programs/sing-box.nix
+    ../../../programs/sing-box
     ../../../programs/sunshine.nix
     ../../../programs/ollama.nix
     ../../../programs/openssh.nix

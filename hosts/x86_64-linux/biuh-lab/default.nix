@@ -45,7 +45,7 @@ in
     ../../../system/sops.nix
     ../../../system/virtualization/docker.nix
     ../../../system/network.nix
-    ../../../programs/sing-box.nix
+    ../../../programs/sing-box
     ../../../programs/tmux.nix
     ../../../programs/shell.nix
     ../../../hardware/NV.nix

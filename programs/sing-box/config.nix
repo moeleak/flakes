@@ -210,13 +210,19 @@ in
       flow = "xtls-rprx-vision";
       packet_encoding = "";
       server = secret "sing-box-moeleak-lax-server";
-      server_port = 11452;
+      server_port = 11451;
       tls = {
         enabled = true;
-        server_name = "lax.leak.moe";
-        ech = {
+        insecure = false;
+        reality = {
           enabled = true;
-          config_path = ./ech.configs;
+          public_key = secret "sing-box-moeleak-lax-public-key";
+          short_id = secret "sing-box-moeleak-lax-short-id";
+        };
+        server_name = "www.samsung.com";
+        utls = {
+          enabled = true;
+          fingerprint = "chrome";
         };
       };
       uuid = secret "sing-box-moeleak-lax-uuid";

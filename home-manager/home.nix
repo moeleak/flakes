@@ -47,6 +47,7 @@ in
     pkgs.devenv
     pkgs.direnv
     pkgs.codex
+    pkgs.claude-code
     pkgs.colmena
     pkgs.gh
     pkgs.openspec

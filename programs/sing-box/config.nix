@@ -104,7 +104,7 @@ in
       }
       {
         rule_set = [ "geosite-cn" ];
-        server = "doh-cn";
+        server = "doh-proxy";
       }
     ];
 
@@ -203,10 +203,6 @@ in
       };
     }
     {
-      domain_resolver = {
-        server = "doh-cn";
-        strategy = "prefer_ipv4";
-      };
       flow = "xtls-rprx-vision";
       packet_encoding = "";
       server = secret "sing-box-moeleak-lax-server";
@@ -233,7 +229,7 @@ in
 
   route = {
     default_domain_resolver = {
-      server = "doh-cn";
+      server = "doh-proxy";
     };
 
     rule_set = [

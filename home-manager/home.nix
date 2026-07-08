@@ -58,7 +58,6 @@ in
 
     pkgs.clang-tools
     pkgs.clang
-    pkgs.gcc
     pkgs.llvm
     pkgs.cmake
     pkgs.ccls

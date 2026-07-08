@@ -102,15 +102,6 @@
         obs-bilibili-stream = import ./overlays/obs-bilibili-stream.nix;
       };
 
-      packages.x86_64-linux.neovim =
-        let
-          pkgs = import nixpkgs {
-            system = "x86_64-linux";
-            config.allowUnfree = true;
-          };
-        in
-        import ./programs/neovim.nix { inherit pkgs inputs; };
-
       nixosConfigurations = {
         "LoliIsland-PC-Nix" = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
@@ -122,7 +113,6 @@
             ./system/virtualization/winboat.nix
             ./system/network.nix
             ./system/bluetooth.nix
-            ./system/packages.nix
             sops-nix.nixosModules.sops
             home-manager.nixosModules.default
             lanzaboote.nixosModules.lanzaboote
@@ -158,7 +148,6 @@
             ./system/virtualization/docker.nix
             ./system/network.nix
             ./system/bluetooth.nix
-            ./system/packages.nix
             sops-nix.nixosModules.sops
             home-manager.nixosModules.default
             (

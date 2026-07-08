@@ -163,6 +163,8 @@ in
     };
   };
 
+  programs.zoxide.enable = true;
+
   programs.kitty = {
     enable = true;
     font.name = "0xProto Nerd Font Mono";

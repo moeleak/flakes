@@ -58,6 +58,7 @@ in
 
     pkgs.clang-tools
     pkgs.clang
+    (lib.hiPrio pkgs.gcc16)
     pkgs.llvm
     pkgs.cmake
     pkgs.ccls

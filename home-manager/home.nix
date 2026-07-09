@@ -44,7 +44,6 @@ in
     pkgs.gnupg
     pkgs.fastfetch
     pkgs.yazi
-    pkgs.devenv
     pkgs.direnv
     pkgs.codex
     pkgs.claude-code
@@ -312,6 +311,7 @@ in
   programs.starship.enable = true;
   programs.direnv.enable = true;
   programs.direnv.nix-direnv.enable = true;
+  programs.devenv.enable = true;
 
   home.stateVersion = "25.11";
 }

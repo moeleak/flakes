@@ -50,6 +50,7 @@ in
     pkgs.claude-code
     pkgs.colmena
     pkgs.gh
+    pkgs.lazygit
     pkgs.openspec
 
     pkgs.cargo

@@ -46,6 +46,7 @@ in
     pkgs.yazi
     pkgs.direnv
     pkgs.codex
+    pkgs.codex-auth
     pkgs.claude-code
     pkgs.colmena
     pkgs.gh

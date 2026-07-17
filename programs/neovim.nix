@@ -1,56 +1,137 @@
 { pkgs, inputs, ... }:
 
 let
-  hostSystem = pkgs.stdenv.hostPlatform.system;
-  buildSystem = pkgs.stdenv.buildPlatform.system;
-  isCross = hostSystem != buildSystem;
-  nixvimSystem =
-    if builtins.hasAttr hostSystem inputs.nixvim.legacyPackages then hostSystem else buildSystem;
-  nixFormatter = if isCross && hostSystem == "riscv64-linux" then "alejandra" else "nixfmt";
-  enableRustfmt = !(isCross && hostSystem == "riscv64-linux");
-  lualinePackage =
-    if isCross then
-      pkgs.vimUtils.buildVimPlugin {
-        pname = "lualine.nvim";
-        version = pkgs.vimPlugins.lualine-nvim.version;
-        src = pkgs.vimPlugins.lualine-nvim.src;
-      }
-    else
-      pkgs.vimPlugins.lualine-nvim;
+  # Keep target-specific workarounds out of the editor configuration below.
+  platform =
+    let
+      inherit (pkgs.stdenv) buildPlatform hostPlatform;
+      isCross = buildPlatform.system != hostPlatform.system;
+      needsLp4aWorkarounds = isCross && hostPlatform.isRiscV64;
+    in
+    {
+      nixvim =
+        inputs.nixvim.legacyPackages.${hostPlatform.system}
+          or inputs.nixvim.legacyPackages.${buildPlatform.system};
+
+      lualine =
+        if isCross then
+          pkgs.vimUtils.buildVimPlugin {
+            pname = "lualine.nvim";
+            inherit (pkgs.vimPlugins.lualine-nvim) version src;
+          }
+        else
+          pkgs.vimPlugins.lualine-nvim;
+
+      # nixfmt and rustfmt are unavailable when cross-compiling for lp4a.
+      formatterCommands =
+        if needsLp4aWorkarounds then
+          { nix = "alejandra"; }
+        else
+          {
+            nix = "nixfmt";
+            rust = "rustfmt";
+          };
+    };
 in
-inputs.nixvim.legacyPackages.${nixvimSystem}.makeNixvimWithModule {
+platform.nixvim.makeNixvimWithModule {
   inherit pkgs;
 
   module =
     { lib, ... }:
     let
-      inherit (lib.nixvim) mkRaw;
+      inherit (lib.nixvim)
+        listToUnkeyedAttrs
+        mkRaw
+        toRawKeys
+        ;
+
+      mkNormalMap = key: action: desc: {
+        mode = "n";
+        inherit key action;
+        options = { inherit desc; };
+      };
+
+      mkLspMap = key: lspBufAction: desc: {
+        mode = "n";
+        inherit key lspBufAction;
+        options = { inherit desc; };
+      };
+
+      closeBuffer = mkRaw ''
+        function()
+          local listed_buffers = vim.fn.getbufinfo({ buflisted = 1 })
+          if #listed_buffers <= 1 then
+            vim.cmd("quit!")
+          else
+            vim.cmd("bdelete!")
+          end
+        end
+      '';
+
+      toggleDiagnostics = mkRaw ''
+        function()
+          local enabled = vim.g.diagnostics_enabled
+          if enabled == nil then
+            enabled = not (vim.diagnostic.is_enabled and vim.diagnostic.is_enabled() == false)
+          end
+
+          vim.g.diagnostics_enabled = not enabled
+          vim.diagnostic.enable(not enabled)
+        end
+      '';
+
+      bufferKeymaps =
+        lib.range 1 9
+        |> map (
+          index:
+          let
+            buffer = toString index;
+          in
+          mkNormalMap "<leader>${buffer}" "<Cmd>BufferLineGoToBuffer ${buffer}<CR>" "Go to buffer ${buffer}"
+        );
+
+      withFallback = action: [
+        action
+        "fallback"
+      ];
+
+      completionLabelColumn =
+        listToUnkeyedAttrs [
+          "label"
+          "label_description"
+        ]
+        // {
+          gap = 1;
+        };
     in
     {
       viAlias = true;
       vimAlias = true;
-      enableMan = builtins.hasAttr hostSystem (inputs.nixvim.packages or { });
+      enableMan = false;
       withRuby = true;
       withPython3 = true;
 
-      extraPackages = with pkgs; [
-        ripgrep
-        statix
+      extraPackages = [
+        pkgs.ripgrep
+        pkgs.statix
       ];
 
       globals.mapleader = " ";
 
       opts = {
+        number = true;
+        relativenumber = true;
+        cursorline = true;
+        showmode = false;
+        termguicolors = true;
+
         expandtab = true;
         shiftwidth = 2;
         tabstop = 2;
-        number = true;
-        relativenumber = true;
+
         ignorecase = true;
         smartcase = true;
-        termguicolors = true;
-        showmode = false;
-        cursorline = true;
+
         clipboard = "unnamedplus";
         undofile = true;
       };
@@ -91,11 +172,11 @@ inputs.nixvim.legacyPackages.${nixvimSystem}.makeNixvimWithModule {
         underline = true;
         update_in_insert = true;
         severity_sort = true;
-        signs.text = {
-          "__rawKey__vim.diagnostic.severity.ERROR" = " ";
-          "__rawKey__vim.diagnostic.severity.WARN" = " ";
-          "__rawKey__vim.diagnostic.severity.HINT" = " ";
-          "__rawKey__vim.diagnostic.severity.INFO" = " ";
+        signs.text = toRawKeys {
+          "vim.diagnostic.severity.ERROR" = " ";
+          "vim.diagnostic.severity.WARN" = " ";
+          "vim.diagnostic.severity.HINT" = " ";
+          "vim.diagnostic.severity.INFO" = " ";
         };
       };
 
@@ -116,68 +197,17 @@ inputs.nixvim.legacyPackages.${nixvimSystem}.makeNixvimWithModule {
       ];
 
       keymaps = [
-        {
-          mode = "n";
-          key = "<leader>x";
-          action = mkRaw ''
-            function()
-              local listed_buffers = vim.fn.getbufinfo({ buflisted = 1 })
-              if #listed_buffers <= 1 then
-                vim.cmd("quit!")
-              else
-                vim.cmd("bdelete!")
-              end
-            end
-          '';
-          options.desc = "Force Close";
-        }
-        {
-          mode = "n";
-          key = "<leader>e";
-          action = mkRaw ''function() require("yazi").yazi() end'';
-          options.desc = "Yazi";
-        }
-        {
-          mode = "n";
-          key = "<Tab>";
-          action = "<Cmd>BufferLineCycleNext<CR>";
-          options.desc = "Next Buf";
-        }
-        {
-          mode = "n";
-          key = "<S-Tab>";
-          action = "<Cmd>BufferLineCyclePrev<CR>";
-          options.desc = "Prev Buf";
-        }
-        {
-          mode = "n";
-          key = "<leader>f";
-          action = mkRaw ''function() require("conform").format({ lsp_format = "fallback" }) end'';
-          options.desc = "Format";
-        }
-        {
-          mode = "n";
-          key = "<leader>c";
-          action = mkRaw ''
-            function()
-              local enabled = vim.g.diagnostics_enabled
-              if enabled == nil then
-                enabled = not (vim.diagnostic.is_enabled and vim.diagnostic.is_enabled() == false)
-              end
-
-              vim.g.diagnostics_enabled = not enabled
-              vim.diagnostic.enable(not enabled)
-            end
-          '';
-          options.desc = "Toggle Diagnostics";
-        }
+        (mkNormalMap "<leader>x" closeBuffer "Force Close")
+        (mkNormalMap "<leader>e" (mkRaw ''function() require("yazi").yazi() end'') "Yazi")
+        (mkNormalMap "<Tab>" "<Cmd>BufferLineCycleNext<CR>" "Next Buf")
+        (mkNormalMap "<S-Tab>" "<Cmd>BufferLineCyclePrev<CR>" "Prev Buf")
+        (mkNormalMap "<leader>f"
+          (mkRaw ''function() require("conform").format({ lsp_format = "fallback" }) end'')
+          "Format"
+        )
+        (mkNormalMap "<leader>c" toggleDiagnostics "Toggle Diagnostics")
       ]
-      ++ (map (i: {
-        mode = "n";
-        key = "<leader>${toString i}";
-        action = "<Cmd>BufferLineGoToBuffer ${toString i}<CR>";
-        options.desc = "Go to buffer ${toString i}";
-      }) (lib.range 1 9));
+      ++ bufferKeymaps;
 
       lsp = {
         luaConfig.pre = ''
@@ -194,51 +224,27 @@ inputs.nixvim.legacyPackages.${nixvimSystem}.makeNixvimWithModule {
         '';
 
         keymaps = [
-          {
-            mode = "n";
-            key = "gd";
-            lspBufAction = "definition";
-            options.desc = "Definition";
-          }
-          {
-            mode = "n";
-            key = "K";
-            lspBufAction = "hover";
-            options.desc = "Hover";
-          }
-          {
-            mode = "n";
-            key = "<leader>rn";
-            lspBufAction = "rename";
-            options.desc = "Rename";
-          }
-          {
-            mode = "n";
-            key = "<leader>d";
-            action = mkRaw "vim.diagnostic.open_float";
-            options.desc = "Diagnostic";
-          }
+          (mkLspMap "gd" "definition" "Definition")
+          (mkLspMap "K" "hover" "Hover")
+          (mkLspMap "<leader>rn" "rename" "Rename")
+          (mkNormalMap "<leader>d" (mkRaw "vim.diagnostic.open_float") "Diagnostic")
         ];
 
-        servers = {
-          "*".config.capabilities = mkRaw "require('blink-cmp').get_lsp_capabilities()";
+        servers =
+          {
+            "*".capabilities = mkRaw "require('blink-cmp').get_lsp_capabilities()";
 
-          nixd = {
-            enable = true;
-            config = {
+            nixd = {
               cmd = [ "nixd" ];
               filetypes = [ "nix" ];
               root_markers = [
                 "flake.nix"
                 ".git"
               ];
-              settings.nixd.formatting.command = [ nixFormatter ];
+              settings.nixd.formatting.command = [ platform.formatterCommands.nix ];
             };
-          };
 
-          clangd = {
-            enable = true;
-            config = {
+            clangd = {
               cmd = [ "clangd" ];
               filetypes = [
                 "c"
@@ -266,11 +272,8 @@ inputs.nixvim.legacyPackages.${nixvimSystem}.makeNixvimWithModule {
                 end
               '';
             };
-          };
 
-          pyright = {
-            enable = true;
-            config = {
+            pyright = {
               cmd = [
                 "pyright-langserver"
                 "--stdio"
@@ -288,11 +291,8 @@ inputs.nixvim.legacyPackages.${nixvimSystem}.makeNixvimWithModule {
                 useLibraryCodeForTypes = true;
               };
             };
-          };
 
-          rust_analyzer = {
-            enable = true;
-            config = {
+            rust_analyzer = {
               cmd = [ "rust-analyzer" ];
               filetypes = [ "rust" ];
               root_markers = [
@@ -301,8 +301,13 @@ inputs.nixvim.legacyPackages.${nixvimSystem}.makeNixvimWithModule {
                 ".git"
               ];
             };
-          };
-        };
+          }
+          |> builtins.mapAttrs (
+            _: config: {
+              enable = true;
+              inherit config;
+            }
+          );
       };
 
       plugins = {
@@ -362,37 +367,8 @@ inputs.nixvim.legacyPackages.${nixvimSystem}.makeNixvimWithModule {
 
         lualine = {
           enable = true;
-          package = lualinePackage;
-          settings = {
-            options = {
-              theme = "auto";
-              component_separators = {
-                left = "";
-                right = "";
-              };
-              section_separators = {
-                left = "";
-                right = "";
-              };
-              globalstatus = true;
-            };
-            sections = {
-              lualine_a = [ "mode" ];
-              lualine_b = [
-                "branch"
-                "diff"
-                "diagnostics"
-              ];
-              lualine_c = [ "filename" ];
-              lualine_x = [
-                "encoding"
-                "fileformat"
-                "filetype"
-              ];
-              lualine_y = [ "progress" ];
-              lualine_z = [ "location" ];
-            };
-          };
+          package = platform.lualine;
+          settings.options.globalstatus = true;
         };
 
         web-devicons.enable = true;
@@ -416,13 +392,13 @@ inputs.nixvim.legacyPackages.${nixvimSystem}.makeNixvimWithModule {
           autoInstall.enable = true;
           settings = {
             formatters_by_ft = {
-              nix = [ nixFormatter ];
-              cpp = [ "clang_format" ];
+              nix = [ platform.formatterCommands.nix ];
               c = [ "clang_format" ];
+              cpp = [ "clang_format" ];
               python = [ "black" ];
             }
-            // lib.optionalAttrs enableRustfmt {
-              rust = [ "rustfmt" ];
+            // lib.optionalAttrs (platform.formatterCommands ? rust) {
+              rust = [ platform.formatterCommands.rust ];
             };
             formatters.clang_format.append_args = [
               "--style={SortIncludes: Never}"
@@ -441,31 +417,16 @@ inputs.nixvim.legacyPackages.${nixvimSystem}.makeNixvimWithModule {
           settings = {
             keymap = {
               preset = "enter";
-              "<C-b>" = [
-                "scroll_documentation_up"
-                "fallback"
-              ];
-              "<C-f>" = [
-                "scroll_documentation_down"
-                "fallback"
-              ];
+              "<C-b>" = withFallback "scroll_documentation_up";
+              "<C-f>" = withFallback "scroll_documentation_down";
               "<C-Space>" = [
                 "show"
                 "show_documentation"
                 "hide_documentation"
               ];
-              "<C-p>" = [
-                "select_prev"
-                "fallback"
-              ];
-              "<C-n>" = [
-                "select_next"
-                "fallback"
-              ];
-              "<Tab>" = [
-                "snippet_forward"
-                "fallback"
-              ];
+              "<C-p>" = withFallback "select_prev";
+              "<C-n>" = withFallback "select_next";
+              "<Tab>" = withFallback "snippet_forward";
               "<S-Tab>" = [
                 "select_prev"
                 "snippet_backward"
@@ -482,11 +443,7 @@ inputs.nixvim.legacyPackages.${nixvimSystem}.makeNixvimWithModule {
                 border = "rounded";
                 draw.columns = [
                   [ "kind_icon" ]
-                  {
-                    __unkeyed-1 = "label";
-                    __unkeyed-2 = "label_description";
-                    gap = 1;
-                  }
+                  completionLabelColumn
                 ];
               };
               documentation = {
@@ -510,9 +467,7 @@ inputs.nixvim.legacyPackages.${nixvimSystem}.makeNixvimWithModule {
                   max_items = 10;
                   fallbacks = [ ];
                 };
-                snippets = {
-                  max_items = 5;
-                };
+                snippets.max_items = 5;
                 path.score_offset = 3;
               };
             };

@@ -12,7 +12,15 @@ let
   secretsFile = ../../../secrets/hydra.yaml;
 
   secret = name: config.sops.secrets.${name}.path;
-  r2StoreUri = "s3://nix-cache?scheme=https&endpoint=${config.sops.placeholder.r2-account-id}.r2.cloudflarestorage.com&region=auto&addressing-style=path&compression=zstd&parallel-compression=true&multipart-upload=true&write-nar-listing=true&ls-compression=br&secret-key=${secret "hydra-cache-signing-key"}";
+  r2Bucket = "nix-cache";
+  r2PendingRoots = "/nix/var/nix/gcroots/hydra-r2-pending";
+  # Cloudflare measures the free allowance in decimal GB-month. Keep 100 MB
+  # free so metadata and a partially completed request cannot cross 10 GB.
+  r2StorageLimitBytes = 9900000000;
+  r2UpstreamCaches = [
+    "https://cache.nixos.org"
+    "https://devenv.cachix.org"
+  ];
 
   cloudflaredConfig = pkgs.writeText "hydra-cloudflared.json" (
     builtins.toJSON {
@@ -79,6 +87,23 @@ let
       ' ${lib.escapeShellArg (secret "cloudflare-tunnel-credentials")} >/dev/null
     '';
   };
+
+  uploadHydraCache = pkgs.writeShellApplication {
+    name = "upload-hydra-cache-to-r2";
+    runtimeInputs = [
+      pkgs.awscli2
+      pkgs.coreutils
+      pkgs.curl
+      pkgs.findutils
+      pkgs.gawk
+      pkgs.gnugrep
+      pkgs.gnused
+      pkgs.jq
+      pkgs.nix
+      pkgs.util-linux
+    ];
+    text = builtins.readFile ./hydra-r2-uploader.sh;
+  };
 in
 {
   sops = {
@@ -87,21 +112,21 @@ in
         sopsFile = secretsFile;
         restartUnits = [
           "hydra-secrets-check.service"
-          "hydra-queue-runner.service"
+          "hydra-r2-uploader.service"
         ];
       };
       r2-access-key-id = {
         sopsFile = secretsFile;
         restartUnits = [
           "hydra-secrets-check.service"
-          "hydra-queue-runner.service"
+          "hydra-r2-uploader.service"
         ];
       };
       r2-secret-access-key = {
         sopsFile = secretsFile;
         restartUnits = [
           "hydra-secrets-check.service"
-          "hydra-queue-runner.service"
+          "hydra-r2-uploader.service"
         ];
       };
       hydra-admin-password = {
@@ -121,7 +146,7 @@ in
         mode = "0400";
         restartUnits = [
           "hydra-secrets-check.service"
-          "hydra-queue-runner.service"
+          "hydra-r2-uploader.service"
         ];
       };
       cloudflare-tunnel-credentials = {
@@ -146,8 +171,18 @@ in
         '';
         restartUnits = [
           "hydra-secrets-check.service"
-          "hydra-queue-runner.service"
+          "hydra-r2-uploader.service"
         ];
+      };
+
+      "hydra-r2-uploader.env" = {
+        owner = "hydra-queue-runner";
+        group = "hydra";
+        mode = "0400";
+        content = ''
+          R2_ENDPOINT=https://${config.sops.placeholder.r2-account-id}.r2.cloudflarestorage.com
+        '';
+        restartUnits = [ "hydra-r2-uploader.service" ];
       };
 
       "hydra-r2.conf" = {
@@ -155,7 +190,6 @@ in
         group = "hydra";
         mode = "0440";
         content = ''
-          store_uri = ${r2StoreUri}
           binary_cache_public_uri = https://${cacheHost}
           upload_logs_to_binary_cache = false
         '';
@@ -166,15 +200,14 @@ in
         ];
       };
 
-      # The C++ queue runner only parses key/value lines from HYDRA_CONFIG and
-      # does not process Config::General Include directives. Give it a flat
-      # runtime configuration so that store_uri is not silently omitted.
+      # The C++ queue runner does not process Config::General Include
+      # directives. Keep its flat configuration deliberately local; the
+      # quota-aware uploader below is the only component allowed to write R2.
       "hydra-queue-runner.conf" = {
         owner = "hydra-queue-runner";
         group = "hydra";
         mode = "0400";
         content = ''
-          store_uri = ${r2StoreUri}
           upload_logs_to_binary_cache = false
           queue_runner_metrics_address = 127.0.0.1:9198
           gc_roots_dir = ${config.services.hydra.gcRootsDir}
@@ -196,7 +229,7 @@ in
     useSubstitutes = true;
     extraConfig = ''
       Include ${config.sops.templates."hydra-r2.conf".path}
-      server_store_uri = https://${cacheHost}
+      server_store_uri = daemon
       allow_import_from_derivation = true
       queue_runner_metrics_address = 127.0.0.1:9198
     '';
@@ -218,6 +251,7 @@ in
         "hydra-notify.service"
         "hydra-bootstrap.service"
         "hydra-cloudflared.service"
+        "hydra-r2-uploader.service"
       ];
       serviceConfig = {
         Type = "oneshot";
@@ -245,10 +279,50 @@ in
       after = [ "hydra-secrets-check.service" ];
       requires = [ "hydra-secrets-check.service" ];
       environment = {
+        HYDRA_CONFIG = lib.mkForce config.sops.templates."hydra-queue-runner.conf".path;
+      };
+    };
+
+    hydra-r2-uploader = {
+      description = "Upload the filtered Hydra cache to Cloudflare R2";
+      after = [
+        "hydra-secrets-check.service"
+        "hydra-update-gc-roots.service"
+        "network-online.target"
+      ];
+      wants = [ "network-online.target" ];
+      requires = [
+        "hydra-secrets-check.service"
+        "hydra-update-gc-roots.service"
+      ];
+      environment = {
         AWS_EC2_METADATA_DISABLED = "true";
         AWS_REGION = "auto";
         AWS_SHARED_CREDENTIALS_FILE = config.sops.templates."hydra-r2-credentials".path;
-        HYDRA_CONFIG = lib.mkForce config.sops.templates."hydra-queue-runner.conf".path;
+        HYDRA_GC_ROOTS = config.services.hydra.gcRootsDir;
+        R2_BUCKET = r2Bucket;
+        R2_PENDING_ROOTS = r2PendingRoots;
+        R2_SIGNING_KEY = secret "hydra-cache-signing-key";
+        R2_STORAGE_LIMIT_BYTES = toString r2StorageLimitBytes;
+        R2_UPSTREAM_CACHES = lib.concatStringsSep " " r2UpstreamCaches;
+      };
+      serviceConfig = {
+        Type = "oneshot";
+        User = "hydra-queue-runner";
+        Group = "hydra";
+        EnvironmentFile = config.sops.templates."hydra-r2-uploader.env".path;
+        ExecStart = lib.getExe uploadHydraCache;
+        StateDirectory = "hydra-r2-uploader";
+        StateDirectoryMode = "0700";
+        UMask = "0077";
+        Nice = 10;
+        IOSchedulingClass = "idle";
+        TimeoutStartSec = "6h";
+        PrivateTmp = true;
+        ProtectHome = true;
+        ProtectSystem = "strict";
+        ReadWritePaths = [ r2PendingRoots ];
+        NoNewPrivileges = true;
       };
     };
 
@@ -381,4 +455,19 @@ in
       };
     };
   };
+
+  systemd.timers.hydra-r2-uploader = {
+    description = "Periodically upload the filtered Hydra cache to R2";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnActiveSec = "2min";
+      OnUnitInactiveSec = "30min";
+      RandomizedDelaySec = "2min";
+      Unit = "hydra-r2-uploader.service";
+    };
+  };
+
+  systemd.tmpfiles.rules = [
+    "d ${r2PendingRoots} 0750 hydra-queue-runner hydra -"
+  ];
 }

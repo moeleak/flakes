@@ -175,6 +175,7 @@ in
       tag = "guanran-lax";
       server = secret "sing-box-guanran-lax0-server";
       server_port = 27253;
+      domain_resolver = "doh-cn";
       uuid = secret "sing-box-guanran-uuid";
       flow = "xtls-rprx-vision";
       tls = {
@@ -191,6 +192,7 @@ in
       tag = "guanran-tyo";
       server = secret "sing-box-guanran-tyo0-server";
       server_port = 27253;
+      domain_resolver = "doh-cn";
       uuid = secret "sing-box-guanran-uuid";
       flow = "xtls-rprx-vision";
       tls = {

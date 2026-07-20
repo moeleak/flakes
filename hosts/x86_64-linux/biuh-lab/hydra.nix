@@ -92,6 +92,7 @@ let
     name = "upload-hydra-cache-to-r2";
     runtimeInputs = [
       pkgs.awscli2
+      pkgs.bash
       pkgs.coreutils
       pkgs.curl
       pkgs.findutils

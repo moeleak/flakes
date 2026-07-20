@@ -12,6 +12,7 @@ let
   secretsFile = ../../../secrets/hydra.yaml;
 
   secret = name: config.sops.secrets.${name}.path;
+  r2StoreUri = "s3://nix-cache?scheme=https&endpoint=${config.sops.placeholder.r2-account-id}.r2.cloudflarestorage.com&region=auto&addressing-style=path&compression=zstd&parallel-compression=true&multipart-upload=true&write-nar-listing=true&ls-compression=br&secret-key=${secret "hydra-cache-signing-key"}";
 
   cloudflaredConfig = pkgs.writeText "hydra-cloudflared.json" (
     builtins.toJSON {
@@ -154,7 +155,7 @@ in
         group = "hydra";
         mode = "0440";
         content = ''
-          store_uri = s3://nix-cache?scheme=https&endpoint=${config.sops.placeholder.r2-account-id}.r2.cloudflarestorage.com&region=auto&addressing-style=path&compression=zstd&parallel-compression=true&multipart-upload=true&write-nar-listing=true&ls-compression=br&secret-key=${secret "hydra-cache-signing-key"}
+          store_uri = ${r2StoreUri}
           binary_cache_public_uri = https://${cacheHost}
           upload_logs_to_binary_cache = false
         '';
@@ -163,6 +164,23 @@ in
           "hydra-server.service"
           "hydra-queue-runner.service"
         ];
+      };
+
+      # The C++ queue runner only parses key/value lines from HYDRA_CONFIG and
+      # does not process Config::General Include directives. Give it a flat
+      # runtime configuration so that store_uri is not silently omitted.
+      "hydra-queue-runner.conf" = {
+        owner = "hydra-queue-runner";
+        group = "hydra";
+        mode = "0400";
+        content = ''
+          store_uri = ${r2StoreUri}
+          upload_logs_to_binary_cache = false
+          queue_runner_metrics_address = 127.0.0.1:9198
+          gc_roots_dir = ${config.services.hydra.gcRootsDir}
+          use-substitutes = ${if config.services.hydra.useSubstitutes then "1" else "0"}
+        '';
+        restartUnits = [ "hydra-queue-runner.service" ];
       };
     };
   };
@@ -230,6 +248,7 @@ in
         AWS_EC2_METADATA_DISABLED = "true";
         AWS_REGION = "auto";
         AWS_SHARED_CREDENTIALS_FILE = config.sops.templates."hydra-r2-credentials".path;
+        HYDRA_CONFIG = lib.mkForce config.sops.templates."hydra-queue-runner.conf".path;
       };
     };
 

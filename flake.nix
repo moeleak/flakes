@@ -22,7 +22,7 @@
     };
 
     lanzaboote = {
-      url = "github:nix-community/lanzaboote/v0.4.3";
+      url = "github:nix-community/lanzaboote";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -203,6 +203,15 @@
             deployment.targetUser = "root";
             imports = lp4aModules;
           };
+      };
+
+      hydraJobs = {
+        nixos = {
+          LoliIsland-PC-Nix = self.nixosConfigurations."LoliIsland-PC-Nix".config.system.build.toplevel;
+          LoliIsland-Laptop-Nix =
+            self.nixosConfigurations."LoliIsland-Laptop-Nix".config.system.build.toplevel;
+          biuh-lab = self.nixosConfigurations.biuh-lab.config.system.build.toplevel;
+        };
       };
 
       homeConfigurations =

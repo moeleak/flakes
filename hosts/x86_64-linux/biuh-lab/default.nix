@@ -40,6 +40,7 @@ in
   imports = [
     ./hardware-configuration.nix
     ./frp.nix
+    ./hydra.nix
     ../../../system/boot.nix
     ../../../system/nix.nix
     ../../../system/sops.nix

@@ -13,7 +13,7 @@
 
   services.frp = {
     instances."ngb-moeleak" = {
-      enable = true;
+      enable = false;
       role = "client";
       environmentFiles = [
         config.sops.templates."frp-ngb-moeleak.env".path

@@ -111,24 +111,15 @@ in
     secrets = {
       r2-account-id = {
         sopsFile = secretsFile;
-        restartUnits = [
-          "hydra-secrets-check.service"
-          "hydra-r2-uploader.service"
-        ];
+        restartUnits = [ "hydra-secrets-check.service" ];
       };
       r2-access-key-id = {
         sopsFile = secretsFile;
-        restartUnits = [
-          "hydra-secrets-check.service"
-          "hydra-r2-uploader.service"
-        ];
+        restartUnits = [ "hydra-secrets-check.service" ];
       };
       r2-secret-access-key = {
         sopsFile = secretsFile;
-        restartUnits = [
-          "hydra-secrets-check.service"
-          "hydra-r2-uploader.service"
-        ];
+        restartUnits = [ "hydra-secrets-check.service" ];
       };
       hydra-admin-password = {
         sopsFile = secretsFile;
@@ -145,10 +136,7 @@ in
         owner = "hydra-queue-runner";
         group = "hydra";
         mode = "0400";
-        restartUnits = [
-          "hydra-secrets-check.service"
-          "hydra-r2-uploader.service"
-        ];
+        restartUnits = [ "hydra-secrets-check.service" ];
       };
       cloudflare-tunnel-credentials = {
         sopsFile = secretsFile;
@@ -170,10 +158,7 @@ in
           aws_secret_access_key=${config.sops.placeholder.r2-secret-access-key}
           region=auto
         '';
-        restartUnits = [
-          "hydra-secrets-check.service"
-          "hydra-r2-uploader.service"
-        ];
+        restartUnits = [ "hydra-secrets-check.service" ];
       };
 
       "hydra-r2-uploader.env" = {
@@ -183,7 +168,6 @@ in
         content = ''
           R2_ENDPOINT=https://${config.sops.placeholder.r2-account-id}.r2.cloudflarestorage.com
         '';
-        restartUnits = [ "hydra-r2-uploader.service" ];
       };
 
       "hydra-r2.conf" = {

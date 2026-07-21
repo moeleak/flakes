@@ -269,18 +269,13 @@ in
       {
         domain_suffix = [
           "nixos.org"
+          "updates.cdn-apple.com"
         ];
         outbound = "proxy";
       }
       {
         domain_suffix = [
-          "frp3.ccszxc.xin"
-          "ngb.leak.moe"
-          "play.leak.moe"
-          "lax.leak.moe"
-          "szh.leak.moe"
-          "hk.leak.moe"
-          "upload.leak.moe"
+          "leak.moe"
           "ts.cherr.cc"
         ];
         outbound = "direct";

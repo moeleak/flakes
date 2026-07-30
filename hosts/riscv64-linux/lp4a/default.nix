@@ -1,5 +1,4 @@
 {
-  config,
   inputs,
   nixpkgs,
   pkgs,
@@ -156,45 +155,6 @@ in
   services.glances = {
     enable = true;
     port = 8000;
-  };
-
-  sops = {
-    secrets."frp-ngb-moeleak-token".sopsFile = ../../../secrets/frp.yaml;
-    templates."frp-ngb-moeleak.env" = {
-      content = ''
-        FRP_TOKEN=${config.sops.placeholder."frp-ngb-moeleak-token"}
-      '';
-      restartUnits = [ "frp-ngb-moeleak.service" ];
-    };
-  };
-
-  services.frp = {
-    instances."ngb-moeleak" = {
-      enable = true;
-      role = "client";
-      environmentFiles = [
-        config.sops.templates."frp-ngb-moeleak.env".path
-      ];
-      settings = {
-        serverAddr = "114.66.6.101";
-        serverPort = 7111;
-        transport.protocol = "quic";
-
-        auth = {
-          method = "token";
-          token = "{{ .Envs.FRP_TOKEN }}";
-        };
-
-        proxies = [
-          {
-            name = "tenet";
-            type = "tcp";
-            localPort = 22;
-            remotePort = 22;
-          }
-        ];
-      };
-    };
   };
 
   virtualisation.docker.enable = true;

@@ -2,31 +2,33 @@
 
 {
   sops = {
-    secrets."frp-ngb-moeleak-token".sopsFile = ../../../secrets/frp.yaml;
-    templates."frp-ngb-moeleak.env" = {
+    secrets."frp-token".sopsFile = ../../../secrets/frp.yaml;
+    secrets."frp-user".sopsFile = ../../../secrets/frp.yaml;
+    templates."frp.env" = {
       content = ''
-        FRP_TOKEN=${config.sops.placeholder."frp-ngb-moeleak-token"}
+        FRP_TOKEN=${config.sops.placeholder."frp-token"}
+        FRP_USER=${config.sops.placeholder."frp-user"}
       '';
-      restartUnits = [ "frp-ngb-moeleak.service" ];
+      restartUnits = [ "frp.service" ];
     };
   };
 
   services.frp = {
-    instances."ngb-moeleak" = {
-      enable = false;
+    instances."frp" = {
+      enable = true;
       role = "client";
       environmentFiles = [
-        config.sops.templates."frp-ngb-moeleak.env".path
+        config.sops.templates."frp.env".path
       ];
       settings = {
-        serverAddr = "114.66.6.101";
-        serverPort = 7111;
-        transport.protocol = "quic";
+        serverAddr = "47.107.83.180";
+        serverPort = 7000;
 
         auth = {
           method = "token";
           token = "{{ .Envs.FRP_TOKEN }}";
         };
+        user = "{{ .Envs.FRP_USER }}";
 
         proxies = [
           {
@@ -52,12 +54,6 @@
             type = "tcp";
             localPort = 25502;
             remotePort = 25502;
-          }
-          {
-            name = "jupyter";
-            type = "tcp";
-            localPort = 8888;
-            remotePort = 8888;
           }
         ];
       };

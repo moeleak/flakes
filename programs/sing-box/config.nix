@@ -9,6 +9,31 @@ let
   secret = name: {
     _secret = config.sops.secrets.${name}.path;
   };
+
+  moeleak = {
+    type = "vless";
+    flow = "xtls-rprx-vision";
+    packet_encoding = "";
+    server_port = 11451;
+    uuid = secret "sing-box-moeleak-uuid";
+
+    tls = {
+      enabled = true;
+      insecure = false;
+      server_name = "www.samsung.com";
+
+      reality = {
+        enabled = true;
+        public_key = secret "sing-box-moeleak-public-key";
+        short_id = secret "sing-box-moeleak-short-id";
+      };
+
+      utls = {
+        enabled = true;
+        fingerprint = "chrome";
+      };
+    };
+  };
 in
 {
   log = {
@@ -158,9 +183,10 @@ in
         "guanran-lax"
         "guanran-tyo"
         "moeleak-lax"
+        "moeleak-as3"
         "direct"
       ];
-      default = "guanran-lax";
+      default = "moeleak-lax";
     }
     {
       type = "direct";
@@ -204,29 +230,20 @@ in
         };
       };
     }
-    {
-      flow = "xtls-rprx-vision";
-      packet_encoding = "";
-      server = secret "sing-box-moeleak-lax-server";
-      server_port = 11451;
-      tls = {
-        enabled = true;
-        insecure = false;
-        reality = {
-          enabled = true;
-          public_key = secret "sing-box-moeleak-lax-public-key";
-          short_id = secret "sing-box-moeleak-lax-short-id";
-        };
-        server_name = "www.samsung.com";
-        utls = {
-          enabled = true;
-          fingerprint = "chrome";
-        };
-      };
-      uuid = secret "sing-box-moeleak-lax-uuid";
-      tag = "moeleak-lax";
-      type = "vless";
-    }
+    (
+      moeleak
+      // {
+        tag = "moeleak-lax";
+        server = secret "sing-box-moeleak-lax-server";
+      }
+    )
+    (
+      moeleak
+      // {
+        tag = "moeleak-as3";
+        server = secret "sing-box-moeleak-as3-server";
+      }
+    )
   ];
 
   route = {

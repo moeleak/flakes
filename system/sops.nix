@@ -44,13 +44,16 @@ in
           "sing-box-moeleak-lax-server" = {
             sopsFile = ../secrets/sing-box.yaml;
           };
-          "sing-box-moeleak-lax-uuid" = {
+          "sing-box-moeleak-as3-server" = {
             sopsFile = ../secrets/sing-box.yaml;
           };
-          "sing-box-moeleak-lax-public-key" = {
+          "sing-box-moeleak-uuid" = {
             sopsFile = ../secrets/sing-box.yaml;
           };
-          "sing-box-moeleak-lax-short-id" = {
+          "sing-box-moeleak-public-key" = {
+            sopsFile = ../secrets/sing-box.yaml;
+          };
+          "sing-box-moeleak-short-id" = {
             sopsFile = ../secrets/sing-box.yaml;
           };
         };

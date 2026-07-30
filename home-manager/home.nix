@@ -130,6 +130,11 @@ in
 
   programs.zen-browser.enable = true;
 
+  programs.zen-browser.profiles.main.settings = {
+    "browser.ctrlTab.sortByRecentlyUsed" = true;
+    "browser.translations.neverTranslateLanguages" = "zh-Hans";
+  };
+
   programs.zen-browser.profiles.main.extensions.packages =
     with inputs.firefox-addons.packages.${pkgs.stdenv.hostPlatform.system}; [
       ublock-origin

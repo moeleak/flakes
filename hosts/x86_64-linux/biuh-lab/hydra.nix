@@ -95,6 +95,7 @@ let
       pkgs.bash
       pkgs.coreutils
       pkgs.curl
+      pkgs.diffutils
       pkgs.findutils
       pkgs.gawk
       pkgs.gnugrep
@@ -270,6 +271,9 @@ in
 
     hydra-r2-uploader = {
       description = "Upload the filtered Hydra cache to Cloudflare R2";
+      # Timer runs can take hours, so let an in-flight run finish with its
+      # original definition instead of blocking a configuration switch.
+      restartIfChanged = false;
       after = [
         "hydra-secrets-check.service"
         "hydra-update-gc-roots.service"

@@ -14,7 +14,7 @@
   };
 
   services.frp = {
-    instances."frp" = {
+    instances."" = {
       enable = true;
       role = "client";
       environmentFiles = [
@@ -32,25 +32,25 @@
 
         proxies = [
           {
-            name = "minecraft-velocity-1.21.11";
+            name = "proxy_20260730152817_1487ea8d"; # Velocity
             type = "tcp";
             localPort = 25500;
             remotePort = 25500;
           }
           {
-            name = "minecraft-fabric-1.21.11 simple voice chat";
+            name = "proxy_20260730152749_959bdd81"; # Simple Voice Chat
             type = "udp";
             localPort = 11110;
             remotePort = 11110;
           }
           {
-            name = "minecraft-geyser-1.21.11";
+            name = "proxy_20260730152850_e569d851"; # Geyser
             type = "udp";
             localPort = 19132;
             remotePort = 19132;
           }
           {
-            name = "minecraft-mods";
+            name = "proxy_20260730152913_e84571c6"; # 模组服
             type = "tcp";
             localPort = 25502;
             remotePort = 25502;

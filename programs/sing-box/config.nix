@@ -129,7 +129,7 @@ in
       }
       {
         rule_set = [ "geosite-cn" ];
-        server = "doh-proxy";
+        server = "doh-cn";
       }
     ];
 
@@ -155,7 +155,7 @@ in
         tag = "tun-in";
         address = [
           "172.19.0.1/30"
-          # "fdfe:dcba:9876::1/126"
+          "fdfe:dcba:9876::1/126"
         ];
         mtu = 9000;
         auto_route = true;
@@ -293,7 +293,9 @@ in
       {
         domain_suffix = [
           "leak.moe"
+          "bilibili.com"
           "ts.cherr.cc"
+          "live.bilibili.com"
         ];
         outbound = "direct";
       }

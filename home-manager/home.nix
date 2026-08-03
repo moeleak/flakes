@@ -52,6 +52,7 @@ in
     pkgs.gh
     pkgs.lazygit
     pkgs.openspec
+    pkgs.branchfs
 
     pkgs.cargo
     pkgs.rustc

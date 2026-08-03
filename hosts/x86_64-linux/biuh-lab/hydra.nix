@@ -17,6 +17,7 @@ let
   # Cloudflare measures the free allowance in decimal GB-month. Keep 100 MB
   # free so metadata and a partially completed request cannot cross 10 GB.
   r2StorageLimitBytes = 9900000000;
+  r2UpstreamMissTtlSeconds = 14 * 24 * 60 * 60;
   r2UpstreamCaches = [
     "https://cache.nixos.org"
     "https://devenv.cachix.org"
@@ -294,6 +295,7 @@ in
         R2_SIGNING_KEY = secret "hydra-cache-signing-key";
         R2_STORAGE_LIMIT_BYTES = toString r2StorageLimitBytes;
         R2_UPSTREAM_CACHES = lib.concatStringsSep " " r2UpstreamCaches;
+        R2_UPSTREAM_MISS_TTL_SECONDS = toString r2UpstreamMissTtlSeconds;
       };
       serviceConfig = {
         Type = "oneshot";

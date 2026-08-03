@@ -9,11 +9,18 @@ IFS=$'\n\t'
 : "${R2_SIGNING_KEY:?R2_SIGNING_KEY is not set}"
 : "${R2_STORAGE_LIMIT_BYTES:?R2_STORAGE_LIMIT_BYTES is not set}"
 : "${R2_UPSTREAM_CACHES:?R2_UPSTREAM_CACHES is not set}"
+: "${R2_UPSTREAM_MISS_TTL_SECONDS:?R2_UPSTREAM_MISS_TTL_SECONDS is not set}"
 : "${R2_PENDING_ROOTS:?R2_PENDING_ROOTS is not set}"
 : "${HYDRA_GC_ROOTS:?HYDRA_GC_ROOTS is not set}"
 
 if [[ ! "$R2_STORAGE_LIMIT_BYTES" =~ ^[0-9]+$ ]] || ((R2_STORAGE_LIMIT_BYTES <= 0)); then
   echo "R2_STORAGE_LIMIT_BYTES must be a positive integer" >&2
+  exit 1
+fi
+
+if [[ ! "$R2_UPSTREAM_MISS_TTL_SECONDS" =~ ^[0-9]+$ ]] \
+  || ((R2_UPSTREAM_MISS_TTL_SECONDS <= 0)); then
+  echo "R2_UPSTREAM_MISS_TTL_SECONDS must be a positive integer" >&2
   exit 1
 fi
 
@@ -272,8 +279,10 @@ while IFS=$'\t' read -r key _size; do
 done <"$inventory_tsv"
 
 # Positive upstream results are immutable because Nix store paths are content
-# addressed. Cache them locally; misses are deliberately checked again later.
+# addressed. Cache misses temporarily so every timer run does not repeat the
+# same upstream requests; expired misses are checked again.
 declare -A upstream_source=()
+upstream_check_time="$(date +%s)"
 for index in "${!upstream_caches[@]}"; do
   cache_url="${upstream_caches[$index]%/}"
   cache_state="$upstream_state_dir/$index"
@@ -284,12 +293,21 @@ for index in "${!upstream_caches[@]}"; do
   for hash in "${candidate_order[@]}"; do
     [[ -v "upstream_source[$hash]" ]] && continue
     cached="$cache_state/$hash.narinfo"
+    missing="$cache_state/$hash.missing"
     if [[ -f "$cached" ]] \
       && grep -Eq "^StorePath: /nix/store/$hash-.+" "$cached" \
       && grep -q '^URL: ' "$cached"; then
+      rm -f -- "$missing"
       upstream_source["$hash"]="$index"
     else
       rm -f -- "$cached"
+      if [[ -f "$missing" ]]; then
+        missing_mtime="$(stat --format='%Y' "$missing")"
+        if ((upstream_check_time - missing_mtime < R2_UPSTREAM_MISS_TTL_SECONDS)); then
+          continue
+        fi
+        rm -f -- "$missing"
+      fi
       printf '%s\n' "$hash" >>"$missing_file"
     fi
   done
@@ -303,6 +321,7 @@ for index in "${!upstream_caches[@]}"; do
       set -euo pipefail
       hash="$1"
       destination="$UPSTREAM_CACHE_STATE/$hash.narinfo"
+      missing="$UPSTREAM_CACHE_STATE/$hash.missing"
       temporary="$destination.tmp.$$"
       trap '\''rm -f -- "$temporary"'\'' EXIT
 
@@ -329,8 +348,10 @@ for index in "${!upstream_caches[@]}"; do
             exit 1
           fi
           mv -- "$temporary" "$destination"
+          rm -f -- "$missing"
           ;;
         404)
+          touch "$missing"
           ;;
         *)
           echo "Unexpected HTTP $status from $UPSTREAM_CACHE_URL for $hash" >&2

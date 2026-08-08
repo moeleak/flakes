@@ -50,10 +50,16 @@
             remotePort = 19132;
           }
           {
-            name = "proxy_20260730152913_e84571c6"; # 模组服
+            name = "proxy_20260808172519_aba043a8"; # Xianyu Gebulin
             type = "tcp";
-            localPort = 25502;
-            remotePort = 25502;
+            localPort = 6000;
+            remotePort = 6000;
+          }
+          {
+            name = "proxy_20260808172818_52a061f3"; # Xianyu Gebulin SimpleVoiceChat
+            type = "udp";
+            localPort = 6001;
+            remotePort = 6001;
           }
         ];
       };

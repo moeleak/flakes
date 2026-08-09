@@ -53,6 +53,7 @@ in
     pkgs.lazygit
     pkgs.openspec
     pkgs.branchfs
+    pkgs.comma
 
     pkgs.cargo
     pkgs.rustc

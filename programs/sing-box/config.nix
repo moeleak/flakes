@@ -286,6 +286,21 @@ in
         action = "hijack-dns";
       }
       {
+        network = "icmp";
+        domain_regex = [ ".+" ];
+        action = "resolve";
+      }
+      {
+        preferred_by = [ "tailscale-endpoint" ];
+        action = "route";
+        outbound = "tailscale-endpoint";
+      }
+      {
+        network = "icmp";
+        action = "route";
+        outbound = "direct";
+      }
+      {
         domain_suffix = [
           "nixos.org"
           "updates.cdn-apple.com"
@@ -298,11 +313,6 @@ in
           "ts.cherr.cc"
         ];
         outbound = "direct";
-      }
-      {
-        preferred_by = [ "tailscale-endpoint" ];
-        action = "route";
-        outbound = "tailscale-endpoint";
       }
       {
         rule_set = [ "gfwlist" ];

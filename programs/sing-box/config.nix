@@ -34,6 +34,31 @@ let
       };
     };
   };
+  guanran = {
+    type = "vless";
+    tag = "guanran-lax";
+    server_port = 27253;
+    domain_resolver = "doh-cn";
+    uuid = secret "sing-box-guanran-uuid";
+    flow = "xtls-rprx-vision";
+    tls = {
+      enabled = true;
+      server_name = secret "sing-box-guanran-lax0-server";
+      utls = {
+        enabled = true;
+        fingerprint = "chrome";
+      };
+    };
+  };
+
+  mk =
+    base: tag: serverName:
+    base
+    // {
+      inherit tag;
+      server = secret serverName;
+    };
+
 in
 {
   log = {
@@ -198,54 +223,11 @@ in
       type = "block";
       tag = "block";
     }
-    {
-      type = "vless";
-      tag = "guanran-lax";
-      server = secret "sing-box-guanran-lax0-server";
-      server_port = 27253;
-      domain_resolver = "doh-cn";
-      uuid = secret "sing-box-guanran-uuid";
-      flow = "xtls-rprx-vision";
-      tls = {
-        enabled = true;
-        server_name = secret "sing-box-guanran-lax0-server";
-        utls = {
-          enabled = true;
-          fingerprint = "chrome";
-        };
-      };
-    }
-    {
-      type = "vless";
-      tag = "guanran-tyo";
-      server = secret "sing-box-guanran-tyo0-server";
-      server_port = 27253;
-      domain_resolver = "doh-cn";
-      uuid = secret "sing-box-guanran-uuid";
-      flow = "xtls-rprx-vision";
-      tls = {
-        enabled = true;
-        server_name = secret "sing-box-guanran-tyo0-server";
-        utls = {
-          enabled = true;
-          fingerprint = "chrome";
-        };
-      };
-    }
-    (
-      moeleak
-      // {
-        tag = "moeleak-lax";
-        server = secret "sing-box-moeleak-lax-server";
-      }
-    )
-    (
-      moeleak
-      // {
-        tag = "moeleak-as3";
-        server = secret "sing-box-moeleak-as3-server";
-      }
-    )
+
+    (mk guanran "guanran-lax" "sing-box-guanran-lax0-server")
+    (mk guanran "guanran-tyo" "sing-box-guanran-tyo0-server")
+    (mk moeleak "moeleak-lax" "sing-box-moeleak-lax-server")
+    (mk moeleak "moeleak-as3" "sing-box-moeleak-as3-server")
   ];
 
   route = {

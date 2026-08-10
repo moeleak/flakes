@@ -191,6 +191,10 @@ in
     {
       type = "direct";
       tag = "direct";
+      domain_resolver = {
+        server = "doh-cn";
+        strategy = "ipv4_only";
+      };
     }
     {
       type = "block";

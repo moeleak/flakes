@@ -62,6 +62,7 @@ in
         type = "tailscale";
         tag = "dns-tailscale";
         endpoint = "tailscale-endpoint";
+        accept_search_domain = true;
       }
       {
         type = "fakeip";
@@ -109,19 +110,16 @@ in
 
     rules = [
       {
+        preferred_by = "dns-tailscale";
+        action = "route";
+        server = "dns-tailscale";
+      }
+      {
         query_type = [
           "A"
           "AAAA"
         ];
         server = "fakeip";
-      }
-      {
-        ip_accept_any = true;
-        server = "dns-tailscale";
-      }
-      {
-        domain_suffix = [ "ts.net" ];
-        server = "dns-tailscale";
       }
       {
         rule_set = [ "gfwlist" ];
@@ -297,25 +295,15 @@ in
       {
         domain_suffix = [
           "leak.moe"
-          "bilibili.com"
           "ts.cherr.cc"
-          "live.bilibili.com"
         ];
         outbound = "direct";
       }
       {
-        domain_suffix = [
-          "ts.net"
-        ];
+        preferred_by = [ "tailscale-endpoint" ];
+        action = "route";
         outbound = "tailscale-endpoint";
       }
-      {
-        ip_cidr = [
-          "100.64.0.0/10"
-        ];
-        outbound = "tailscale-endpoint";
-      }
-
       {
         rule_set = [ "gfwlist" ];
         outbound = "proxy";

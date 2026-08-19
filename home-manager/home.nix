@@ -137,7 +137,7 @@ in
     "browser.translations.neverTranslateLanguages" = "zh-Hans";
   };
 
-  programs.zen-browser.profiles.main.extensions.packages =
+  programs.zen-browser.globalExtensions =
     with inputs.firefox-addons.packages.${pkgs.stdenv.hostPlatform.system}; [
       ublock-origin
       vimium

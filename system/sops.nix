@@ -69,7 +69,7 @@ in
         age.plugins = [ pkgs.age-plugin-yubikey ];
       };
     })
-    (lib.mkIf (pkgs.stdenv.isLinux && useKeyFile) {
+    (lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && useKeyFile) {
       system.activationScripts = {
         setupYubikeyForSopsNix.text = ''
           PATH=$PATH:${lib.makeBinPath [ pkgs.age-plugin-yubikey ]}

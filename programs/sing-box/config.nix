@@ -185,7 +185,7 @@ in
         strict_route = true;
         stack = "system";
       }
-      // lib.optionalAttrs pkgs.stdenv.isLinux {
+      // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
         auto_redirect = true;
       }
     )

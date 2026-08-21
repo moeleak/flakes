@@ -102,11 +102,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1783576820,
-        "narHash": "sha256-Oe6tF2a/Sy6qbi61EsgaEi/CCJtkHJj1w1Q2QF2PgT0=",
+        "lastModified": 1787326613,
+        "narHash": "sha256-d53em7G15cFILJT5dV4OzI5SYS2L+856f3y2+UniW3I=",
         "owner": "moeleak",
         "repo": "home-manager",
-        "rev": "43373df5148cf12e81316e080ccf253f0fa2a9f5",
+        "rev": "cf47ff3a8d98c2fc0d35468bd1c6971308986bbe",
         "type": "github"
       },
       "original": {

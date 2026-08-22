@@ -54,6 +54,7 @@ in
     pkgs.openspec
     pkgs.branchfs
     pkgs.comma
+    inputs.workmux.packages.${pkgs.stdenv.hostPlatform.system}.default
 
     pkgs.cargo
     pkgs.rustc

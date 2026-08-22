@@ -235,6 +235,22 @@
     },
     "nixpkgs_2": {
       "locked": {
+        "lastModified": 1787360063,
+        "narHash": "sha256-dt4WdcvsA8/RCe+VZZwqU0X+XMM3wBbGCWA0/sFWzGo=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "2c423e03bbafcff28bfadc6781a4a8257f205cb5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_3": {
+      "locked": {
         "lastModified": 1786599213,
         "narHash": "sha256-yNJd40f11EzXBjSByCB7IPpeFFAdeoSKKM67dGkfFoU=",
         "owner": "nixos",
@@ -329,6 +345,7 @@
         "plasma-manager": "plasma-manager",
         "sops-nix": "sops-nix",
         "vscode-server": "vscode-server",
+        "workmux": "workmux",
         "zen-browser": "zen-browser"
       }
     },
@@ -411,10 +428,28 @@
         "type": "github"
       }
     },
+    "workmux": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_2"
+      },
+      "locked": {
+        "lastModified": 1787396856,
+        "narHash": "sha256-qOFerovwAvN39l4CHkR8gW3mTE/KWJZ+wMwL1BVCSXE=",
+        "owner": "raine",
+        "repo": "workmux",
+        "rev": "ba96d0c9efc0d877715b9d466b046a3de58ba098",
+        "type": "github"
+      },
+      "original": {
+        "owner": "raine",
+        "repo": "workmux",
+        "type": "github"
+      }
+    },
     "zen-browser": {
       "inputs": {
         "home-manager": "home-manager_2",
-        "nixpkgs": "nixpkgs_2"
+        "nixpkgs": "nixpkgs_3"
       },
       "locked": {
         "lastModified": 1787281392,

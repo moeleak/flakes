@@ -293,6 +293,7 @@ in
         domain_suffix = [
           "leak.moe"
           "ts.cherr.cc"
+          "office365.com"
         ];
         outbound = "direct";
       }

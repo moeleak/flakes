@@ -108,6 +108,30 @@
         obs-bilibili-stream = import ./overlays/obs-bilibili-stream.nix;
       };
 
+      checks.x86_64-linux.hydra-r2-uploader =
+        let
+          pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        in
+        pkgs.runCommand "hydra-r2-uploader-test"
+          {
+            nativeBuildInputs = [
+              pkgs.bash
+              pkgs.coreutils
+              pkgs.diffutils
+              pkgs.findutils
+              pkgs.gawk
+              pkgs.gnugrep
+              pkgs.gnused
+              pkgs.jq
+              pkgs.util-linux
+            ];
+          }
+          ''
+            HYDRA_R2_UPLOADER_SCRIPT=${./hosts/x86_64-linux/biuh-lab/hydra-r2-uploader.sh} \
+              bash ${./hosts/x86_64-linux/biuh-lab/hydra-r2-uploader-test.sh}
+            touch "$out"
+          '';
+
       nixosConfigurations = {
         "LoliIsland-PC-Nix" = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";

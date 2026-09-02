@@ -17,6 +17,10 @@ import-from-derivation because the existing Home Manager configuration
 generates Fish completions during evaluation; the jobset source remains the
 fixed public repository above.
 
+The R2 bucket is maintained as a bounded rolling cache. Each uploader run keeps
+the closure of Hydra's currently retained outputs, removes older cache paths and
+expired pending roots, and stays below the configured 9.9 GB storage ceiling.
+
 The public endpoints are:
 
 - Hydra: `https://hydra.leak.moe`

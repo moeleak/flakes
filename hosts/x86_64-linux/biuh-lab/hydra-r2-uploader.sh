@@ -191,18 +191,12 @@ if ((local_narinfo_count != remote_narinfo_count)); then
   exit 1
 fi
 
-# Hydra and this uploader name every root marker after the corresponding
-# /nix/store path. Derivation-only roots are scheduled or failed builds; only
-# successful output roots should seed the public binary cache.
-find "$R2_PENDING_ROOTS" -mindepth 1 -maxdepth 1 -type f -print0 \
-  | while IFS= read -r -d '' marker; do
-      path="/nix/store/${marker##*/}"
-      if ! nix-store --check-validity "$path" 2>/dev/null; then
-        rm -f -- "$marker"
-      fi
-    done
-
-find "$HYDRA_GC_ROOTS" "$R2_PENDING_ROOTS" -mindepth 1 -maxdepth 1 -printf '%f\n' \
+# Hydra names every root marker after the corresponding /nix/store path.
+# Derivation-only roots are scheduled or failed builds; only successful output
+# roots should seed the public binary cache. Pending markers protect the current
+# closure from local GC while it is being uploaded, but must not keep historical
+# builds in the rolling cache forever.
+find "$HYDRA_GC_ROOTS" -mindepth 1 -maxdepth 1 -printf '%f\n' \
   | while IFS= read -r base; do
       [[ "$base" == *.drv ]] && continue
       path="/nix/store/$base"
@@ -227,6 +221,7 @@ if [[ ! -s "$desired_file" ]]; then
 fi
 
 declare -A desired_path=()
+declare -A desired_marker=()
 declare -a desired_order=()
 while IFS= read -r path; do
   base="${path##*/}"
@@ -236,26 +231,33 @@ while IFS= read -r path; do
     exit 1
   fi
   desired_path["$hash"]="$path"
+  desired_marker["$base"]=1
   desired_order+=("$hash")
 done <"$desired_file"
 
 echo "Hydra retains ${#roots[@]} output roots and ${#desired_order[@]} closure paths"
 
-# Protect every candidate from local Nix GC before making network requests.
+# Protect every current candidate from local Nix GC before making network
+# requests, then discard pending markers left by builds Hydra no longer retains.
 # Confirmed upstream paths and completed uploads remove their marker later.
 for hash in "${desired_order[@]}"; do
   touch "$R2_PENDING_ROOTS/${desired_path[$hash]##*/}"
 done
 
-# The upstream filter also covers older objects already present in R2. Keep
-# unique remote paths even after they leave the current Hydra closure, while
-# allowing old copies that exist upstream to be reclaimed.
-declare -A candidate_path=()
+expired_pending_count=0
+while IFS= read -r -d '' marker; do
+  base="${marker##*/}"
+  if [[ ! -v "desired_marker[$base]" ]]; then
+    rm -f -- "$marker"
+    ((expired_pending_count += 1))
+  fi
+done < <(find "$R2_PENDING_ROOTS" -mindepth 1 -maxdepth 1 -type f -print0)
+echo "Removed $expired_pending_count expired pending roots"
+
+# Only current Hydra paths need upstream lookups. Remote paths outside this set
+# are expired rolling-cache entries and are pruned below.
 declare -a candidate_order=("${desired_order[@]}")
 declare -A remote_nar_url=()
-for hash in "${desired_order[@]}"; do
-  candidate_path["$hash"]="${desired_path[$hash]}"
-done
 
 while IFS=$'\t' read -r key _size; do
   [[ "$key" =~ ^([0-9a-z]{32})\.narinfo$ ]] || continue
@@ -263,19 +265,15 @@ while IFS=$'\t' read -r key _size; do
   narinfo="$remote_narinfo_dir/$key"
   store_path="$(sed -n 's/^StorePath: //p' "$narinfo" | head -n 1)"
   if [[ ! "$store_path" =~ ^/nix/store/$hash-.+ ]]; then
-    echo "R2 contains an invalid narinfo: $key" >&2
-    exit 1
+    echo "R2 contains an invalid narinfo; scheduling it for replacement: $key" >&2
+    continue
   fi
   nar_url="$(sed -n 's/^URL: //p' "$narinfo" | head -n 1)"
   if [[ -z "$nar_url" ]]; then
-    echo "R2 narinfo has no URL: $key" >&2
-    exit 1
+    echo "R2 narinfo has no URL; scheduling it for replacement: $key" >&2
+    continue
   fi
   remote_nar_url["$hash"]="$nar_url"
-  if [[ ! -v "candidate_path[$hash]" ]]; then
-    candidate_path["$hash"]="$store_path"
-    candidate_order+=("$hash")
-  fi
 done <"$inventory_tsv"
 
 # Positive upstream results are immutable because Nix store paths are content
@@ -402,14 +400,15 @@ done
 custom_count=$((${#desired_order[@]} - desired_upstream_count))
 echo "$desired_upstream_count desired paths are already available upstream; $custom_count paths require this cache"
 
-# Classify every remote narinfo before deleting anything. Relative NARs remain
-# stored when their paths are unavailable from every configured upstream.
+# Classify every remote narinfo before deleting anything. Only valid relative
+# NARs in the current Hydra closure remain in the rolling cache.
 declare -A remote_custom_valid=()
 declare -A keep_nar=()
 
 for hash in "${!remote_nar_url[@]}"; do
   nar_url="${remote_nar_url[$hash]}"
-  if [[ ! -v "upstream_source[$hash]" ]] \
+  if [[ -v "desired_path[$hash]" ]] \
+    && [[ ! -v "upstream_source[$hash]" ]] \
     && [[ "$nar_url" == nar/* ]] \
     && object_exists "$nar_url"; then
     remote_custom_valid["$hash"]=1
@@ -426,16 +425,21 @@ for hash in "${desired_order[@]}"; do
   fi
 done
 
-# Prune upstream copies, invalid metadata, listings for proxy paths, and every
-# orphan NAR that is no longer referenced by a unique remote path.
+# Prune paths outside the current Hydra closure, upstream copies, invalid
+# metadata, listings for proxy paths, and every orphan NAR that is no longer
+# referenced by a retained custom path.
 : >"$work_dir/delete-keys"
 proxy_replaced=0
+expired_remote_paths=0
 while IFS=$'\t' read -r key _size; do
   if [[ "$key" =~ ^([0-9a-z]{32})\.narinfo$ ]]; then
     hash="${BASH_REMATCH[1]}"
-    if [[ -v "upstream_source[$hash]" ]]; then
-      if [[ ! -v "desired_path[$hash]" ]] \
-        || ! cmp --silent "${proxy_file[$hash]}" "$remote_narinfo_dir/$key"; then
+    if [[ ! -v "desired_path[$hash]" ]]; then
+      queue_batch_delete "$key"
+      queue_batch_delete "$hash.ls"
+      ((expired_remote_paths += 1))
+    elif [[ -v "upstream_source[$hash]" ]]; then
+      if ! cmp --silent "${proxy_file[$hash]}" "$remote_narinfo_dir/$key"; then
         queue_batch_delete "$key"
         ((proxy_replaced += 1))
       fi
@@ -456,7 +460,7 @@ done <"$inventory_tsv"
 
 prune_count="$(sort -u "$work_dir/delete-keys" | sed '/^$/d' | wc -l)"
 run_batch_deletes
-echo "Removed $proxy_replaced upstream payload narinfos and pruned $prune_count redundant objects"
+echo "Expired $expired_remote_paths old cache paths, replaced $proxy_replaced upstream payload narinfos, and pruned $prune_count objects"
 echo "R2 uses $(human_bytes "$bucket_bytes") after pruning"
 
 # Add proxy metadata that did not previously exist. These files are normally
@@ -494,22 +498,40 @@ fi
 
 stage_uri="file://$stage_dir?compression=zstd&parallel-compression=true&write-nar-listing=true&secret-key=$R2_SIGNING_KEY"
 uploaded_paths=0
-deferred_paths=0
+missing_reference_paths=0
+space_deferred_paths=0
+
+# A path is usable by later closure members only after its narinfo is available
+# from R2 (either as a proxy, an existing custom object, or a completed upload).
+declare -A available_path=()
+for hash in "${desired_order[@]}"; do
+  if object_exists "$hash.narinfo" \
+    && { [[ -v "upstream_source[$hash]" ]] || [[ -v "remote_custom_valid[$hash]" ]]; }; then
+    available_path["$hash"]=1
+  fi
+done
 
 for hash in "${desired_order[@]}"; do
   [[ -v "upstream_source[$hash]" ]] && continue
   [[ -v "remote_custom_valid[$hash]" ]] && continue
   path="${desired_path[$hash]}"
 
+  missing_reference=""
   while IFS= read -r reference; do
     [[ "$reference" == "$path" ]] && continue
     ref_base="${reference##*/}"
     ref_hash="${ref_base%%-*}"
-    if [[ ! -f "$stage_dir/$ref_hash.narinfo" ]]; then
-      echo "Cannot stage $path: reference $reference has no narinfo" >&2
-      exit 1
+    if [[ ! -v "available_path[$ref_hash]" ]]; then
+      missing_reference="$reference"
+      break
     fi
   done < <(nix-store --query --references "$path")
+
+  if [[ -n "$missing_reference" ]]; then
+    echo "Cannot upload $path yet: reference $missing_reference is unavailable"
+    ((missing_reference_paths += 1))
+    continue
+  fi
 
   nix copy \
     --no-recursive \
@@ -536,8 +558,13 @@ for hash in "${desired_order[@]}"; do
   done
 
   if ((bucket_bytes + planned_growth > R2_STORAGE_LIMIT_BYTES)); then
-    echo "R2 limit reached before $path; leaving it and later paths pending"
-    break
+    echo "R2 limit reached before $path; leaving it pending and trying later independent paths"
+    rm -f -- "$narinfo" "$stage_dir/$hash.ls"
+    if ! object_exists "$nar_url"; then
+      rm -f -- "$stage_dir/$nar_url"
+    fi
+    ((space_deferred_paths += 1))
+    continue
   fi
 
   if ! object_exists "$nar_url"; then
@@ -549,6 +576,7 @@ for hash in "${desired_order[@]}"; do
   upload_object "$hash.narinfo" "$narinfo" 'text/x-nix-narinfo'
   cp -- "$narinfo" "$remote_narinfo_dir/$hash.narinfo"
   remote_custom_valid["$hash"]=1
+  available_path["$hash"]=1
   rm -f -- "$R2_PENDING_ROOTS/${path##*/}"
   ((uploaded_paths += 1))
 done
@@ -561,5 +589,6 @@ for hash in "${desired_order[@]}"; do
 done
 
 echo "Added $proxy_added proxy narinfos ($proxy_deferred deferred)"
+echo "Skipped $space_deferred_paths oversized paths and $missing_reference_paths paths with unavailable references"
 echo "Uploaded $uploaded_paths custom paths; $deferred_paths custom paths remain pending"
 echo "R2 now uses $(human_bytes "$bucket_bytes") of $(human_bytes "$R2_STORAGE_LIMIT_BYTES")"

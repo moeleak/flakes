@@ -286,6 +286,7 @@ in
         domain_suffix = [
           "nixos.org"
           "updates.cdn-apple.com"
+          "learn.hibiuh.edu.cn"
         ];
         outbound = "proxy";
       }

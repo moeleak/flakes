@@ -13,6 +13,39 @@ let
         inputs.nixvim.legacyPackages.${hostPlatform.system}
           or inputs.nixvim.legacyPackages.${buildPlatform.system};
 
+      clangdCommand = [
+        "clangd"
+      ]
+      ++ pkgs.lib.optionals hostPlatform.isDarwin [
+        # Query the compiler for a consistent set of headers. This also stops
+        # the Nix clang-tools wrapper from injecting libc++ headers into an
+        # Apple SDK compile command, which breaks even std::string.
+        # Apple compilers use clangd's built-in SDK discovery; querying them
+        # would put SDK headers ahead of clangd's built-in headers.
+        (
+          "--query-driver="
+          + pkgs.lib.concatStringsSep "," (
+            pkgs.lib.concatMap
+              (
+                directory:
+                map (compiler: "${directory}/${compiler}") [
+                  "clang"
+                  "clang++"
+                  "gcc"
+                  "g++"
+                  "cc"
+                  "c++"
+                ]
+              )
+              [
+                "/nix/store/*/bin"
+                "/etc/profiles/per-user/*/bin"
+                "/run/current-system/sw/bin"
+              ]
+          )
+        )
+      ];
+
       lualine =
         if isCross then
           pkgs.vimUtils.buildVimPlugin {
@@ -245,7 +278,7 @@ platform.nixvim.makeNixvimWithModule {
             };
 
             clangd = {
-              cmd = [ "clangd" ];
+              cmd = platform.clangdCommand;
               filetypes = [
                 "c"
                 "cpp"

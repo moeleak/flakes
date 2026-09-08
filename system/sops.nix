@@ -59,6 +59,17 @@ in
         };
       };
     }
+    (lib.mkIf
+      (builtins.elem hostName [
+        "biuh-lab"
+        "LoliIsland-Mac"
+      ])
+      {
+        sops.secrets."sing-box-lab-password" = {
+          sopsFile = ../secrets/sing-box-lab.yaml;
+        };
+      }
+    )
     (lib.mkIf useKeyFile {
       environment.systemPackages = [ pkgs.age-plugin-yubikey ];
       sops = {

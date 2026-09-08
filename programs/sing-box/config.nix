@@ -6,6 +6,12 @@
 }:
 
 let
+  isLabServer = config.networking.hostName == "biuh-lab";
+  isLabClient = config.networking.hostName == "LoliIsland-Mac";
+  internetOutbound = if isLabClient then "egress" else "proxy";
+  labAddress = "10.90.0.3";
+  labPort = 8388;
+
   secret = name: {
     _secret = config.sops.secrets.${name}.path;
   };
@@ -70,7 +76,7 @@ in
       external_controller = "localhost:9090";
       external_ui = "ui";
       external_ui_download_url = "https://github.com/MetaCubeX/Yacd-meta/archive/gh-pages.zip";
-      external_ui_download_detour = "proxy";
+      external_ui_download_detour = internetOutbound;
     };
     cache_file = {
       enabled = true;
@@ -128,7 +134,7 @@ in
           enabled = true;
           server_name = "cloudflare-dns.com";
         };
-        detour = "proxy";
+        detour = internetOutbound;
       }
 
     ];
@@ -139,6 +145,20 @@ in
         action = "route";
         server = "dns-tailscale";
       }
+    ]
+    ++ lib.optionals isLabServer [
+      {
+        inbound = [ "lab-in" ];
+        rule_set = [ "geosite-cn" ];
+        server = "doh-cn";
+      }
+      {
+        # Remote clients must never receive this server's private FakeIP mapping.
+        inbound = [ "lab-in" ];
+        server = "doh-proxy";
+      }
+    ]
+    ++ [
       {
         query_type = [
           "A"
@@ -152,7 +172,7 @@ in
       }
       {
         rule_set = [ "geosite-cn" ];
-        server = "doh-cn";
+        server = if isLabClient then "doh-proxy" else "doh-cn";
       }
     ];
 
@@ -167,7 +187,8 @@ in
       auth_key = "";
       hostname = config.networking.hostName;
       domain_resolver = {
-        server = "doh-proxy";
+        # Keep Tailscale available when the Lab relay is unavailable.
+        server = if isLabClient then "doh-cn" else "doh-proxy";
       };
     }
   ];
@@ -195,6 +216,17 @@ in
       listen = "127.0.0.1";
       listen_port = 53;
       network = "udp";
+    }
+  ]
+  ++ lib.optionals isLabServer [
+    {
+      type = "shadowsocks";
+      tag = "lab-in";
+      listen = labAddress;
+      listen_port = labPort;
+      method = "2022-blake3-aes-128-gcm";
+      password = secret "sing-box-lab-password";
+      multiplex.enabled = true;
     }
   ];
 
@@ -228,6 +260,35 @@ in
     (mk guanran "guanran-tyo" "sing-box-guanran-tyo0-server")
     (mk moeleak "moeleak-lax" "sing-box-moeleak-lax-server")
     (mk moeleak "moeleak-as3" "sing-box-moeleak-as3-server")
+  ]
+  ++ lib.optionals isLabClient [
+    {
+      type = "selector";
+      tag = "egress";
+      outbounds = [
+        "lab"
+        "proxy"
+        "direct"
+      ];
+      default = "lab";
+      interrupt_exist_connections = true;
+    }
+    {
+      type = "shadowsocks";
+      tag = "lab";
+      server = labAddress;
+      server_port = labPort;
+      method = "2022-blake3-aes-128-gcm";
+      password = secret "sing-box-lab-password";
+      # auto_detect_interface dials this IP on the physical network, outside TUN.
+      connect_timeout = "5s";
+      multiplex = {
+        enabled = true;
+        protocol = "smux";
+        max_connections = 4;
+        min_streams = 4;
+      };
+    }
   ];
 
   route = {
@@ -241,21 +302,21 @@ in
         tag = "geosite-cn";
         format = "binary";
         url = "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs";
-        download_detour = "proxy";
+        http_client.detour = internetOutbound;
       }
       {
         type = "remote";
         tag = "geoip-cn";
         format = "binary";
         url = "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs";
-        download_detour = "proxy";
+        http_client.detour = internetOutbound;
       }
       {
         type = "remote";
         tag = "gfwlist";
         format = "binary";
         url = "https://raw.githubusercontent.com/KaringX/karing-ruleset/sing/ACL4SSR/ProxyGFWlist.srs";
-        download_detour = "proxy";
+        http_client.detour = internetOutbound;
       }
     ];
 
@@ -282,6 +343,34 @@ in
         action = "route";
         outbound = "direct";
       }
+    ]
+    ++ lib.optionals isLabClient [
+      {
+        ip_is_private = true;
+        outbound = "direct";
+      }
+      {
+        # Tailscale's control plane must not depend on the Lab relay.
+        domain_suffix = [
+          "leak.moe"
+          "ts.cherr.cc"
+        ];
+        outbound = "direct";
+      }
+      {
+        process_name = [ "cs2.exe" ];
+        outbound = "direct";
+      }
+      {
+        # Both domestic and international public TCP/UDP use this selector.
+        network = [
+          "tcp"
+          "udp"
+        ];
+        outbound = "egress";
+      }
+    ]
+    ++ [
       {
         domain_suffix = [
           "nixos.org"
@@ -323,7 +412,7 @@ in
       }
     ];
 
-    final = "proxy";
+    final = internetOutbound;
     auto_detect_interface = true;
   };
 }

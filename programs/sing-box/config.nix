@@ -11,6 +11,7 @@ let
   internetOutbound = if isLabClient then "egress" else "proxy";
   labAddress = "10.90.0.3";
   labPort = 8388;
+  labDirectPort = 8389;
 
   secret = name: {
     _secret = config.sops.secrets.${name}.path;
@@ -228,6 +229,15 @@ in
       password = secret "sing-box-lab-password";
       multiplex.enabled = true;
     }
+    {
+      type = "shadowsocks";
+      tag = "lab-direct-in";
+      listen = labAddress;
+      listen_port = labDirectPort;
+      method = "2022-blake3-aes-128-gcm";
+      password = secret "sing-box-lab-password";
+      multiplex.enabled = true;
+    }
   ];
 
   outbounds = [
@@ -320,7 +330,15 @@ in
       }
     ];
 
-    rules = [
+    rules = lib.optionals isLabServer [
+      {
+        # Route even DNS directly before sniffing, DNS hijacking, or proxy rules.
+        inbound = [ "lab-direct-in" ];
+        action = "route";
+        outbound = "direct";
+      }
+    ]
+    ++ [
       {
         action = "sniff";
       }

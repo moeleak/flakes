@@ -190,9 +190,9 @@ in
 
   programs.kitty = {
     enable = true;
-    font.name = "0xProto Nerd Font Mono";
-    font.size = if isLinux then 12 else 18;
-    font.package = pkgs.nerd-fonts._0xproto;
+    font.name = "Maple Mono NF CN";
+    font.size = if isLinux then 14 else 18;
+    font.package = pkgs.maple-mono.NF-CN;
     settings.macos_option_as_alt = true;
     themeFile = "Nord";
     keybindings =

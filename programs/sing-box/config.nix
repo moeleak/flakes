@@ -7,7 +7,8 @@
 
 let
   isLabServer = config.networking.hostName == "biuh-lab";
-  isLabClient = config.networking.hostName == "LoliIsland-Mac";
+  isLabClient =
+    config.networking.hostName == "LoliIsland-Mac" || config.networking.hostName == "LoliIsland-PC-Nix";
   internetOutbound = if isLabClient then "egress" else "proxy";
   labAddress = "10.90.0.3";
   labPort = 8388;
@@ -330,105 +331,105 @@ in
       }
     ];
 
-    rules = lib.optionals isLabServer [
-      {
-        # Route even DNS directly before sniffing, DNS hijacking, or proxy rules.
-        inbound = [ "lab-direct-in" ];
-        action = "route";
-        outbound = "direct";
-      }
-    ]
-    ++ [
-      {
-        action = "sniff";
-      }
-      {
-        protocol = "dns";
-        action = "hijack-dns";
-      }
-      {
-        network = "icmp";
-        domain_regex = [ ".+" ];
-        action = "resolve";
-      }
-      {
-        preferred_by = [ "tailscale-endpoint" ];
-        action = "route";
-        outbound = "tailscale-endpoint";
-      }
-      {
-        network = "icmp";
-        action = "route";
-        outbound = "direct";
-      }
-    ]
-    ++ lib.optionals isLabClient [
-      {
-        ip_is_private = true;
-        outbound = "direct";
-      }
-      {
-        # Tailscale's control plane must not depend on the Lab relay.
-        domain_suffix = [
-          "leak.moe"
-          "ts.cherr.cc"
-        ];
-        outbound = "direct";
-      }
-      {
-        process_name = [ "cs2.exe" ];
-        outbound = "direct";
-      }
-      {
-        # Both domestic and international public TCP/UDP use this selector.
-        network = [
-          "tcp"
-          "udp"
-        ];
-        outbound = "egress";
-      }
-    ]
-    ++ [
-      {
-        domain_suffix = [
-          "nixos.org"
-          "updates.cdn-apple.com"
-          "learn.hibiuh.edu.cn"
-        ];
-        outbound = "proxy";
-      }
-      {
-        domain_suffix = [
-          "leak.moe"
-          "ts.cherr.cc"
-          "office365.com"
-        ];
-        outbound = "direct";
-      }
-      {
-        rule_set = [ "gfwlist" ];
-        outbound = "proxy";
-      }
-      {
-        ip_is_private = true;
-        outbound = "direct";
-      }
-      {
-        ip_cidr = [
-          "103.97.201.87"
-          "131.143.240.18"
-        ];
-        outbound = "direct";
-      }
-      {
-        rule_set = [ "geosite-cn" ];
-        outbound = "direct";
-      }
-      {
-        rule_set = [ "geoip-cn" ];
-        outbound = "direct";
-      }
-    ];
+    rules =
+      lib.optionals isLabServer [
+        {
+          # Route even DNS directly before sniffing, DNS hijacking, or proxy rules.
+          inbound = [ "lab-direct-in" ];
+          action = "route";
+          outbound = "direct";
+        }
+      ]
+      ++ [
+        {
+          action = "sniff";
+        }
+        {
+          protocol = "dns";
+          action = "hijack-dns";
+        }
+        {
+          network = "icmp";
+          domain_regex = [ ".+" ];
+          action = "resolve";
+        }
+        {
+          preferred_by = [ "tailscale-endpoint" ];
+          action = "route";
+          outbound = "tailscale-endpoint";
+        }
+        {
+          network = "icmp";
+          action = "route";
+          outbound = "direct";
+        }
+      ]
+      ++ lib.optionals isLabClient [
+        {
+          ip_is_private = true;
+          outbound = "direct";
+        }
+        {
+          domain_suffix = [
+            "leak.moe"
+            "ts.cherr.cc"
+          ];
+          outbound = "direct";
+        }
+        {
+          process_name = [ "cs2.exe" ];
+          outbound = "direct";
+        }
+        {
+          # Both domestic and international public TCP/UDP use this selector.
+          network = [
+            "tcp"
+            "udp"
+          ];
+          outbound = "egress";
+        }
+      ]
+      ++ [
+        {
+          domain_suffix = [
+            "nixos.org"
+            "updates.cdn-apple.com"
+            "learn.hibiuh.edu.cn"
+          ];
+          outbound = "proxy";
+        }
+        {
+          domain_suffix = [
+            "leak.moe"
+            "ts.cherr.cc"
+            "office365.com"
+          ];
+          outbound = "direct";
+        }
+        {
+          rule_set = [ "gfwlist" ];
+          outbound = "proxy";
+        }
+        {
+          ip_is_private = true;
+          outbound = "direct";
+        }
+        {
+          ip_cidr = [
+            "103.97.201.87"
+            "131.143.240.18"
+          ];
+          outbound = "direct";
+        }
+        {
+          rule_set = [ "geosite-cn" ];
+          outbound = "direct";
+        }
+        {
+          rule_set = [ "geoip-cn" ];
+          outbound = "direct";
+        }
+      ];
 
     final = internetOutbound;
     auto_detect_interface = true;

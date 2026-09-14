@@ -63,6 +63,7 @@ in
       (builtins.elem hostName [
         "biuh-lab"
         "LoliIsland-Mac"
+        "LoliIsland-PC-Nix"
       ])
       {
         sops.secrets."sing-box-lab-password" = {

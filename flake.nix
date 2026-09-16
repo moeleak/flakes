@@ -106,6 +106,21 @@
       overlays = {
         direnv = import ./overlays/direnv.nix;
         obs-bilibili-stream = import ./overlays/obs-bilibili-stream.nix;
+        hydra-perl-uri =
+          final: prev:
+          {
+            hydra = prev.hydra.override {
+              perlPackages = prev.perlPackages.overrideScope (self: super: {
+                # URI >= 5.36 ships URI/ws.pm, so the obsolete URI-ws
+                # dependency collides with the file already provided by URI.
+                CatalystRuntime = super.CatalystRuntime.overrideAttrs (old: {
+                  propagatedBuildInputs = builtins.filter
+                    (x: x != super.URIws)
+                    old.propagatedBuildInputs;
+                });
+              });
+            };
+          };
       };
 
       checks.x86_64-linux.hydra-r2-uploader =
@@ -205,6 +220,7 @@
               {
                 nixpkgs.overlays = [
                   self.overlays.direnv
+                  self.overlays.hydra-perl-uri
                 ];
               }
             )

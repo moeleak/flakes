@@ -106,46 +106,7 @@
       overlays = {
         direnv = import ./overlays/direnv.nix;
         obs-bilibili-stream = import ./overlays/obs-bilibili-stream.nix;
-        hydra-perl-uri =
-          final: prev:
-          {
-            hydra = prev.hydra.override {
-              perlPackages = prev.perlPackages.overrideScope (self: super: {
-                # URI >= 5.36 ships URI/ws.pm, so the obsolete URI-ws
-                # dependency collides with the file already provided by URI.
-                CatalystRuntime = super.CatalystRuntime.overrideAttrs (old: {
-                  propagatedBuildInputs = builtins.filter
-                    (x: x != super.URIws)
-                    old.propagatedBuildInputs;
-                });
-              });
-            };
-          };
       };
-
-      checks.x86_64-linux.hydra-r2-uploader =
-        let
-          pkgs = nixpkgs.legacyPackages.x86_64-linux;
-        in
-        pkgs.runCommand "hydra-r2-uploader-test"
-          {
-            nativeBuildInputs = [
-              pkgs.bash
-              pkgs.coreutils
-              pkgs.diffutils
-              pkgs.findutils
-              pkgs.gawk
-              pkgs.gnugrep
-              pkgs.gnused
-              pkgs.jq
-              pkgs.util-linux
-            ];
-          }
-          ''
-            HYDRA_R2_UPLOADER_SCRIPT=${./hosts/x86_64-linux/biuh-lab/hydra-r2-uploader.sh} \
-              bash ${./hosts/x86_64-linux/biuh-lab/hydra-r2-uploader-test.sh}
-            touch "$out"
-          '';
 
       nixosConfigurations = {
         "LoliIsland-PC-Nix" = nixpkgs.lib.nixosSystem {
@@ -220,7 +181,6 @@
               {
                 nixpkgs.overlays = [
                   self.overlays.direnv
-                  self.overlays.hydra-perl-uri
                 ];
               }
             )
@@ -248,15 +208,6 @@
             deployment.targetUser = "root";
             imports = lp4aModules;
           };
-      };
-
-      hydraJobs = {
-        nixos = {
-          LoliIsland-PC-Nix = self.nixosConfigurations."LoliIsland-PC-Nix".config.system.build.toplevel;
-          LoliIsland-Laptop-Nix =
-            self.nixosConfigurations."LoliIsland-Laptop-Nix".config.system.build.toplevel;
-          biuh-lab = self.nixosConfigurations.biuh-lab.config.system.build.toplevel;
-        };
       };
 
       homeConfigurations =

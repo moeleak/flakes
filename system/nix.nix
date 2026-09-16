@@ -10,17 +10,18 @@
   nix.settings = {
     extra-substituters = [
       "https://devenv.cachix.org"
-      "https://cache.leak.moe"
     ];
     extra-trusted-public-keys = [
       "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="
-      "cache.leak.moe-1:mUSixE7LPiarmbyjac1d9qxvEkEl8T6f+hcEIRXLAdM="
     ];
     trusted-users = [
       "root"
       "moeleak"
       "lolimaster"
     ];
+    # If a substituter has a transient outage or connection reset, fall back
+    # to building locally instead of hard-failing.
+    fallback = true;
   };
 
   # Allow unfree packages

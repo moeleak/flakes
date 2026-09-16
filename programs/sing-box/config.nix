@@ -13,6 +13,7 @@ let
   labAddress = "10.90.0.3";
   labPort = 8388;
   labDirectPort = 8389;
+  autoPort = 1081;
 
   secret = name: {
     _secret = config.sops.secrets.${name}.path;
@@ -78,7 +79,8 @@ in
       external_controller = "localhost:9090";
       external_ui = "ui";
       external_ui_download_url = "https://github.com/MetaCubeX/Yacd-meta/archive/gh-pages.zip";
-      external_ui_download_detour = internetOutbound;
+      # Downloads run before the local auto inbound starts.
+      external_ui_download_detour = "proxy";
     };
     cache_file = {
       enabled = true;
@@ -112,15 +114,15 @@ in
       {
         type = "https";
         tag = "doh-cn";
-        server = "223.5.5.5";
+        server = "1.12.12.12";
         server_port = 443;
         path = "/dns-query";
         headers = {
-          Host = "dns.alidns.com";
+          Host = "doh.pub";
         };
         tls = {
           enabled = true;
-          server_name = "dns.alidns.com";
+          server_name = "doh.pub";
         };
       }
       {
@@ -220,6 +222,15 @@ in
       network = "udp";
     }
   ]
+  ++ lib.optionals isLabClient [
+    {
+      # Re-enter the local routing rules when egress selects auto.
+      type = "socks";
+      tag = "auto-in";
+      listen = "127.0.0.1";
+      listen_port = autoPort;
+    }
+  ]
   ++ lib.optionals isLabServer [
     {
       type = "shadowsocks";
@@ -278,11 +289,20 @@ in
       tag = "egress";
       outbounds = [
         "lab"
+        "auto"
         "proxy"
         "direct"
       ];
       default = "lab";
       interrupt_exist_connections = true;
+    }
+    {
+      type = "socks";
+      tag = "auto";
+      server = "127.0.0.1";
+      server_port = autoPort;
+      # Keep the local hop off the physical interface selected for Internet traffic.
+      inet4_bind_address = "127.0.0.1";
     }
     {
       type = "shadowsocks";
@@ -304,7 +324,8 @@ in
 
   route = {
     default_domain_resolver = {
-      server = "doh-proxy";
+      # Bootstrap proxy nodes and downloads without depending on the auto inbound.
+      server = if isLabClient then "doh-cn" else "doh-proxy";
     };
 
     rule_set = [
@@ -313,21 +334,22 @@ in
         tag = "geosite-cn";
         format = "binary";
         url = "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs";
-        http_client.detour = internetOutbound;
+        # Rule sets are loaded before the local auto inbound starts.
+        http_client.detour = "proxy";
       }
       {
         type = "remote";
         tag = "geoip-cn";
         format = "binary";
         url = "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs";
-        http_client.detour = internetOutbound;
+        http_client.detour = "proxy";
       }
       {
         type = "remote";
         tag = "gfwlist";
         format = "binary";
         url = "https://raw.githubusercontent.com/KaringX/karing-ruleset/sing/ACL4SSR/ProxyGFWlist.srs";
-        http_client.detour = internetOutbound;
+        http_client.detour = "proxy";
       }
     ];
 
@@ -381,10 +403,20 @@ in
           outbound = "direct";
         }
         {
-          # Both domestic and international public TCP/UDP use this selector.
-          network = [
-            "tcp"
-            "udp"
+          # auto-in continues through the local rules instead of entering egress again.
+          type = "logical";
+          mode = "and";
+          rules = [
+            {
+              network = [
+                "tcp"
+                "udp"
+              ];
+            }
+            {
+              inbound = [ "auto-in" ];
+              invert = true;
+            }
           ];
           outbound = "egress";
         }
@@ -428,6 +460,12 @@ in
         {
           rule_set = [ "geoip-cn" ];
           outbound = "direct";
+        }
+      ]
+      ++ lib.optionals isLabClient [
+        {
+          inbound = [ "auto-in" ];
+          outbound = "proxy";
         }
       ];
 

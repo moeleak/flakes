@@ -171,8 +171,6 @@ in
   hardware.graphics.enable32Bit = true;
   hardware.nvidia-container-toolkit.enable = lib.mkForce true;
 
-  security.unprivilegedUsernsClone = true;
-
   nix.settings.trusted-users = [
     "root"
     "moeleak"

@@ -145,7 +145,7 @@ in
     btrfs.autoScrub = {
       enable = true;
       interval = "weekly";
-      fileSystems = [ "/mnt/data" ];
+      fileSystems = [ "/" ];
     };
 
     samba = {
@@ -166,6 +166,16 @@ in
       };
     };
   };
+
+  # Bolt databases get badly fragmented under btrfs CoW + compression on this HDD,
+  # making containerd miss dockerd's start timeout. NOCOW only applies to files
+  # created afterwards; existing ones must be copied once to pick it up.
+  systemd.tmpfiles.rules = [
+    "h /var/lib/docker/containerd/daemon/io.containerd.metadata.v1.bolt - - - - +C"
+    "h /var/lib/docker/buildkit - - - - +C"
+    "h /var/lib/docker/network/files - - - - +C"
+    "h /home/moeleak/.local/share/docker/containerd/daemon/io.containerd.metadata.v1.bolt - - - - +C"
+  ];
 
   hardware.graphics.enable32Bit = true;
   hardware.nvidia-container-toolkit.enable = lib.mkForce true;

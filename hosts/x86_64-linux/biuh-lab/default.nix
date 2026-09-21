@@ -149,8 +149,16 @@ in
     };
 
     samba = {
-      enable = false;
+      enable = true;
       settings = {
+        comfyui = {
+          path = "/home/moeleak/Projects/comfyui-workspace";
+          browseable = true;
+          writable = true;
+          guestOk = true;
+          "force user" = "moeleak";
+          "force group" = "users";
+        };
         resources = {
           path = "/samba/resources";
           browseable = true;

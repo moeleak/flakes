@@ -32,6 +32,10 @@ let
       isNormalUser = true;
       shell = pkgs.fish;
     };
+    ziyanxiao = {
+      isNormalUser = true;
+      shell = pkgs.fish;
+    };
   };
 
   neovim = import ../../../programs/neovim.nix { inherit pkgs inputs; };
@@ -124,6 +128,8 @@ in
       vmtouch
     ];
   };
+
+  programs.starship.enable = true;
 
   services = {
     vscode-server = {

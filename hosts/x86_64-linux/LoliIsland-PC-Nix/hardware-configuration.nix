@@ -44,7 +44,11 @@
   fileSystems."/mnt/NTFS_Shared" = {
     device = "/dev/disk/by-uuid/42EF3C171CBE35E6";
     fsType = "ntfs";
-    options = [ "nofail" ];
+    options = [
+      "nofail"
+      "uid=1000"
+      "gid=100"
+    ];
   };
 
   swapDevices = [ ];

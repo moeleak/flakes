@@ -18,18 +18,21 @@
     defaultFonts = {
       emoji = [ "Noto Color Emoji" ];
       monospace = [
+        "Noto Sans Mono"
         "Noto Sans Mono CJK SC"
         "Noto Sans Mono CJK TC"
         "Sarasa Mono SC"
         "DejaVu Sans Mono"
       ];
       sansSerif = [
+        "Noto Sans"
         "Noto Sans CJK SC"
         "Noto Sans CJK TC"
         "Source Han Sans SC"
         "DejaVu Sans"
       ];
       serif = [
+        "Noto Serif"
         "Noto Serif CJK SC"
         "Noto Serif CJK TC"
         "Source Han Serif SC"

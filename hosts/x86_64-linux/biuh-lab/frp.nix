@@ -50,11 +50,12 @@
             remotePort = 19132;
           }
           {
-            name = "proxy_20260808172818_52a061f3"; # Xianyu Gebulin SimpleVoiceChat
-            type = "udp";
-            localPort = 6001;
-            remotePort = 6001;
+            name = "proxy_20260926124929_42124625"; # SSH
+            type = "tcp";
+            localPort = 22;
+            remotePort = 33387;
           }
+
         ];
       };
     };

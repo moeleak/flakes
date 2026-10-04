@@ -192,6 +192,13 @@ in
     "h /home/moeleak/.local/share/docker/containerd/daemon/io.containerd.metadata.v1.bolt - - - - +C"
   ];
 
+  # containerd opens meta.db with NoFreelistSync, so bbolt walks every page through
+  # MADV_RANDOM 4K faults. On a cold HDD that is thousands of seeks and overruns
+  # dockerd's hardcoded 15s containerd start timeout; one sequential read avoids it.
+  systemd.services.docker.preStart = ''
+    cat /var/lib/docker/containerd/daemon/io.containerd.metadata.v1.bolt/meta.db > /dev/null 2>&1 || true
+  '';
+
   hardware.graphics.enable32Bit = true;
   hardware.nvidia-container-toolkit.enable = lib.mkForce true;
 

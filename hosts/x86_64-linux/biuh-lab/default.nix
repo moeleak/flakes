@@ -34,6 +34,7 @@ let
     };
     ziyanxiao = {
       isNormalUser = true;
+      extraGroups = [ "docker" ];
       shell = pkgs.fish;
     };
   };

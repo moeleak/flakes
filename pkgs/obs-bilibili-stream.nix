@@ -12,7 +12,7 @@
 
 stdenv.mkDerivation rec {
   pname = "obs-bilibili-stream";
-  version = "2.0.10";
+  version = "2.1.5";
 
   src =
     if srcOverride != null then
@@ -21,13 +21,9 @@ stdenv.mkDerivation rec {
       fetchFromGitHub {
         owner = "Zarosmm";
         repo = "obs-bilibili-stream";
-        rev = "2.0.10";
-        sha256 = "sha256-wyWZ7uXDCxXGpNWViafiBW5ApY6V5xm4INg84SaOc/U=";
+        rev = version;
+        hash = "sha256-cFIPbOHhafsH1YLV8wqnRZF+df3K/cEWP6h6KuZsqNc=";
       };
-
-  patches = [
-    ./obs-bilibili-stream-config-path.patch
-  ];
 
   nativeBuildInputs = [
     cmake

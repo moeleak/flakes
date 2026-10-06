@@ -54,6 +54,7 @@ in
     ../../../programs/tmux.nix
     ../../../programs/shell.nix
     ../../../hardware/NV.nix
+    ../../../hardware/NVContainer32.nix
     ../../../zone/locale.nix
   ];
 

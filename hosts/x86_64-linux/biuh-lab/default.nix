@@ -37,6 +37,10 @@ let
       extraGroups = [ "docker" ];
       shell = pkgs.fish;
     };
+    cvpr = {
+      isNormalUser = true;
+      shell = pkgs.fish;
+    };
   };
 
   neovim = import ../../../programs/neovim.nix { inherit pkgs inputs; };

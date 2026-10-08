@@ -40,6 +40,11 @@ let
     cvpr = {
       isNormalUser = true;
       shell = pkgs.fish;
+      openssh.authorizedKeys.keys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ43sOLJu4sxn0Fc1Rc+Z4eEBkcJborw6r/VpcpmSp5T alan@BlakeMacBook-Pro.local"
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExZDkXsgLa31xUKC/9ZCNQrIiNyrE2rSUhnlfY/7rfU codex-chl66-20260602"
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMz+2frjnWmRB86/XlWOaPLxSWnQRIAwf7x83v8xTaHw i@leak.moe"
+      ];
     };
   };
 

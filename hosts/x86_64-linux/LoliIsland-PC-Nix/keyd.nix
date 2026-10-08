@@ -1,5 +1,13 @@
 { config, pkgs, ... }:
 
+let
+  # Restore default modifier behavior while Counter-Strike 2 is focused
+  appConf = pkgs.writeText "keyd-app.conf" ''
+    [cs2]
+    control = layer(control)
+    leftmeta = layer(meta)
+  '';
+in
 {
   services.keyd = {
     enable = true;
@@ -72,6 +80,31 @@
           left = M-S-tab
         '';
       };
+    };
+  };
+
+  # keyd calls setgid("keyd") so that the IPC socket is accessible to the keyd group,
+  # which needs CAP_SETGID under the module's hardening
+  users.groups.keyd = { };
+  users.users.moeleak.extraGroups = [ "keyd" ];
+  systemd.services.keyd.serviceConfig.CapabilityBoundingSet = [ "CAP_SETGID" ];
+
+  home-manager.users.moeleak = {
+    xdg.configFile."keyd/app.conf".source = appConf;
+    systemd.user.services.keyd-application-mapper = {
+      Unit = {
+        Description = "keyd per-application remapping";
+        PartOf = [ "graphical-session.target" ];
+        After = [ "graphical-session.target" ];
+        # Store files keep a fixed mtime, so the mapper cannot detect changes itself
+        X-Restart-Triggers = [ "${appConf}" ];
+      };
+      Service = {
+        ExecStart = "${config.services.keyd.package}/bin/keyd-application-mapper";
+        Environment = "KEYD_BIN=${config.services.keyd.package}/bin/keyd";
+        Restart = "on-failure";
+      };
+      Install.WantedBy = [ "graphical-session.target" ];
     };
   };
 }

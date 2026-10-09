@@ -1,9 +1,14 @@
 { config, pkgs, ... }:
 
 let
-  # Restore default modifier behavior while Counter-Strike 2 is focused
+  # Restore default modifier behavior while Counter-Strike 2 or Minecraft is focused
   appConf = pkgs.writeText "keyd-app.conf" ''
     [cs2]
+    control = layer(control)
+    leftmeta = layer(meta)
+
+    # Minecraft's window class is its initial title, e.g. "Minecraft* 1.21.1" -> minecraft-1-21-1
+    [minecraft*]
     control = layer(control)
     leftmeta = layer(meta)
   '';

@@ -15,7 +15,6 @@ in
     ../../../desktop/sway.nix
     ../../../programs/sing-box
     ../../../programs/tmux.nix
-    ./builder.nix
     ./keyd.nix
   ];
 

@@ -11,10 +11,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    workmux = {
-      url = "github:raine/workmux";
-    };
-
     vscode-server = {
       url = "github:moeleak/nixos-vscode-server";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -67,7 +63,6 @@
       nix-darwin,
       sops-nix,
       vscode-server,
-      workmux,
       ...
     }@inputs:
     let

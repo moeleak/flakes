@@ -39,20 +39,7 @@ in
     (import ../programs/neovim.nix { inherit pkgs inputs; })
 
     pkgs._64gram
-    # macOS uses dyld to discover the external OpenPGP/GnuPG bridge.
-    (
-      if isDarwin then
-        pkgs.thunderbird.overrideAttrs (old: {
-          buildCommand = old.buildCommand + ''
-            if ! grep -q 'DYLD_.*LIBRARY_PATH' "$executablePath"; then
-              substituteInPlace "$executablePath" \
-                --replace-fail 'LD_LIBRARY_PATH' 'DYLD_FALLBACK_LIBRARY_PATH'
-            fi
-          '';
-        })
-      else
-        pkgs.thunderbird
-    )
+    pkgs.thunderbird
     pkgs.ffmpeg
     pkgs.android-tools
     pkgs.openssh
@@ -69,7 +56,7 @@ in
     pkgs.openspec
     pkgs.branchfs
     pkgs.comma
-    inputs.workmux.packages.${pkgs.stdenv.hostPlatform.system}.default
+    pkgs.workmux
 
     pkgs.cargo
     pkgs.rustc

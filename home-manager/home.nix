@@ -34,6 +34,8 @@ in
     pkgs.nerd-fonts.jetbrains-mono
     pkgs.nerd-fonts._0xproto
 
+    pkgs.claude-swap
+
     (import ../programs/neovim.nix { inherit pkgs inputs; })
 
     pkgs._64gram

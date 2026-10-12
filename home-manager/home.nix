@@ -107,6 +107,16 @@ in
     pkgs.gitmux
   ]
   ++ (lib.optionals isLinux [
+    pkgs.wineWow64Packages.stagingFull
+    pkgs.winetricks
+    pkgs.gst_all_1.gstreamer
+    pkgs.gst_all_1.gst-plugins-base
+    pkgs.gst_all_1.gst-plugins-good
+    pkgs.gst_all_1.gst-plugins-bad
+    pkgs.gst_all_1.gst-plugins-ugly
+    pkgs.gst_all_1.gst-libav
+    pkgs.bottles
+
     pkgs.wechat
     pkgs.libreoffice
     pkgs.audacious

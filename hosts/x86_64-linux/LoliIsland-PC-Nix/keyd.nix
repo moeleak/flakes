@@ -7,8 +7,9 @@ let
     control = layer(control)
     leftmeta = layer(meta)
 
-    # Minecraft's window class is its initial title, e.g. "Minecraft* 1.21.1" -> minecraft-1-21-1
-    [minecraft*]
+    # Minecraft on native Wayland uses app_id "com.mojang.minecraft" -> com-mojang-minecraft;
+    # under XWayland its class is the initial title, e.g. "Minecraft* 1.21.1" -> minecraft-1-21-1
+    [*minecraft*]
     control = layer(control)
     leftmeta = layer(meta)
   '';

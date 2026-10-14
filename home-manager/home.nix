@@ -96,7 +96,13 @@ in
     pkgs.gitmux
   ]
   ++ (lib.optionals isLinux [
-    pkgs.wineWow64Packages.stagingFull
+    # unstable is built from the moeleak/wine fork; the staging patches aren't checked against it
+    pkgs.wineWow64Packages.unstableFull
+    # gal xxx.exe: run a game in the reproducible GalGame prefix
+    (import ../programs/galgame.nix {
+      inherit pkgs;
+      wine = pkgs.wineWow64Packages.unstableFull;
+    })
     pkgs.winetricks
     pkgs.gst_all_1.gstreamer
     pkgs.gst_all_1.gst-plugins-base
@@ -162,6 +168,17 @@ in
     Name=Weixin
     Exec=env QT_IM_MODULE=fcitx XMODIFIERS=@im=fcitx wechat %U
     Icon=wechat
+  '';
+
+  # "Open with" entry for .exe files: run them with gal, in the GalGame prefix
+  xdg.dataFile."applications/wine-galgame.desktop".text = lib.optionalString isLinux ''
+    [Desktop Entry]
+    Type=Application
+    Name=GalGame（中文）
+    Exec=gal start /unix %f
+    MimeType=application/x-ms-dos-executable;application/x-msdownload;
+    Icon=wine
+    NoDisplay=true
   '';
 
   programs.plasma = lib.mkIf isLinux {

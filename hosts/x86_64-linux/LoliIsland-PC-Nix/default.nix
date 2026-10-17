@@ -32,6 +32,13 @@
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
+  zramSwap = {
+    enable = true;
+    algorithm = "zstd"; # Compression algorithm (e.g., zstd, lz4)
+    memoryPercent = 100; # Percentage of total RAM to use for zram
+    priority = 10; # Swap priority (set higher than regular swap/swapfile)
+  };
+
   networking.hostName = "LoliIsland-PC-Nix"; # Define your hostname.
 
   users.users.moeleak = {

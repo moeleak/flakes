@@ -7,6 +7,7 @@
   imports = [
     ./hardware-configuration.nix
     ./keyd.nix
+    ./strata.nix
     ../../../system/boot.nix
     ../../../system/pcscd.nix
     ../../../system/sops.nix

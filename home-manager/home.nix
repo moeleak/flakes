@@ -34,7 +34,11 @@ in
     pkgs.nerd-fonts.jetbrains-mono
     pkgs.nerd-fonts._0xproto
 
+    pkgs.python3
+
     pkgs.claude-swap
+    pkgs.pi-coding-agent
+    pkgs.wemeet
 
     (import ../programs/neovim.nix { inherit pkgs inputs; })
 

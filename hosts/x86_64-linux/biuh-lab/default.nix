@@ -55,6 +55,7 @@ in
   imports = [
     ./hardware-configuration.nix
     ./frp.nix
+    ./strata.nix
     ../../../system/boot.nix
     ../../../system/nix.nix
     ../../../system/sops.nix

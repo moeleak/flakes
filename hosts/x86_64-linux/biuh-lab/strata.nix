@@ -30,7 +30,8 @@ in
   # A user unit can raise its memlock limit only up to its user manager's hard limit (8 MiB by default), and the engine
   # mlocks its PLE table (~27 GB of the model file) so the page cache cannot drop it.  As a drop-in, not a whole
   # user@1000.service; the template's X-RestartIfChanged=false is repeated so a switch never restarts the (lingering)
-  # manager and everything under it.  A running manager keeps its old limit until it restarts:
+  # manager and everything under it.  A running manager keeps the limit it started with until it restarts (reboot),
+  # and each switch re-execs it, which puts that limit back; after a switch, raise it by hand and restart strata:
   #   sudo prlimit --pid "$(systemctl show user@1000 -p MainPID --value)" --memlock=unlimited:unlimited
   systemd.units."user@1000.service" = {
     overrideStrategy = "asDropin";

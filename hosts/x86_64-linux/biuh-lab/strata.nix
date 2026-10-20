@@ -1,13 +1,21 @@
-# Strata (github.com/Niko1221/Strata): Qwen3.8-Flash-Next (Unsloth UD-Q4_K_XL) served on http://127.0.0.1:8080, started by
+# Strata (github.com/Niko1221/Strata): Qwen3.8-Flash-Next served on http://127.0.0.1:8080, started by
 # hand with `systemctl --user start strata` (it holds ~110 GB of RAM and most of the 2080 Ti while it runs).
 # Strata itself is installed outside Nix in ~/Projects/Strata by its own setup, run in its flake's dev shell
 # (.nix/devshell.sh: the repo's flake with this host's nixpkgs, since github.com does not answer here):
 #   .nix/run-setup-q4.sh
+# The model is huihui-ai's abliterated v2 of Unsloth's UD-Q4_K_XL (huihui-ai/Huihui-Qwen3.8-Flash-Next-abliterated-v2-GGUF,
+# unsloth-UD-Q4_K_XL-V2; the same tensors and types as Unsloth's file, which setup installs above).  Setup refuses its
+# SHA256s, so its files are in Strata-data/models/huihui-v2-UD-Q4_K_XL and its pack was made the way setup makes one:
+#   tools/iq_pack.py --gguf <shard 1> --out Strata-data/packs/huihui-v2-ud-q4_k_xl --compat-bf16
+# Same speed and MTP draft acceptance as Unsloth's (2026-10-19); strata-unsloth-ud-q4_k_xl.json still runs that one.
+# Pictures: the config's "vision" section (mmproj-Qwen3.8-Flash-Next-BF16.gguf in Strata-data/models; strata-vision
+# compiled by setup's build_engine, Strata-data/build-vision.py) with "elastic" and "vram_elastic": the encoder starts
+# with the first picture (~1.5 GB taken from the expert cache) and stops after 120 s without one, so text keeps its speed.
 # The .nix/strata-dev profile is a GC root that keeps the engine's CUDA libraries alive.
 #
 # The card is shared with ComfyUI (the comfyui-cu130 container): ComfyUI unloads its models after 5 minutes idle
 # (comfyui-idle-free below), Strata asks it to before loading (ExecStartPre here, "before_load" in
-# strata-unsloth-ud-q4_k_xl.json for later loads) and unloads itself after 30 minutes idle ("idle_unload_s").
+# strata-huihui-v2-ud-q4_k_xl.json for later loads) and unloads itself after 30 minutes idle ("idle_unload_s").
 { pkgs, lib, ... }:
 
 let
@@ -45,21 +53,21 @@ in
   home-manager.users.moeleak = {
     systemd.user.services.strata = {
       Unit = {
-        Description = "Strata local LLM server (Qwen3.8-Flash-Next, Unsloth UD-Q4_K_XL)";
-        ConditionPathExists = "${strataDir}/strata-unsloth-ud-q4_k_xl.json";
+        Description = "Strata local LLM server (Qwen3.8-Flash-Next, huihui-ai abliterated v2 UD-Q4_K_XL)";
+        ConditionPathExists = "${strataDir}/strata-huihui-v2-ud-q4_k_xl.json";
       };
       Service = {
         WorkingDirectory = strataDir;
         # a ComfyUI that is down must not stop Strata from starting ("-")
         ExecStartPre = "-${comfyFree}";
-        # run-unsloth-ud-q4_k_xl.sh
+        # as run-unsloth-ud-q4_k_xl.sh, with the huihui config
         ExecStart = lib.escapeShellArgs [
           "${strataDir}/.venv/bin/python"
           "${strataDir}/serve/server.py"
           "--engine"
           "strata"
           "--config"
-          "${strataDir}/strata-unsloth-ud-q4_k_xl.json"
+          "${strataDir}/strata-huihui-v2-ud-q4_k_xl.json"
           "--port"
           "8080"
         ];

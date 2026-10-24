@@ -30,6 +30,8 @@
     ../../../hardware/NVFanControl.nix
   ];
 
+  fileSystems."/".options = [ "compress-force=zstd" ];
+
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
   zramSwap = {

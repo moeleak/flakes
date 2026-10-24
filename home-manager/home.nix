@@ -38,7 +38,6 @@ in
 
     pkgs.claude-swap
     pkgs.pi-coding-agent
-    pkgs.wemeet
 
     (import ../programs/neovim.nix { inherit pkgs inputs; })
 
@@ -107,6 +106,7 @@ in
       inherit pkgs;
       wine = pkgs.wineWow64Packages.unstableFull;
     })
+    pkgs.wemeet
     pkgs.winetricks
     pkgs.gst_all_1.gstreamer
     pkgs.gst_all_1.gst-plugins-base

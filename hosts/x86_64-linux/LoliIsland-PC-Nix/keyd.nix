@@ -1,8 +1,12 @@
 { config, pkgs, ... }:
 
 let
-  # Restore default modifier behavior while Counter-Strike 2 or Minecraft is focused
+  # Application-specific overrides for the Cmd layer and game modifiers
   appConf = pkgs.writeText "keyd-app.conf" ''
+    [kitty]
+    # Keep Meta-T distinct from Ctrl-T so terminal applications still receive Ctrl-T
+    meta_mac.t = C-S-t
+
     [cs2]
     control = layer(control)
     leftmeta = layer(meta)

@@ -217,7 +217,8 @@ in
     themeFile = "Nord";
     keybindings =
       lib.optionalAttrs (host == "LoliIsland-PC-Nix") {
-        "ctrl+t" = "new_tab";
+        # keyd maps Meta-T to Ctrl-Shift-T only in kitty; leave Ctrl-T to the terminal
+        "ctrl+shift+t" = "new_tab";
         "ctrl+shift+[" = "previous_tab";
         "ctrl+shift+]" = "next_tab";
       }

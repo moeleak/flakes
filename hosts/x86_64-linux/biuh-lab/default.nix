@@ -152,7 +152,7 @@ in
 
     openssh = {
       enable = true;
-      settings.PasswordAuthentication = false;
+      settings.PermitRootLogin = "prohibit-password";
     };
 
     ollama = {

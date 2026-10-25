@@ -4,6 +4,9 @@ let
   # Application-specific overrides for the Cmd layer and game modifiers
   appConf = pkgs.writeText "keyd-app.conf" ''
     [kitty]
+    # Use kitty's regular clipboard for both copy and paste
+    meta_mac.c = C-S-c
+    meta_mac.v = C-S-v
     # Keep Meta-T distinct from Ctrl-T so terminal applications still receive Ctrl-T
     meta_mac.t = C-S-t
 

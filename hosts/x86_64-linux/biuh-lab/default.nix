@@ -139,6 +139,7 @@ in
       tree
       qemu
       vmtouch
+      pi-coding-agent
     ];
   };
 

@@ -19,54 +19,20 @@ let
     _secret = config.sops.secrets.${name}.path;
   };
 
-  moeleak = {
-    type = "vless";
-    flow = "xtls-rprx-vision";
-    packet_encoding = "";
-    server_port = 11451;
-    uuid = secret "sing-box-moeleak-uuid";
-
-    tls = {
-      enabled = true;
-      insecure = false;
-      server_name = "www.samsung.com";
-
-      reality = {
-        enabled = true;
-        public_key = secret "sing-box-moeleak-public-key";
-        short_id = secret "sing-box-moeleak-short-id";
-      };
-
-      utls = {
-        enabled = true;
-        fingerprint = "chrome";
-      };
-    };
-  };
-  guanran = {
-    type = "vless";
-    tag = "guanran-lax";
-    server_port = 27253;
+  mkHysteria = node: {
+    type = "hysteria2";
+    tag = "hysteria-${node}";
+    server = secret "sing-box-hysteria-${node}-server";
+    server_port = 8443;
+    # Bootstrap the node without resolving it through the proxy itself.
     domain_resolver = "doh-cn";
-    uuid = secret "sing-box-guanran-uuid";
-    flow = "xtls-rprx-vision";
+    password = secret "sing-box-hysteria-${node}-password";
     tls = {
       enabled = true;
-      server_name = secret "sing-box-guanran-lax0-server";
-      utls = {
-        enabled = true;
-        fingerprint = "chrome";
-      };
+      server_name = "${node}.leak.moe";
+      certificate_public_key_sha256 = [ (secret "sing-box-hysteria-${node}-pin") ];
     };
   };
-
-  mk =
-    base: tag: serverName:
-    base
-    // {
-      inherit tag;
-      server = secret serverName;
-    };
 
 in
 {
@@ -257,13 +223,11 @@ in
       type = "selector";
       tag = "proxy";
       outbounds = [
-        "guanran-lax"
-        "guanran-tyo"
-        "moeleak-lax"
-        "moeleak-as3"
+        "hysteria-lax"
+        "hysteria-as3"
         "direct"
       ];
-      default = "moeleak-lax";
+      default = "hysteria-lax";
     }
     {
       type = "direct";
@@ -278,10 +242,8 @@ in
       tag = "block";
     }
 
-    (mk guanran "guanran-lax" "sing-box-guanran-lax0-server")
-    (mk guanran "guanran-tyo" "sing-box-guanran-tyo0-server")
-    (mk moeleak "moeleak-lax" "sing-box-moeleak-lax-server")
-    (mk moeleak "moeleak-as3" "sing-box-moeleak-as3-server")
+    (mkHysteria "lax")
+    (mkHysteria "as3")
   ]
   ++ lib.optionals isLabClient [
     {

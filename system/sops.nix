@@ -32,28 +32,22 @@ in
           lib.optionals (useSshKey && userHome != null) [ "${userHome}/.ssh/id_ed25519" ]
         );
         secrets = {
-          "sing-box-guanran-uuid" = {
+          "sing-box-hysteria-lax-server" = {
             sopsFile = ../secrets/sing-box.yaml;
           };
-          "sing-box-guanran-lax0-server" = {
+          "sing-box-hysteria-as3-server" = {
             sopsFile = ../secrets/sing-box.yaml;
           };
-          "sing-box-guanran-tyo0-server" = {
+          "sing-box-hysteria-lax-password" = {
             sopsFile = ../secrets/sing-box.yaml;
           };
-          "sing-box-moeleak-lax-server" = {
+          "sing-box-hysteria-as3-password" = {
             sopsFile = ../secrets/sing-box.yaml;
           };
-          "sing-box-moeleak-as3-server" = {
+          "sing-box-hysteria-lax-pin" = {
             sopsFile = ../secrets/sing-box.yaml;
           };
-          "sing-box-moeleak-uuid" = {
-            sopsFile = ../secrets/sing-box.yaml;
-          };
-          "sing-box-moeleak-public-key" = {
-            sopsFile = ../secrets/sing-box.yaml;
-          };
-          "sing-box-moeleak-short-id" = {
+          "sing-box-hysteria-as3-pin" = {
             sopsFile = ../secrets/sing-box.yaml;
           };
         };

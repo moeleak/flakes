@@ -103,6 +103,27 @@
         obs-bilibili-stream = import ./overlays/obs-bilibili-stream.nix;
       };
 
+      checks = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-darwin" ] (
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        {
+          pi-rescue = pkgs.runCommand "pi-rescue-tests" {
+            nativeBuildInputs = [
+              pkgs.nodejs
+              pkgs.pi-coding-agent
+            ];
+            PI_RESCUE_TEST_PACKAGE = "${pkgs.pi-coding-agent}/lib/node_modules/pi-monorepo";
+          } ''
+            export HOME="$TMPDIR/home"
+            mkdir -p "$HOME"
+            node --test ${./programs/pi/extensions/rescue}/tests/*.test.ts
+            touch "$out"
+          '';
+        }
+      );
+
       nixosConfigurations = {
         "LoliIsland-PC-Nix" = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";

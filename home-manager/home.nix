@@ -14,6 +14,7 @@ let
 in
 {
   imports = [
+    ./pi.nix
     inputs.zen-browser.homeModules.beta
     inputs.plasma-manager.homeModules.plasma-manager
   ];
@@ -37,7 +38,6 @@ in
     pkgs.python3
 
     pkgs.claude-swap
-    pkgs.pi-coding-agent
 
     (import ../programs/neovim.nix { inherit pkgs inputs; })
 

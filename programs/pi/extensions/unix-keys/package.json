@@ -1,0 +1,8 @@
+{
+  "name": "pi-unix-keys",
+  "private": true,
+  "type": "module",
+  "pi": {
+    "extensions": ["./index.ts"]
+  }
+}

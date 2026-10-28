@@ -7,6 +7,36 @@ $ nix shell nixpkgs#age-plugin-yubikey
 $ age-plugin-yubikey --identity --slot 1 > $HOME/.config/sops/age/keys.txt
 ```
 
+# Pi extensions
+
+`home-manager/pi.nix` enables Home Manager's `programs.pi-coding-agent` module
+and deploys local extensions with `home.file`. Their sources live in
+`programs/pi/extensions/`; models, credentials, settings and conversation
+history remain in the user's writable `~/.pi/agent` directory.
+
+The extensions deployed by `home-manager/pi.nix` are:
+
+- `/rescue` preserves the complete conversation in a new session file, replaces
+  the active context with local excerpts, and switches to the recovery copy. It
+  does not call a model to prepare the excerpts. Press Enter to submit the
+  continuation request it places in the editor. Excerpts can omit details; the
+  complete history is retained for reference. This restores context without
+  fixing an inference backend fault.
+- `token-speed` shows a live tokens-per-second status line. `/speed [toggle|on|off|status]`
+  controls it and saves the choice to `settings.json`.
+- `unix-keys` binds Ctrl-P/Ctrl-N to readline-style history and list navigation.
+
+After rebuilding the host or Home Manager configuration, new Pi processes load
+the extensions automatically. In an already running Pi, use `/reload` once.
+Run `/rescue` or `/rescue <additional instructions>`; `/rescue help` shows usage.
+
+To run all 14 tests, including a real Pi process, against the packages pinned
+by this flake (use `aarch64-darwin` on the Mac):
+
+```bash
+nix build .#checks.x86_64-linux.pi-rescue
+```
+
 # Proxy
 
 The `proxy` selector uses Hysteria 2 on UDP 8443: `hysteria-lax` is the

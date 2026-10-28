@@ -1,0 +1,13 @@
+{
+  "name": "pi-rescue",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Recover Pi conversations using a full-history fork and local context excerpts",
+  "pi": {
+    "extensions": ["./index.ts"]
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.ts"
+  }
+}

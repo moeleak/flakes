@@ -170,7 +170,7 @@ in
     [Desktop Entry]
     Type=Application
     Name=Weixin
-    Exec=env QT_IM_MODULE=fcitx XMODIFIERS=@im=fcitx wechat %U
+    Exec=env XMODIFIERS=@im=fcitx wechat %U
     Icon=wechat
   '';
 

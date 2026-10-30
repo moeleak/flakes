@@ -388,12 +388,12 @@ in
           domain_suffix = [
             "nixos.org"
             "updates.cdn-apple.com"
-            "learn.hibiuh.edu.cn"
           ];
           outbound = "proxy";
         }
         {
           domain_suffix = [
+            "learn.hibiuh.edu.cn"
             "leak.moe"
             "ts.cherr.cc"
             "office365.com"

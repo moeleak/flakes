@@ -51,3 +51,38 @@ Node addresses, separate passwords, and TLS public-key pins are encrypted in
 `/var/lib/sing-box/hysteria/`. Clients authenticate the pinned key; replacing a
 server key requires updating that node's encrypted `sing-box-hysteria-*-pin`.
 The servers retain their existing VLESS listeners for other clients.
+
+# Claude Code providers
+
+Claude Code speaks the Anthropic API while the Pi providers are
+OpenAI-compatible, so providers are managed through
+[cc-switch-cli](https://github.com/SaladDay/cc-switch-cli): it stores the
+provider profiles, runs a loopback proxy that adapts OpenAI chat completions to
+the Anthropic API, and writes the resulting `ANTHROPIC_*` settings into
+`~/.claude/settings.json`.
+
+Switch providers with the TUI (`cc-switch`) or `cc-switch use <id>`. The seeded
+ids mirror the Pi providers:
+
+| id | upstream |
+| --- | --- |
+| `claude-official` | Anthropic subscription (built in) |
+| `xin-deepseek` | xin / `deepseek-v4.1-flash` (default) |
+| `xin-qwen` | xin / `qwen3.8-27b` |
+| `lab` | lab llama.cpp |
+| `local` | local llama.cpp |
+
+`claude-with <id> [args]` uses a provider for one run without switching,
+`claude-direct [args]` runs the Anthropic subscription. Do not export
+`ANTHROPIC_*` globally — environment variables take precedence over
+cc-switch's configuration.
+
+`home-manager/claude-provider.nix` seeds the providers on the first activation
+and enables the proxy at `127.0.0.1:4000`; later edits through the TUI are left
+alone. The xin host and key live in `secrets/claude-provider.yaml` and are
+decrypted to a user-owned environment file, so no credential reaches the Nix
+store. Edit it with:
+
+```bash
+nix shell nixpkgs#sops nixpkgs#age-plugin-yubikey -c sops secrets/claude-provider.yaml
+```

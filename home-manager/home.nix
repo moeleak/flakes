@@ -15,6 +15,8 @@ in
 {
   imports = [
     ./pi.nix
+    ./claude-provider.nix
+    inputs.sops-nix.homeManagerModules.sops
     inputs.zen-browser.homeModules.beta
     inputs.plasma-manager.homeModules.plasma-manager
   ];

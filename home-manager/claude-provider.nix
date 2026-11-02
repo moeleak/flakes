@@ -116,9 +116,46 @@ in
     };
   };
 
+  # Home Manager installs/loads the plist in setupLaunchAgents. The upstream
+  # hook runs too early on the first switch and does not wait for decryption.
+  home.activation.sops-nix = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin (
+    lib.mkForce (
+      lib.hm.dag.entryAfter [ "setupLaunchAgents" ] ''
+        if [[ -v DRY_RUN ]]; then
+          echo "Would start sops-nix and wait for secret decryption"
+        else
+          # Reuse an in-progress RunAtLoad job rather than interrupting a
+          # YubiKey operation; otherwise start it and wait for its exit status.
+          /bin/launchctl kickstart -p "gui/$UID/org.nix-community.home.sops-nix" > /dev/null
+          while true; do
+            read -r sopsPid sopsExitCode <<< "$(/bin/launchctl list | /usr/bin/awk \
+              '$3 == "org.nix-community.home.sops-nix" { print $1, $2 }')"
+            if [[ -z "$sopsPid" ]]; then
+              errorEcho "sops-nix LaunchAgent is not loaded"
+              exit 1
+            fi
+            if [[ "$sopsPid" == "-" ]]; then
+              if [[ "$sopsExitCode" != "0" ]]; then
+                errorEcho "sops-nix decryption failed (exit $sopsExitCode); see ${home}/Library/Logs/SopsNix/stderr"
+                exit 1
+              fi
+              break
+            fi
+            sleep 1
+          done
+          unset sopsPid sopsExitCode
+        fi
+      ''
+    )
+  );
+
   home.activation.claude-providers = lib.hm.dag.entryAfter [ "sops-nix" ] ''
-    if ${lib.escapeShellArg ccs} provider list > /dev/null 2>&1; then
+    if [[ -v DRY_RUN ]]; then
+      echo "Would configure Claude providers after secret decryption"
+    elif ${lib.escapeShellArg ccs} provider list > /dev/null 2>&1; then
       set -eu
+      # This setting controls both CLI messages and the interactive UI.
+      ${ccs} settings language en
       . ${lib.escapeShellArg envFile}
       ${lib.concatMapStringsSep "\n      " addProvider providers}
 

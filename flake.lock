@@ -203,11 +203,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1793713927,
-        "narHash": "sha256-s8j2fo3hGRf1djGaJRuz+N6UarMGCcnV6lXzdXCRbNo=",
+        "lastModified": 1793721730,
+        "narHash": "sha256-NUckqwrT1wMowrJWIBse+rtCOsUAo6DtMbljZdZ4H74=",
         "owner": "moeleak",
         "repo": "nixpkgs",
-        "rev": "9d9e05565af93b0226ba30f8551010b199188038",
+        "rev": "87c7c1a082fcc1bc2086285e5da04b03b8096490",
         "type": "github"
       },
       "original": {

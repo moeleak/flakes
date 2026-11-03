@@ -45,6 +45,7 @@ in
 
     pkgs._64gram
     pkgs.thunderbird
+    pkgs.pizarra-gpui
     pkgs.ffmpeg
     pkgs.android-tools
     pkgs.openssh

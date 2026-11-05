@@ -43,6 +43,7 @@ in
 
     (import ../programs/neovim.nix { inherit pkgs inputs; })
 
+    pkgs.zellij
     pkgs._64gram
     pkgs.thunderbird
     pkgs.pizarra-gpui

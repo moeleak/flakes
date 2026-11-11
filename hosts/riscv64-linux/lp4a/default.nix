@@ -4,19 +4,20 @@
   pkgs,
   ...
 }:
-let
-  configuredNeovim = import ../../../programs/neovim.nix { inherit pkgs inputs; };
-in
 {
 
   imports = [
     ./user-group.nix
-    ../../../system/sops.nix
-    ../../../desktop/sway.nix
-    ../../../programs/sing-box
-    ../../../programs/tmux.nix
     ./keyd.nix
   ];
+
+  # This board keeps its own nix settings and a bare Home Manager profile.
+  my = {
+    desktop.sway = { };
+    home = null;
+    programs.fish = null;
+    system.nix = null;
+  };
 
   time.timeZone = "Asia/Shanghai";
   services.timesyncd.enable = true;
@@ -68,7 +69,6 @@ in
     vulkan-tools
     mesa-demos
     e2fsprogs
-    configuredNeovim
     fastfetch
     mtr
     iperf3
@@ -91,8 +91,6 @@ in
     tmux
     docker-compose
   ];
-
-  environment.variables.EDITOR = "nvim";
 
   home-manager = {
     useGlobalPkgs = true;

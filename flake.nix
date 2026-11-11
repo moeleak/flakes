@@ -57,15 +57,22 @@
     {
       self,
       nixpkgs,
-      home-manager,
-      lanzaboote,
       nixos-licheepi4a,
       nix-darwin,
-      sops-nix,
-      vscode-server,
       ...
     }@inputs:
     let
+      inherit (nixpkgs) lib;
+      specialArgs = { inherit inputs; };
+
+      # Every directory in hosts/<system>/ is a host, named after the directory.
+      # `mkHost` receives the host name and its directory.
+      hostsIn =
+        dir: mkHost:
+        lib.mapAttrs (name: _: mkHost name (dir + "/${name}")) (
+          lib.filterAttrs (_: type: type == "directory") (builtins.readDir dir)
+        );
+
       lp4aSystem = "x86_64-linux";
       lp4aNixpkgs = import nixos-licheepi4a.inputs.nixpkgs {
         system = lp4aSystem;
@@ -92,8 +99,7 @@
         }
         (nixos-licheepi4a + "/modules/licheepi4a.nix")
         (nixos-licheepi4a + "/modules/sd-image/sd-image-lp4a.nix")
-        sops-nix.nixosModules.sops
-        home-manager.nixosModules.default
+        ./modules/nixos
         ./hosts/riscv64-linux/lp4a
       ];
     in
@@ -118,97 +124,32 @@
           } ''
             export HOME="$TMPDIR/home"
             mkdir -p "$HOME"
-            node --test ${./programs/pi/extensions/rescue}/tests/*.test.ts
+            node --test ${./modules/common/programs/pi/extensions/rescue}/tests/*.test.ts
             touch "$out"
           '';
         }
       );
 
-      nixosConfigurations = {
-        "LoliIsland-PC-Nix" = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = { inherit inputs; };
-          modules = [
-            ./hosts/x86_64-linux/LoliIsland-PC-Nix
-            ./system/nix.nix
-            ./system/virtualization/docker.nix
-            ./system/virtualization/winboat.nix
-            ./system/network.nix
-            ./system/bluetooth.nix
-            sops-nix.nixosModules.sops
-            home-manager.nixosModules.default
-            lanzaboote.nixosModules.lanzaboote
-            (
-              { pkgs, lib, ... }:
-              {
-                environment.systemPackages = [ pkgs.sbctl ];
-                boot.loader.systemd-boot.enable = lib.mkForce false;
-                boot.lanzaboote = {
-                  enable = true;
-                  pkiBundle = "/var/lib/sbctl";
-                };
-              }
-            )
-            (
-              { ... }:
-              {
-                nixpkgs.overlays = [
-                  self.overlays.direnv
-                  self.overlays.obs-bilibili-stream
-                ];
-              }
-            )
-          ];
+      nixosConfigurations =
+        hostsIn ./hosts/x86_64-linux (
+          name: host:
+          lib.nixosSystem {
+            system = "x86_64-linux";
+            inherit specialArgs;
+            modules = [
+              ./modules/nixos
+              host
+              { networking.hostName = name; }
+            ];
+          }
+        )
+        // {
+          lp4a = nixos-licheepi4a.inputs.nixpkgs.lib.nixosSystem {
+            system = lp4aSystem;
+            specialArgs = lp4aSpecialArgs;
+            modules = lp4aModules;
+          };
         };
-
-        "LoliIsland-Laptop-Nix" = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = { inherit inputs; };
-          modules = [
-            ./hosts/x86_64-linux/LoliIsland-Laptop-Nix
-            ./system/nix.nix
-            ./system/virtualization/docker.nix
-            ./system/network.nix
-            ./system/bluetooth.nix
-            sops-nix.nixosModules.sops
-            home-manager.nixosModules.default
-            (
-              { ... }:
-              {
-                nixpkgs.overlays = [
-                  self.overlays.direnv
-                  self.overlays.obs-bilibili-stream
-                ];
-              }
-            )
-          ];
-        };
-
-        biuh-lab = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = { inherit inputs; };
-          modules = [
-            ./hosts/x86_64-linux/biuh-lab
-            sops-nix.nixosModules.sops
-            home-manager.nixosModules.default
-            vscode-server.nixosModules.default
-            (
-              { ... }:
-              {
-                nixpkgs.overlays = [
-                  self.overlays.direnv
-                ];
-              }
-            )
-          ];
-        };
-
-        lp4a = nixos-licheepi4a.inputs.nixpkgs.lib.nixosSystem {
-          system = lp4aSystem;
-          specialArgs = lp4aSpecialArgs;
-          modules = lp4aModules;
-        };
-      };
 
       colmena = {
         meta = {
@@ -226,50 +167,17 @@
           };
       };
 
-      homeConfigurations =
-        let
-          username = "moeleak";
-          system = "x86_64-linux";
-          pkgs = import nixpkgs {
-            inherit system;
-            config.allowUnfree = true;
-            overlays = [
-              self.overlays.direnv
-              self.overlays.obs-bilibili-stream
-            ];
-          };
-        in
-        {
-          ${username} = home-manager.lib.homeManagerConfiguration {
-            inherit pkgs;
-            modules = [ ./home-manager/home.nix ];
-            extraSpecialArgs = {
-              inherit inputs;
-              osConfig = { };
-              stdenv.hostPlatform.system = system;
-            };
-          };
-        };
-
-      darwinConfigurations = {
-        "LoliIsland-Mac" = nix-darwin.lib.darwinSystem {
+      darwinConfigurations = hostsIn ./hosts/aarch64-darwin (
+        name: host:
+        nix-darwin.lib.darwinSystem {
           system = "aarch64-darwin";
-          specialArgs = { inherit inputs; };
+          inherit specialArgs;
           modules = [
-            ./hosts/aarch64-darwin/LoliIsland-Mac
-            sops-nix.darwinModules.sops
-            home-manager.darwinModules.default
-            (
-              { ... }:
-              {
-                nixpkgs.overlays = [
-                  self.overlays.direnv
-                  self.overlays.obs-bilibili-stream
-                ];
-              }
-            )
+            ./modules/darwin
+            host
+            { networking.hostName = name; }
           ];
-        };
-      };
+        }
+      );
     };
 }

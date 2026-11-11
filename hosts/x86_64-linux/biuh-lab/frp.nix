@@ -2,8 +2,8 @@
 
 {
   sops = {
-    secrets."frp-token".sopsFile = ../../../secrets/frp.yaml;
-    secrets."frp-user".sopsFile = ../../../secrets/frp.yaml;
+    secrets."frp-token" = { };
+    secrets."frp-user" = { };
     templates."frp-primary.env" = {
       content = ''
         FRP_TOKEN=${config.sops.placeholder."frp-token"}

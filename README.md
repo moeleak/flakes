@@ -1,6 +1,114 @@
-# Yubikey
+# Layout
 
-Before rebuilding you need to export your age key to a specific folder.
+Every module is always loaded and is switched by an option under `my.*`, so a
+host file only states what the machine is.
+
+- `modules/common/` works on NixOS and macOS, `modules/nixos/` on NixOS only.
+  Every `.nix` file in them is picked up automatically. Each module declares
+  one option, e.g. `my.services.samba`, that is either `null` (off) or an
+  attribute set (on, possibly with settings).
+- `my.variant` (`minimal`, `desktop` or `server`) decides which modules are on
+  by default. A host overrides any of them with `= { };` or `= null;`.
+- `hosts/<system>/<name>/` is picked up automatically too; the directory name
+  becomes the hostname. It holds the hardware and anything unique to the
+  machine.
+- There is no separate Home Manager tree. A module puts its user-level
+  settings under `home-manager.users.${config.my.user}` next to its system
+  ones; `my.home` switches the user environment as a whole.
+  `modules/common/packages/` holds the package lists (`cli`, `dev`,
+  `desktop`), `modules/common/programs/` one file per configured program.
+- `pkgs/` holds packages built here: `pkgs/neovim/` (nixvim, one file per
+  concern) and `pkgs/gal.nix` (the galgame launcher).
+
+A new desktop is a directory with `hardware-configuration.nix` and:
+
+```nix
+{
+  imports = [ ./hardware-configuration.nix ];
+  my = {
+    variant = "desktop";
+    desktop.sway = { };
+  };
+  system.stateVersion = "25.05";
+}
+```
+
+# Adding a feature
+
+Nothing has to be registered in `flake.nix`; put the file in the right place.
+
+For a system feature, create a file in `modules/nixos/` (NixOS only) or
+`modules/common/` (NixOS and macOS):
+
+```nix
+# modules/nixos/services/foo.nix
+{ config, lib, pkgs, ... }:
+let
+  cfg = config.my.services.foo;
+in
+{
+  options.my.services.foo = lib.mkOption {
+    type = lib.types.nullOr (lib.types.submodule { });
+    default = null;
+  };
+
+  config = lib.mkIf (cfg != null) {
+    services.foo.enable = true;
+  };
+}
+```
+
+and switch it on in the hosts that want it with `my.services.foo = { };`.
+
+- To have it on by default for a kind of machine, set `default` to
+  `if config.my.variant == "desktop" then { } else null` (or
+  `!= "minimal"` for desktops and servers).
+- To give it settings, add `options.port = lib.mkOption { ... };` inside
+  `submodule { }`, read it as `cfg.port`, and set
+  `my.services.foo.port = 8080;` in the host.
+  `modules/nixos/hardware/nvidia.nix` is an example.
+- If it needs a secret, add the value to a file in `secrets/` and declare it
+  as described under [Secrets](#secrets).
+
+Everything else:
+
+| What | Where |
+| --- | --- |
+| Configuration only one machine will ever use | its `hosts/<system>/<name>/` directory, like `biuh-lab/frp.nix` |
+| A package for the user | the matching list in `modules/common/packages/` |
+| User-level settings of a program (dotfiles, Home Manager options) | the program's own module, under `home-manager.users.${config.my.user}`; `modules/common/programs/git.nix` is an example |
+| A program packaged here | `pkgs/`, used through `pkgs.callPackage`, like `pkgs/gal.nix` |
+| A new machine | a new `hosts/<system>/<name>/default.nix`, as shown above |
+
+Two things to watch for:
+
+- `git add` new files first. A flake does not see untracked files, and the
+  error is a missing file or an option that does not exist.
+- `modules/common/` may only set options that exist on both systems. A
+  NixOS-only option such as `boot.*` or `systemd.*` breaks the Mac even while
+  the feature is off.
+
+Check with `nixos-rebuild build --flake .#<host>` before switching.
+
+# Secrets
+
+Secrets live in `secrets/*.yaml`, encrypted to the two recipients in
+`.sops.yaml`. A module declares the ones it needs by name and the file that
+contains the key is found automatically:
+
+```nix
+sops.secrets."frp-token" = { };
+```
+
+Edit or create a file with:
+
+```bash
+nix shell nixpkgs#sops nixpkgs#age-plugin-yubikey -c sops secrets/<file>.yaml
+```
+
+Hosts decrypt with the main user's `~/.ssh/id_ed25519`. Hosts that set
+`my.sops.yubikey = true` (the Mac and the laptop) instead need the YubiKey
+plugged in during a rebuild, with its identity exported once:
 
 ```
 $ nix shell nixpkgs#age-plugin-yubikey
@@ -9,12 +117,12 @@ $ age-plugin-yubikey --identity --slot 1 > $HOME/.config/sops/age/keys.txt
 
 # Pi extensions
 
-`home-manager/pi.nix` enables Home Manager's `programs.pi-coding-agent` module
+`modules/common/programs/pi` enables Home Manager's `programs.pi-coding-agent` module
 and deploys local extensions with `home.file`. Their sources live in
-`programs/pi/extensions/`; models, credentials, settings and conversation
+`modules/common/programs/pi/extensions/`; models, credentials, settings and conversation
 history remain in the user's writable `~/.pi/agent` directory.
 
-The extensions deployed by `home-manager/pi.nix` are:
+The extensions deployed from that directory are:
 
 - `/rescue` preserves the complete conversation in a new session file, replaces
   the active context with local excerpts, and switches to the recovery copy. It
@@ -77,7 +185,7 @@ ids mirror the Pi providers:
 `ANTHROPIC_*` globally — environment variables take precedence over
 cc-switch's configuration.
 
-`home-manager/claude-provider.nix` seeds the providers on the first activation
+`modules/common/programs/claude` seeds the providers on the first activation
 and enables the proxy at `127.0.0.1:4000`; later edits through the TUI are left
 alone. The xin host and key live in `secrets/claude-provider.yaml` and are
 decrypted to a user-owned environment file, so no credential reaches the Nix

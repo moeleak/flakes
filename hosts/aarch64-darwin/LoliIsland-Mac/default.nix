@@ -1,36 +1,15 @@
+{ pkgs, ... }:
 {
-  inputs,
-  pkgs,
-  ...
-}:
-{
-  imports = [
-    ../../../system/nix.nix
-    ../../../system/sops.nix
-    ../../../programs/shell.nix
-    ../../../programs/sing-box
-    ../../../programs/tmux.nix
-  ];
-
-  networking.hostName = "LoliIsland-Mac";
+  my = {
+    variant = "desktop";
+    user = "lolimaster";
+    sops.yubikey = true;
+    services.sing-box.lab = "client";
+  };
 
   users.users.lolimaster = {
     home = "/Users/lolimaster";
     shell = pkgs.fish;
-  };
-
-  programs.fish.enable = true;
-
-  home-manager = {
-    useGlobalPkgs = true;
-    useUserPackages = true;
-
-    users.lolimaster = import ../../../home-manager/home.nix;
-    extraSpecialArgs = {
-      inherit inputs pkgs;
-      stdenv.hostPlatform.system = "aarch64-darwin";
-    };
-
   };
 
   system.stateVersion = 6;

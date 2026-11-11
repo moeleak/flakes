@@ -1,0 +1,435 @@
+{
+  config,
+  lib,
+  pkgs,
+  isLabServer,
+  isLabClient,
+}:
+
+let
+  internetOutbound = if isLabClient then "egress" else "proxy";
+  labAddress = "10.90.0.3";
+  labPort = 8388;
+  labDirectPort = 8389;
+  autoPort = 1081;
+
+  secret = name: {
+    _secret = config.sops.secrets.${name}.path;
+  };
+
+  mkHysteria = node: {
+    type = "hysteria2";
+    tag = "hysteria-${node}";
+    server = secret "sing-box-hysteria-${node}-server";
+    server_port = 8443;
+    # Bootstrap the node without resolving it through the proxy itself.
+    domain_resolver = "doh-cn";
+    password = secret "sing-box-hysteria-${node}-password";
+    tls = {
+      enabled = true;
+      server_name = "${node}.leak.moe";
+      certificate_public_key_sha256 = [ (secret "sing-box-hysteria-${node}-pin") ];
+    };
+  };
+
+in
+{
+  log = {
+    level = "info";
+  };
+
+  experimental = {
+    clash_api = {
+      external_controller = "localhost:9090";
+      external_ui = "ui";
+      external_ui_download_url = "https://github.com/MetaCubeX/Yacd-meta/archive/gh-pages.zip";
+      # Downloads run before the local auto inbound starts.
+      external_ui_download_detour = "proxy";
+    };
+    cache_file = {
+      enabled = true;
+    };
+  };
+
+  dns = {
+    servers = [
+      {
+        type = "local";
+        tag = "dns-local";
+      }
+      {
+        type = "tailscale";
+        tag = "dns-tailscale";
+        endpoint = "tailscale-endpoint";
+        accept_search_domain = true;
+      }
+      {
+        type = "fakeip";
+        tag = "fakeip";
+        inet4_range = "198.18.0.0/15";
+        # inet6_range = "fc00::/18";
+      }
+      {
+        type = "tcp";
+        server = "8.8.8.8";
+        server_port = 53;
+        tag = "dns-google";
+      }
+      {
+        type = "https";
+        tag = "doh-cn";
+        server = "1.12.12.12";
+        server_port = 443;
+        path = "/dns-query";
+        headers = {
+          Host = "doh.pub";
+        };
+        tls = {
+          enabled = true;
+          server_name = "doh.pub";
+        };
+      }
+      {
+        type = "https";
+        tag = "doh-proxy";
+        server = "1.1.1.1";
+        server_port = 443;
+        path = "/dns-query";
+        headers = {
+          Host = "cloudflare-dns.com";
+        };
+        tls = {
+          enabled = true;
+          server_name = "cloudflare-dns.com";
+        };
+        detour = internetOutbound;
+      }
+
+    ];
+
+    rules = [
+      {
+        preferred_by = "dns-tailscale";
+        action = "route";
+        server = "dns-tailscale";
+      }
+    ]
+    ++ lib.optionals isLabServer [
+      {
+        inbound = [ "lab-in" ];
+        rule_set = [ "geosite-cn" ];
+        server = "doh-cn";
+      }
+      {
+        # Remote clients must never receive this server's private FakeIP mapping.
+        inbound = [ "lab-in" ];
+        server = "doh-proxy";
+      }
+    ]
+    ++ [
+      {
+        query_type = [
+          "A"
+          "AAAA"
+        ];
+        server = "fakeip";
+      }
+      {
+        rule_set = [ "gfwlist" ];
+        server = "doh-proxy";
+      }
+      {
+        rule_set = [ "geosite-cn" ];
+        server = if isLabClient then "doh-proxy" else "doh-cn";
+      }
+    ];
+
+    final = "doh-proxy";
+    strategy = "ipv4_only";
+  };
+
+  endpoints = [
+    {
+      type = "tailscale";
+      tag = "tailscale-endpoint";
+      auth_key = "";
+      hostname = config.networking.hostName;
+      domain_resolver = {
+        # Keep Tailscale available when the Lab relay is unavailable.
+        server = if isLabClient then "doh-cn" else "doh-proxy";
+      };
+    }
+  ];
+  inbounds = [
+    (
+      {
+        type = "tun";
+        tag = "tun-in";
+        address = [
+          "172.19.0.1/30"
+          # "fdfe:dcba:9876::1/126"
+        ];
+        mtu = 9000;
+        auto_route = true;
+        strict_route = true;
+        stack = "system";
+      }
+      // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+        auto_redirect = true;
+      }
+    )
+    {
+      type = "direct";
+      tag = "dns-in";
+      listen = "127.0.0.1";
+      listen_port = 53;
+      network = "udp";
+    }
+  ]
+  ++ lib.optionals isLabClient [
+    {
+      # Re-enter the local routing rules when egress selects auto.
+      type = "socks";
+      tag = "auto-in";
+      listen = "127.0.0.1";
+      listen_port = autoPort;
+    }
+  ]
+  ++ lib.optionals isLabServer [
+    {
+      type = "shadowsocks";
+      tag = "lab-in";
+      listen = labAddress;
+      listen_port = labPort;
+      method = "2022-blake3-aes-128-gcm";
+      password = secret "sing-box-lab-password";
+      multiplex.enabled = true;
+    }
+    {
+      type = "shadowsocks";
+      tag = "lab-direct-in";
+      listen = labAddress;
+      listen_port = labDirectPort;
+      method = "2022-blake3-aes-128-gcm";
+      password = secret "sing-box-lab-password";
+      multiplex.enabled = true;
+    }
+  ];
+
+  outbounds = [
+    {
+      type = "selector";
+      tag = "proxy";
+      outbounds = [
+        "hysteria-lax"
+        "hysteria-as3"
+        "direct"
+      ];
+      default = "hysteria-lax";
+    }
+    {
+      type = "direct";
+      tag = "direct";
+      domain_resolver = {
+        server = "doh-cn";
+        strategy = "ipv4_only";
+      };
+    }
+    {
+      type = "block";
+      tag = "block";
+    }
+
+    (mkHysteria "lax")
+    (mkHysteria "as3")
+  ]
+  ++ lib.optionals isLabClient [
+    {
+      type = "selector";
+      tag = "egress";
+      outbounds = [
+        "lab"
+        "auto"
+        "proxy"
+        "direct"
+      ];
+      default = "lab";
+      interrupt_exist_connections = true;
+    }
+    {
+      type = "socks";
+      tag = "auto";
+      server = "127.0.0.1";
+      server_port = autoPort;
+      # Keep the local hop off the physical interface selected for Internet traffic.
+      inet4_bind_address = "127.0.0.1";
+    }
+    {
+      type = "shadowsocks";
+      tag = "lab";
+      server = labAddress;
+      server_port = labPort;
+      method = "2022-blake3-aes-128-gcm";
+      password = secret "sing-box-lab-password";
+      # auto_detect_interface dials this IP on the physical network, outside TUN.
+      connect_timeout = "5s";
+      multiplex = {
+        enabled = true;
+        protocol = "smux";
+        max_connections = 4;
+        min_streams = 4;
+      };
+    }
+  ];
+
+  route = {
+    default_domain_resolver = {
+      # Bootstrap proxy nodes and downloads without depending on the auto inbound.
+      server = if isLabClient then "doh-cn" else "doh-proxy";
+    };
+
+    rule_set = [
+      {
+        type = "remote";
+        tag = "geosite-cn";
+        format = "binary";
+        url = "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs";
+        # Rule sets are loaded before the local auto inbound starts.
+        http_client.detour = "proxy";
+      }
+      {
+        type = "remote";
+        tag = "geoip-cn";
+        format = "binary";
+        url = "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs";
+        http_client.detour = "proxy";
+      }
+      {
+        type = "remote";
+        tag = "gfwlist";
+        format = "binary";
+        url = "https://raw.githubusercontent.com/KaringX/karing-ruleset/sing/ACL4SSR/ProxyGFWlist.srs";
+        http_client.detour = "proxy";
+      }
+    ];
+
+    rules =
+      lib.optionals isLabServer [
+        {
+          # Route even DNS directly before sniffing, DNS hijacking, or proxy rules.
+          inbound = [ "lab-direct-in" ];
+          action = "route";
+          outbound = "direct";
+        }
+      ]
+      ++ [
+        {
+          action = "sniff";
+        }
+        {
+          protocol = "dns";
+          action = "hijack-dns";
+        }
+        {
+          network = "icmp";
+          domain_regex = [ ".+" ];
+          action = "resolve";
+        }
+        {
+          preferred_by = [ "tailscale-endpoint" ];
+          action = "route";
+          outbound = "tailscale-endpoint";
+        }
+        {
+          network = "icmp";
+          action = "route";
+          outbound = "direct";
+        }
+      ]
+      ++ lib.optionals isLabClient [
+        {
+          ip_is_private = true;
+          outbound = "direct";
+        }
+        {
+          domain_suffix = [
+            "leak.moe"
+            "ts.cherr.cc"
+          ];
+          outbound = "direct";
+        }
+        {
+          process_name = [ "cs2.exe" ];
+          outbound = "direct";
+        }
+        {
+          # auto-in continues through the local rules instead of entering egress again.
+          type = "logical";
+          mode = "and";
+          rules = [
+            {
+              network = [
+                "tcp"
+                "udp"
+              ];
+            }
+            {
+              inbound = [ "auto-in" ];
+              invert = true;
+            }
+          ];
+          outbound = "egress";
+        }
+      ]
+      ++ [
+        {
+          domain_suffix = [
+            "nixos.org"
+            "updates.cdn-apple.com"
+          ];
+          outbound = "proxy";
+        }
+        {
+          domain_suffix = [
+            "learn.hibiuh.edu.cn"
+            "leak.moe"
+            "ts.cherr.cc"
+            "office365.com"
+          ];
+          outbound = "direct";
+        }
+        {
+          rule_set = [ "gfwlist" ];
+          outbound = "proxy";
+        }
+        {
+          ip_is_private = true;
+          outbound = "direct";
+        }
+        {
+          ip_cidr = [
+            "103.97.201.87"
+            "131.143.240.18"
+          ];
+          outbound = "direct";
+        }
+        {
+          rule_set = [ "geosite-cn" ];
+          outbound = "direct";
+        }
+        {
+          rule_set = [ "geoip-cn" ];
+          outbound = "direct";
+        }
+      ]
+      ++ lib.optionals isLabClient [
+        {
+          inbound = [ "auto-in" ];
+          outbound = "proxy";
+        }
+      ];
+
+    final = internetOutbound;
+    auto_detect_interface = true;
+  };
+}

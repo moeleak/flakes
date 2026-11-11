@@ -103,6 +103,13 @@ in
   systemd.services.keyd.serviceConfig.CapabilityBoundingSet = [ "CAP_SETGID" ];
 
   home-manager.users.moeleak = {
+    # keyd maps Meta-T to Ctrl-Shift-T only in kitty; leave Ctrl-T to the terminal
+    programs.kitty.keybindings = {
+      "ctrl+shift+t" = "new_tab";
+      "ctrl+shift+[" = "previous_tab";
+      "ctrl+shift+]" = "next_tab";
+    };
+
     xdg.configFile."keyd/app.conf".source = appConf;
     systemd.user.services.keyd-application-mapper = {
       Unit = {

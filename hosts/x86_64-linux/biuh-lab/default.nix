@@ -49,28 +49,22 @@ let
     };
   };
 
-  neovim = import ../../../programs/neovim.nix { inherit pkgs inputs; };
 in
 {
   imports = [
     ./hardware-configuration.nix
     ./frp.nix
     ./strata.nix
-    ../../../system/boot.nix
-    ../../../system/nix.nix
-    ../../../system/sops.nix
-    ../../../system/virtualization/docker.nix
-    ../../../system/network.nix
-    ../../../programs/sing-box
-    ../../../programs/tmux.nix
-    ../../../programs/shell.nix
-    ../../../hardware/NV.nix
-    ../../../hardware/NVContainer32.nix
-    ../../../zone/locale.nix
+    inputs.vscode-server.nixosModules.default
   ];
 
+  my = {
+    variant = "server";
+    hardware.nvidia.container32 = true;
+    services.sing-box.lab = "server";
+  };
+
   networking = {
-    hostName = "biuh-lab";
     interfaces.eno1np0.ipv4.addresses = [
       {
         address = "10.90.0.3";
@@ -105,21 +99,8 @@ in
 
   users.users = managedUsers;
 
-  home-manager = {
-    useGlobalPkgs = true;
-    useUserPackages = true;
-
-    users.moeleak = import ../../../home-manager/home.nix;
-    extraSpecialArgs = {
-      inherit inputs pkgs;
-      stdenv.hostPlatform.system = "x86_64-linux";
-    };
-  };
-
   environment = {
-    variables.EDITOR = "nvim";
     systemPackages = with pkgs; [
-      neovim
       gcc
       gnumake
       colmena

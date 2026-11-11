@@ -1,5 +1,6 @@
 {
   pkgs,
+  lib,
   inputs,
   ...
 }:
@@ -8,31 +9,33 @@
     ./hardware-configuration.nix
     ./keyd.nix
     ./strata.nix
-    ../../../system/boot.nix
-    ../../../system/pcscd.nix
-    ../../../system/sops.nix
-    ../../../desktop/plasma.nix
-    ../../../system/samba.nix
-    ../../../programs/sing-box
-    ../../../programs/sunshine.nix
-    ../../../programs/ollama.nix
-    ../../../programs/openssh.nix
-    ../../../programs/gnupg.nix
-    ../../../programs/rime.nix
-    ../../../programs/shell.nix
-    ../../../programs/steam.nix
-    ../../../programs/tmux.nix
-    ../../../programs/xkb.nix
-    ../../../programs/llama.nix
-    ../../../zone/fonts.nix
-    ../../../zone/locale.nix
-    ../../../hardware/NV.nix
-    ../../../hardware/NVFanControl.nix
+    inputs.lanzaboote.nixosModules.lanzaboote
   ];
+
+  my = {
+    variant = "desktop";
+    desktop.plasma = { };
+    hardware.nvidia.fanControl = true;
+    programs.llama = { };
+    programs.obs = { };
+    services = {
+      ollama = { };
+      samba = { };
+      sing-box.lab = "client";
+      sunshine = { };
+      winboat = { };
+    };
+  };
 
   fileSystems."/".options = [ "compress-force=zstd" ];
 
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  # Secure Boot
+  environment.systemPackages = [ pkgs.sbctl ];
+  boot.loader.systemd-boot.enable = lib.mkForce false;
+  boot.lanzaboote = {
+    enable = true;
+    pkiBundle = "/var/lib/sbctl";
+  };
 
   zramSwap = {
     enable = true;
@@ -40,35 +43,6 @@
     memoryPercent = 100; # Percentage of total RAM to use for zram
     priority = 10; # Swap priority (set higher than regular swap/swapfile)
   };
-
-  networking.hostName = "LoliIsland-PC-Nix"; # Define your hostname.
-
-  users.users.moeleak = {
-    shell = pkgs.fish;
-    isNormalUser = true;
-    description = "moeleak";
-    home = "/home/moeleak";
-    extraGroups = [
-      "networkmanager"
-      "wheel"
-    ];
-  };
-
-  # make home-manager as a module of nixos
-  # so that home-manager configuration will be deployed automatically when executing `nixos-rebuild switch`
-  home-manager = {
-    useGlobalPkgs = true;
-    useUserPackages = true;
-
-    users.moeleak = import ../../../home-manager/home.nix;
-    extraSpecialArgs = {
-      inherit inputs pkgs;
-      stdenv.hostPlatform.system = "x86_64-linux";
-    };
-
-  };
-
-  programs.nix-ld.enable = true;
 
   system.stateVersion = "25.05"; # Did you read the comment?
 }

@@ -7,6 +7,12 @@
       KEYBOARD_KEY_d8=f24
       KEYBOARD_KEY_e058=f24
   '';
+  home-manager.users.moeleak.programs.kitty.keybindings = {
+    "alt+t" = "new_tab";
+    "alt+shift+[" = "previous_tab";
+    "alt+shift+]" = "next_tab";
+  };
+
   services.keyd = {
     enable = true;
     keyboards = {

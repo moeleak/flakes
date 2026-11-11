@@ -53,7 +53,6 @@ in
 {
   imports = [
     ./hardware-configuration.nix
-    ./frp.nix
     ./strata.nix
     inputs.vscode-server.nixosModules.default
   ];
@@ -62,6 +61,35 @@ in
     variant = "server";
     hardware.nvidia.container32 = true;
     services.sing-box.lab = "server";
+    services.frp = {
+      serverAddr = "47.107.83.180";
+      proxies = [
+        {
+          name = "proxy_20260730152817_1487ea8d"; # Velocity
+          type = "tcp";
+          localPort = 25500;
+          remotePort = 25500;
+        }
+        {
+          name = "proxy_20260730152749_959bdd81"; # Simple Voice Chat
+          type = "udp";
+          localPort = 11110;
+          remotePort = 11110;
+        }
+        {
+          name = "proxy_20260730152850_e569d851"; # Geyser
+          type = "udp";
+          localPort = 19132;
+          remotePort = 19132;
+        }
+        {
+          name = "proxy_20260926124929_42124625"; # SSH
+          type = "tcp";
+          localPort = 22;
+          remotePort = 33387;
+        }
+      ];
+    };
   };
 
   networking = {

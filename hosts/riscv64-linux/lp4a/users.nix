@@ -2,8 +2,6 @@ let
   publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMz+2frjnWmRB86/XlWOaPLxSWnQRIAwf7x83v8xTaHw i@leak.moe";
 in
 {
-  networking.hostName = "lp4a";
-
   users.users."moeleak" = {
     isNormalUser = true;
     home = "/home/moeleak";

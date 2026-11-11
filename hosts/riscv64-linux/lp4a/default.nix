@@ -1,168 +1,58 @@
+# LicheePi 4A (RISC-V), cross-compiled on x86_64 and deployed with colmena.
+# It is built from its own nixpkgs (the nixos-licheepi4a input), so it keeps
+# its own nix settings and only a bare Home Manager profile.
+{ inputs, nixpkgs, ... }:
 {
-  inputs,
-  nixpkgs,
-  pkgs,
-  ...
-}:
-{
-
   imports = [
-    ./user-group.nix
+    (inputs.nixos-licheepi4a + "/modules/licheepi4a.nix")
+    (inputs.nixos-licheepi4a + "/modules/sd-image/sd-image-lp4a.nix")
     ./keyd.nix
+    ./packages.nix
+    ./services.nix
+    ./users.nix
   ];
 
-  # This board keeps its own nix settings and a bare Home Manager profile.
+  networking.hostName = "lp4a";
+  nixpkgs.crossSystem.system = "riscv64-linux";
+
   my = {
     desktop.sway = { };
+    system.network = { };
+
     home = null;
     programs.fish = null;
     system.nix = null;
   };
 
+  nix = {
+    settings = {
+      auto-optimise-store = true;
+      builders-use-substitutes = true;
+      experimental-features = [
+        "nix-command"
+        "flakes"
+        "pipe-operators"
+      ];
+    };
+    # `nix shell nixpkgs#...` and <nixpkgs> use the nixpkgs this system is built from
+    registry.nixpkgs.flake = nixpkgs;
+    nixPath = [ "/etc/nix/inputs" ];
+  };
+  environment.etc."nix/inputs/nixpkgs".source = "${nixpkgs}";
+
   time.timeZone = "Asia/Shanghai";
   services.timesyncd.enable = true;
   i18n.defaultLocale = "en_US.UTF-8";
 
-  nix.settings = {
-    auto-optimise-store = true;
-    builders-use-substitutes = true;
-    experimental-features = [
-      "nix-command"
-      "flakes"
-      "pipe-operators"
-    ];
+  networking = {
+    wireless.enable = true;
+    interfaces.end0.useDHCP = true;
   };
-
-  nix.registry.nixpkgs.flake = nixpkgs;
-  environment.etc."nix/inputs/nixpkgs".source = "${nixpkgs}";
-  nix.nixPath = [ "/etc/nix/inputs" ];
-
-  environment.systemPackages = with pkgs; [
-    firefox
-    btop
-    (prismlauncher.override {
-      additionalPrograms = [ ffmpeg ];
-      jdks = [
-        openjdk25_headless
-      ];
-    })
-    cloudflared
-    stress
-    yazi
-    keyd
-    bear
-    nixd
-    waypipe
-    vkpeak
-    gnumake
-    cmake
-    clang-tools
-    cargo
-    rustc
-    rust-analyzer
-    qemu
-    ninja
-    pkg-config
-    gdb
-    bc
-    ncurses.dev
-    vulkan-tools
-    mesa-demos
-    e2fsprogs
-    fastfetch
-    mtr
-    iperf3
-    nmap
-    ldns
-    socat
-    tcpdump
-    zip
-    xz
-    unzip
-    p7zip
-    zstd
-    gnutar
-    file
-    which
-    tree
-    ripgrep
-    gnused
-    gawk
-    docker-compose
-  ];
 
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
     backupFileExtension = "hm-backup";
-
-    users.moeleak = {
-      home = {
-        stateVersion = "25.11";
-      };
-
-    };
-  };
-
-  programs.starship.enable = true;
-
-  programs.direnv.enable = true;
-
-  services.minecraft-server = {
-    enable = true;
-    package = pkgs.papermc;
-    eula = true;
-    declarative = true;
-    serverProperties = {
-      server-port = 25565;
-      difficulty = 3;
-      gamemode = 0;
-      max-players = 20;
-      motd = "Minecraft Server on RISC-V";
-      white-list = false;
-      allow-cheats = false;
-    };
-    jvmOpts = "-Xms4096M -Xmx4096M";
-  };
-
-  services.cloudflared = {
-    enable = true;
-    tunnels = {
-      "7f917902-fe32-4b56-b8e4-81532b5208e2" = {
-        credentialsFile = "/home/moeleak/.cloudflared/7f917902-fe32-4b56-b8e4-81532b5208e2.json";
-        ingress = {
-          "lp4a.leak.moe" = "http://localhost:8000";
-        };
-        default = "http_status:404";
-      };
-    };
-  };
-
-  services.openssh = {
-    enable = true;
-    ports = [ 2333 ];
-    settings = {
-      X11Forwarding = true;
-      PermitRootLogin = "prohibit-password";
-      PasswordAuthentication = true;
-    };
-  };
-
-  services.glances = {
-    enable = true;
-    port = 8000;
-  };
-
-  virtualisation.docker.enable = true;
-
-  networking.networkmanager.enable = true;
-
-  networking = {
-    wireless.enable = true;
-    firewall.enable = false;
-
-    interfaces.end0 = {
-      useDHCP = true;
-    };
+    users.moeleak.home.stateVersion = "25.11";
   };
 }

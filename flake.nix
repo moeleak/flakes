@@ -92,13 +92,6 @@
         pkgsKernel = nixos-licheepi4a.packages.${lp4aSystem}.pkgsKernelCross;
       };
       lp4aModules = [
-        {
-          nixpkgs.crossSystem = {
-            system = "riscv64-linux";
-          };
-        }
-        (nixos-licheepi4a + "/modules/licheepi4a.nix")
-        (nixos-licheepi4a + "/modules/sd-image/sd-image-lp4a.nix")
         ./modules/nixos
         ./hosts/riscv64-linux/lp4a
       ];

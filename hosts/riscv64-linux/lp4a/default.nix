@@ -88,7 +88,6 @@
     ripgrep
     gnused
     gawk
-    tmux
     docker-compose
   ];
 

@@ -14,9 +14,10 @@ in
   };
 
   config = lib.mkIf (cfg != null) {
-    programs.tmux = {
-      enable = true;
-    };
+    programs.tmux.enable = true;
+
+    # git status in the status line (status-right below)
+    environment.systemPackages = [ pkgs.gitmux ];
 
     environment.etc."tmux.conf" = {
       text = ''

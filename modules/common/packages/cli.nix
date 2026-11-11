@@ -51,9 +51,7 @@ in
         pkgs.eza
         pkgs.bat
         pkgs.fzf
-        pkgs.tmux
         pkgs.btop
-        pkgs.gitmux
 
         # lets ssh sessions from kitty find their terminal
         pkgs.kitty.terminfo

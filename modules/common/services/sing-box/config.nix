@@ -345,6 +345,11 @@ in
           action = "route";
           outbound = "direct";
         }
+        {
+          # Reach the learning portal through the campus relay before egress routing.
+          domain_suffix = [ "learn.hibiuh.edu.cn" ];
+          outbound = if isLabClient then "lab" else "direct";
+        }
       ]
       ++ lib.optionals isLabClient [
         {
@@ -391,7 +396,6 @@ in
         }
         {
           domain_suffix = [
-            "learn.hibiuh.edu.cn"
             "leak.moe"
             "ts.cherr.cc"
             "office365.com"

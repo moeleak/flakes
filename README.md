@@ -225,37 +225,84 @@ The VPS and Lab are deployed with
 [colmena](https://github.com/nix-community/colmena) (0.5, in nixpkgs and
 installed on Lab). The flake's `colmenaHive` has a node for each host in
 `deployTargets` (`flake.nix`), built from the same modules as its
-`nixosConfigurations` entry (the same system, down to the derivation) and
-reached as root over SSH; `my.programs.ssh` pins their host keys on every
-machine here. colmena reads the flake through git, so `git add` new files
-first. From the repository:
+`nixosConfigurations` entry (the same system, down to the derivation, so
+colmena and `nixos-rebuild --flake .#<host>` can be mixed) and reached as root
+over SSH:
+
+| Node | Target | Tag |
+| --- | --- | --- |
+| `LoliIsland-VPS-AS3` | `root@as3.leak.moe:2333` | `vps` |
+| `LoliIsland-VPS-lax` | `root@lax.leak.moe:2333` | `vps` |
+| `biuh-lab` | `root@100.64.44.88` (Tailscale) | `lab` |
+| `lp4a` | `root@100.76.208.19:2333` (Tailscale) | |
+
+Run it from the repository; without `colmena` installed, use
+`nix run nixpkgs#colmena -- <arguments>`:
 
 ```bash
-colmena apply --on @vps                         # both, switch
-colmena apply --on LoliIsland-VPS-lax           # one
-colmena apply --on @vps boot                    # activate at the next boot
-colmena build --on @vps                         # build only
+colmena apply --on @vps                         # both VPS: build, copy, switch
+colmena apply --on LoliIsland-VPS-lax           # one host
+colmena apply --on @vps,@lab                    # the VPS and Lab
+colmena apply --on @vps dry-activate            # what would restart, nothing changes
+colmena apply --on @vps boot                    # switch at the next boot
+colmena apply-local --sudo                      # on Lab, deploy Lab itself
 colmena exec --on @vps -- systemctl status sing-box
-colmena apply --on @lab                         # Lab, over Tailscale
-colmena apply --on @lab dry-activate            # what Lab would restart
-colmena apply-local --sudo                      # on Lab itself
+colmena eval -E '{ nodes, ... }: nodes.LoliIsland-VPS-lax.config.networking.hostName'
 ```
 
-Without `colmena` installed, `nix run nixpkgs#colmena -- apply --on @vps`.
+### Choosing hosts
 
-By default colmena evaluates and builds on the machine running it, then copies
-the closure; the VPS fetch whatever cache.nixos.org has themselves, so only
-the paths built here cross the network. That suits Lab and the PC (the VPS
-are too small to evaluate their systems). `--build-on-target` instead copies
-the derivations and builds on the VPS, which is quicker from a machine close
-to them or one of another architecture, such as the Mac.
+`--on` takes node names (comma-separated), tags (`@vps`, `@lab`) and globs
+(`'LoliIsland-VPS-*'`). Without `--on`, colmena deploys every node, including
+`lp4a`, which is usually offline: always pass `--on`.
 
-Lab (`biuh-lab`, tag `lab`) always builds its own system, being the
-strongest machine here, and allows local deployment: on Lab,
-`colmena apply-local --sudo` asks for the sudo password and switches it. Root
-logs in to Lab with the key in its `/root/.ssh/authorized_keys`.
+### Goals
 
-`lp4a` is in the hive too, without a tag (`colmena apply --on lp4a`).
+The word after `apply` says how far to go; `switch` is the default.
+
+| Goal | Does |
+| --- | --- |
+| `switch` | build, copy, activate now and at boot |
+| `boot` | activate at the next boot (for risky changes such as networking) |
+| `test` | activate now, but not at boot: a reboot undoes it |
+| `dry-activate` | show what activation would restart, change nothing |
+| `build` / `push` | only build / build and copy, without activating |
+
+`--reboot` reboots the hosts after activating.
+
+### Where it builds
+
+By default colmena evaluates and builds on the machine running it, then
+copies the closure; the hosts fetch whatever cache.nixos.org has themselves,
+so only the paths built locally cross the network. That suits Lab and the PC
+(the VPS are too small to evaluate their systems). `--build-on-target`
+instead copies the derivations and builds on the host, which is quicker from a
+machine close to the VPS, and needed from one that cannot build x86_64-linux,
+such as the Mac.
+
+Lab always builds its own system (`buildOnTarget`), being the strongest
+machine here, and allows local deployment: on Lab, `colmena apply-local
+--sudo` asks for the sudo password and switches it. Root logs in to Lab with
+the key in its `/root/.ssh/authorized_keys`.
+
+### Things to know
+
+- colmena reads the flake through git: `git add` new files first, or they are
+  missing (as with `nixos-rebuild --flake`). Uncommitted changes are used,
+  with a warning.
+- SSH logs in as root with your key (the YubiKey or `i@leak.moe`), and
+  `my.programs.ssh` pins the hosts' keys on every machine here.
+- To undo a deployment, pick the previous generation in GRUB (the VPS have a
+  VNC console in the provider's panel). Deploy changes that could cut a host
+  off, such as its network, with `boot`, and reboot it yourself.
+
+### Adding a host
+
+1. Create `hosts/x86_64-linux/<name>/` (for a VPS, like the existing ones:
+   `my.system.vps = { };` and its `hardware-configuration.nix`).
+2. Add it to `deployTargets` in `flake.nix`, with its `targetHost`, port and
+   tags, and pin its host key in `modules/common/programs/ssh.nix`.
+3. `git add` it, then `colmena apply --on <name>`.
 
 `/etc/nixos` on the VPS is empty; the old channel configuration is archived in
 `/root/nixos-legacy-20261117.tar.gz`.

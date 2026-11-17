@@ -183,9 +183,12 @@ profile contains every node that lists the user (TUN, mainland China direct,
 1.13 or later): tailnet addresses, subnet routes and `*.ts.net` names go
 through Tailscale, whose own connections use the proxy. It carries no auth
 key; on the first start sing-box logs a login URL, and the user signs in to
-whichever tailnet they like. `&lab=true` makes the Lab relay (`lab` in
-`lib/proxy.nix`) the default for `proxy`; it only answers on Lab's campus
-network, so the nodes stay selectable. The two combine, and each user has a
+whichever tailnet they like. `&lab=true` makes the profile work like the
+flake's Lab clients: all traffic but private addresses goes to an `egress`
+selector whose default `lab` hands it to the Lab relay (`lab` in
+`lib/proxy.nix`), which splits it itself, with FakeIP so Lab gets the domain
+names. `egress` can also be `split` (the profile's own rules), `proxy` or
+`direct`; the relay only answers on Lab's campus network. The two combine, and each user has a
 profile for every combination. Opened in a browser, the URL shows a page with
 a QR code (and a link) that the sing-box apps import as a remote profile, and
 a switch for each option; the apps themselves, curl and `&qr-code=false` get

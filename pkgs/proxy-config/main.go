@@ -43,7 +43,7 @@ type option struct {
 }
 
 var switches = []option{
-	{"lab", "Lab", "Lab 中转", "经 Lab 转发，只在 Lab 所在的校园网里能用"},
+	{"lab", "Lab", "Lab 中转", "所有流量交给 Lab 转发和分流，只在 Lab 所在的校园网里能用"},
 	{"tailscale", "Tailscale", "Tailscale", "同时加入 tailnet，首次启动时用日志里的链接登录"},
 }
 

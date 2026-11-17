@@ -45,18 +45,7 @@ in
       environment.systemPackages = [ pkgs.sing-box ];
 
       sops.secrets = lib.genAttrs (
-        lib.concatMap
-          (node: [
-            "sing-box-hysteria-${node}-server"
-            "sing-box-hysteria-${node}-password"
-            "sing-box-hysteria-${node}-pin"
-            "sing-box-hysteria-${node}-obfs-password"
-          ])
-          [
-            "lax"
-            "as3"
-          ]
-        ++ lib.optional (cfg.lab != null) "sing-box-lab-password"
+        [ "sing-box-vless-uuid" ] ++ lib.optional (cfg.lab != null) "sing-box-lab-password"
       ) (_: { });
     }
 

@@ -1,23 +1,27 @@
-# The Hysteria 2 proxy nodes and who may use them. Read by the sing-box client
+# The proxy nodes and who may use them. Read by the sing-box client
 # (modules/common/services/sing-box) and by the nodes themselves
-# (modules/nixos/services/proxy-node). Node <name> is reachable as <name>.leak.moe.
+# (modules/nixos/services/proxy-node). Node <name> is reachable as
+# <name>.leak.moe, so changing its address only takes a DNS update.
 {
   domain = "leak.moe";
 
-  hysteria = {
-    # Without obfuscation, for clients configured with a fixed port.
+  # VLESS with XTLS Vision over TLS, with a Let's Encrypt certificate that
+  # sing-box obtains itself.
+  vless = {
     port = 8443;
-    # Salamander obfuscation; every port in hopPorts is redirected here.
-    obfsPort = 8444;
-    hopPorts = {
-      from = 18443;
-      to = 19443;
-    };
-    hopInterval = "30s";
+    flow = "xtls-rprx-vision";
   };
 
-  # Users besides this flake's own clients. Each one's passwords and
-  # configuration token are under `sing-box-users.<user>` in secrets/sing-box.yaml.
+  # Every user downloads one profile from https://<host>/query?token=<token>,
+  # with all the nodes below that list them. One node serves it; DNS for
+  # `host` must point there.
+  profiles = {
+    host = "config.leak.moe";
+    node = "lax";
+  };
+
+  # Users besides this flake's own clients. Each one's VLESS UUID and profile
+  # token are under `sing-box-users.<user>` in secrets/sing-box.yaml.
   nodes = {
     lax.users = [
       "ada"

@@ -6,26 +6,13 @@ keys:
   - &lax age12h6yc3xrqkjkgflpagtnlyqdzvxl4qlcna7j8cpg7a6ffz330ets8zfj08
 
 creation_rules:
-  # Read by the clients and by every node (each serves all users' profiles).
+  # Read by the clients and by the nodes.
   - path_regex: ^secrets/sing-box\.yaml$
     key_groups:
       - age:
           - *loliIsland
           - *loliIslandCanokey
           - *as3
-          - *lax
-  # One node's TLS key.
-  - path_regex: ^secrets/as3\.yaml$
-    key_groups:
-      - age:
-          - *loliIsland
-          - *loliIslandCanokey
-          - *as3
-  - path_regex: ^secrets/lax\.yaml$
-    key_groups:
-      - age:
-          - *loliIsland
-          - *loliIslandCanokey
           - *lax
   - path_regex: ^secrets/.*\.ya?ml$
     key_groups:

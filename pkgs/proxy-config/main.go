@@ -1,5 +1,5 @@
 // proxy-config serves each proxy user's client configuration. The user is
-// named by a secret token in the query: GET /config?token=<token>.
+// named by a secret token in the query: GET /query?token=<token>.
 //
 // The file given with -users maps each user name to its token and its
 // configuration (any JSON value), and is read once at startup.
@@ -39,7 +39,7 @@ func main() {
 		}
 	}
 
-	http.HandleFunc("GET /config", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("GET /query", func(w http.ResponseWriter, r *http.Request) {
 		token := []byte(r.URL.Query().Get("token"))
 		// Compare against every token so the time taken does not tell which user matched.
 		var match string

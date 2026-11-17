@@ -1,6 +1,5 @@
 # The sing-box profile a proxy user downloads: TUN, mainland China direct,
-# everything else through the user's nodes. Needs sing-box 1.13 or later
-# (certificate_public_key_sha256).
+# everything else through the user's nodes. Needs sing-box 1.12 or later.
 #
 # `secret` turns a sops secret name into a `_secret` reference, `nodes` lists the
 # nodes this user may use.
@@ -12,8 +11,7 @@
 }:
 
 let
-  tag = node: "hysteria-${node}";
-  inherit (proxy.hysteria) hopPorts;
+  tag = node: node;
 
   ruleSet = repo: name: {
     type = "remote";
@@ -77,20 +75,20 @@ in
     }
   ]
   ++ map (node: {
-    type = "hysteria2";
+    type = "vless";
     tag = tag node;
-    server = secret "sing-box-hysteria-${node}-server";
-    server_ports = [ "${toString hopPorts.from}:${toString hopPorts.to}" ];
-    hop_interval = proxy.hysteria.hopInterval;
-    password = secret "sing-box-users/${user}/${node}";
-    obfs = {
-      type = "salamander";
-      password = secret "sing-box-hysteria-${node}-obfs-password";
-    };
+    server = "${node}.${proxy.domain}";
+    server_port = proxy.vless.port;
+    uuid = secret "sing-box-users/${user}/uuid";
+    inherit (proxy.vless) flow;
+    packet_encoding = "xudp";
     tls = {
       enabled = true;
       server_name = "${node}.${proxy.domain}";
-      certificate_public_key_sha256 = [ (secret "sing-box-hysteria-${node}-pin") ];
+      utls = {
+        enabled = true;
+        fingerprint = "chrome";
+      };
     };
   }) nodes
   ++ [

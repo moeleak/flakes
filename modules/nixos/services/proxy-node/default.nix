@@ -1,15 +1,15 @@
-# A Hysteria 2 node that the sing-box clients use (lib/proxy.nix lists the
-# nodes and their users). It serves:
+# A proxy node that the sing-box clients use (lib/proxy.nix lists the nodes and
+# their users). It serves:
 #
-# - Hysteria 2 on UDP `port` without obfuscation, and with Salamander on
-#   `obfsPort`, which every UDP port in `hopPorts` is redirected to;
-# - https://<name>.leak.moe/config?token=<token>, each user's sing-box profile
+# - VLESS with XTLS Vision on TCP `vless.port`, over TLS with a Let's Encrypt
+#   certificate for <name>.leak.moe that sing-box obtains itself, answering the
+#   HTTP challenge behind Caddy's port 80;
+# - on the node named by `profiles.node` only:
+#   https://<profiles.host>/query?token=<token>, each user's sing-box profile
 #   with all of that user's nodes, behind Caddy.
 #
-# Secrets: `sing-box-hysteria-<name>-{password,obfs-password}` (the flake's own
-# clients log in as "flakes"), `sing-box-hysteria-<name>-tls` (certificate and
-# key; clients pin its public key as `-pin`), and `sing-box-users.<user>`
-# (`token`, and a password per node).
+# Secrets: `sing-box-vless-uuid` (the flake's own clients, user "flakes") and
+# `sing-box-users.<user>` (`uuid`, and the profile `token`).
 {
   config,
   lib,
@@ -20,34 +20,16 @@
 let
   cfg = config.my.services.proxy-node;
   proxy = import ../../../../lib/proxy.nix;
-  inherit (proxy.hysteria) hopPorts;
 
-  prefix = "sing-box-hysteria-${cfg.name}";
+  fqdn = "${cfg.name}.${proxy.domain}";
   secret = name: { _secret = config.sops.secrets.${name}.path; };
   configPort = 8090;
+  # Where sing-box answers the ACME HTTP challenge, forwarded from port 80.
+  acmePort = 18080;
+  serveProfiles = cfg.name == proxy.profiles.node;
 
   allUsers = lib.unique (lib.concatMap (node: node.users) (lib.attrValues proxy.nodes));
   nodesOf = user: lib.filter (node: lib.elem user proxy.nodes.${node}.users) (lib.attrNames proxy.nodes);
-
-  hysteria = {
-    type = "hysteria2";
-    listen = "::";
-    users = [
-      {
-        name = "flakes";
-        password = secret "${prefix}-password";
-      }
-    ]
-    ++ map (user: {
-      name = user;
-      password = secret "sing-box-users/${user}/${cfg.name}";
-    }) proxy.nodes.${cfg.name}.users;
-    tls = {
-      enabled = true;
-      certificate = secret "${prefix}-tls/certificate";
-      key = secret "${prefix}-tls/key";
-    };
-  };
 
   # What the config server hands out, rendered with the secrets at start.
   profiles = utils.genJqSecretsReplacement { loadCredential = true; } (lib.genAttrs allUsers (user: {
@@ -62,15 +44,8 @@ in
   options.my.services.proxy-node = lib.mkOption {
     type = lib.types.nullOr (
       lib.types.submodule {
-        options = {
-          # A key of `nodes` in lib/proxy.nix.
-          name = lib.mkOption { type = lib.types.enum (lib.attrNames proxy.nodes); };
-          # The interface whose hopPorts are redirected.
-          interface = lib.mkOption {
-            type = lib.types.str;
-            default = "eth0";
-          };
-        };
+        # A key of `nodes` in lib/proxy.nix.
+        options.name = lib.mkOption { type = lib.types.enum (lib.attrNames proxy.nodes); };
       }
     );
     default = null;
@@ -84,29 +59,26 @@ in
       }
     ];
 
-    sops.secrets = lib.genAttrs (
-      [
-        "${prefix}-password"
-        "${prefix}-obfs-password"
-        "${prefix}-tls/certificate"
-        "${prefix}-tls/key"
-      ]
-      ++ lib.concatMap (
-        user:
-        [ "sing-box-users/${user}/token" ]
-        ++ lib.concatMap (node: [
-          "sing-box-users/${user}/${node}"
-          "sing-box-hysteria-${node}-server"
-          "sing-box-hysteria-${node}-obfs-password"
-          "sing-box-hysteria-${node}-pin"
-        ]) (nodesOf user)
-      ) allUsers
-    ) (_: {
-      restartUnits = [
-        "sing-box.service"
-        "proxy-config.service"
-      ];
-    });
+    sops.secrets =
+      let
+        # Read by this node's sing-box.
+        nodeSecrets = [
+          "sing-box-vless-uuid"
+        ]
+        ++ map (user: "sing-box-users/${user}/uuid") proxy.nodes.${cfg.name}.users;
+        # Rendered into the profiles.
+        profileSecrets = lib.optionals serveProfiles (
+          lib.concatMap (user: [
+            "sing-box-users/${user}/token"
+            "sing-box-users/${user}/uuid"
+          ]) allUsers
+        );
+      in
+      lib.genAttrs (lib.unique (nodeSecrets ++ profileSecrets)) (name: {
+        restartUnits =
+          lib.optional (lib.elem name nodeSecrets) "sing-box.service"
+          ++ lib.optional (lib.elem name profileSecrets) "proxy-config.service";
+      });
 
     services.sing-box = {
       enable = true;
@@ -118,25 +90,45 @@ in
             tag = "local";
           }
         ];
+        certificate_providers = [
+          {
+            type = "acme";
+            tag = "acme";
+            domain = [ fqdn ];
+            data_directory = "/var/lib/sing-box/acme";
+            # Caddy holds port 443.
+            disable_tls_alpn_challenge = true;
+            alternative_http_port = acmePort;
+          }
+        ];
         inbounds = [
-          (
-            hysteria
-            // {
-              tag = "hysteria-in";
-              listen_port = proxy.hysteria.port;
-            }
-          )
-          (
-            hysteria
-            // {
-              tag = "hysteria-obfs-in";
-              listen_port = proxy.hysteria.obfsPort;
-              obfs = {
-                type = "salamander";
-                password = secret "${prefix}-obfs-password";
-              };
-            }
-          )
+          {
+            type = "vless";
+            tag = "vless-in";
+            listen = "::";
+            listen_port = proxy.vless.port;
+            users = [
+              {
+                name = "flakes";
+                uuid = secret "sing-box-vless-uuid";
+                inherit (proxy.vless) flow;
+              }
+            ]
+            ++ map (user: {
+              name = user;
+              uuid = secret "sing-box-users/${user}/uuid";
+              inherit (proxy.vless) flow;
+            }) proxy.nodes.${cfg.name}.users;
+            tls = {
+              enabled = true;
+              # Negotiate like an ordinary HTTPS server.
+              alpn = [
+                "h2"
+                "http/1.1"
+              ];
+              certificate_provider = "acme";
+            };
+          }
         ];
         outbounds = [
           {
@@ -151,30 +143,7 @@ in
       };
     };
 
-    # Port hopping: the kernel sends every port of the range to the obfuscated
-    # listener. Docker keeps its own iptables-nft tables, so a reload replaces
-    # only this table instead of flushing the ruleset.
-    networking.nftables = {
-      enable = true;
-      flushRuleset = false;
-      tables.hysteria-port-hopping = {
-        family = "inet";
-        content = ''
-          chain prerouting {
-            type nat hook prerouting priority dstnat; policy accept;
-            iifname "${cfg.interface}" udp dport ${toString hopPorts.from}-${toString hopPorts.to} redirect to :${toString proxy.hysteria.obfsPort}
-          }
-        '';
-      };
-    };
-
-    # https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes
-    boot.kernel.sysctl = {
-      "net.core.rmem_max" = 7500000;
-      "net.core.wmem_max" = 7500000;
-    };
-
-    systemd.services.proxy-config = {
+    systemd.services.proxy-config = lib.mkIf serveProfiles {
       description = "Per-user sing-box profiles";
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
@@ -226,17 +195,29 @@ in
 
     services.caddy = {
       enable = true;
-      virtualHosts."${cfg.name}.${proxy.domain}" = {
-        # The query string carries the user's token.
-        logFormat = "output discard";
-        extraConfig = ''
-          handle /config {
-            reverse_proxy 127.0.0.1:${toString configPort}
+      virtualHosts = {
+        "http://${fqdn}".extraConfig = ''
+          handle /.well-known/acme-challenge/* {
+            reverse_proxy 127.0.0.1:${toString acmePort}
           }
           handle {
             respond 404
           }
         '';
+      }
+      // lib.optionalAttrs serveProfiles {
+        ${proxy.profiles.host} = {
+          # The query string carries the user's token.
+          logFormat = "output discard";
+          extraConfig = ''
+            handle /query {
+              reverse_proxy 127.0.0.1:${toString configPort}
+            }
+            handle {
+              respond 404
+            }
+          '';
+        };
       };
     };
   };

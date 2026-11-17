@@ -1,4 +1,4 @@
-# Hysteria 2 node as3.leak.moe.
+# Proxy node as3.leak.moe.
 {
   imports = [
     ./hardware-configuration.nix

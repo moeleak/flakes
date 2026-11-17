@@ -18,27 +18,25 @@ let
   };
 
   proxy = import ../../../../lib/proxy.nix;
-  inherit (proxy.hysteria) hopPorts;
 
-  # Every node hops across hopPorts with Salamander obfuscation, which works
-  # around the UDP return-path loss seen on fixed ports from the client network.
-  mkHysteria = node: {
-    type = "hysteria2";
-    tag = "hysteria-${node}";
-    server = secret "sing-box-hysteria-${node}-server";
-    server_ports = [ "${toString hopPorts.from}:${toString hopPorts.to}" ];
-    hop_interval = proxy.hysteria.hopInterval;
+  # VLESS with XTLS Vision; TLS looks like Chrome's.
+  mkVless = node: {
+    type = "vless";
+    tag = node;
+    server = "${node}.${proxy.domain}";
+    server_port = proxy.vless.port;
     # Bootstrap the node without resolving it through the proxy itself.
     domain_resolver = "doh-cn";
-    password = secret "sing-box-hysteria-${node}-password";
-    obfs = {
-      type = "salamander";
-      password = secret "sing-box-hysteria-${node}-obfs-password";
-    };
+    uuid = secret "sing-box-vless-uuid";
+    inherit (proxy.vless) flow;
+    packet_encoding = "xudp";
     tls = {
       enabled = true;
       server_name = "${node}.${proxy.domain}";
-      certificate_public_key_sha256 = [ (secret "sing-box-hysteria-${node}-pin") ];
+      utls = {
+        enabled = true;
+        fingerprint = "chrome";
+      };
     };
   };
 
@@ -232,11 +230,11 @@ in
       type = "selector";
       tag = "proxy";
       outbounds = [
-        "hysteria-lax"
-        "hysteria-as3"
+        "lax"
+        "as3"
         "direct"
       ];
-      default = "hysteria-lax";
+      default = "lax";
     }
     {
       type = "direct";
@@ -251,8 +249,8 @@ in
       tag = "block";
     }
 
-    (mkHysteria "lax")
-    (mkHysteria "as3")
+    (mkVless "lax")
+    (mkVless "as3")
   ]
   ++ lib.optionals isLabClient [
     {

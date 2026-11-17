@@ -1,4 +1,4 @@
-# Hysteria 2 node lax.leak.moe.
+# Proxy node lax.leak.moe.
 {
   imports = [
     ./hardware-configuration.nix

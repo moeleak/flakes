@@ -93,9 +93,9 @@ Check with `nixos-rebuild build --flake .#<host>` before switching.
 # Secrets
 
 Secrets live in `secrets/*.yaml`, encrypted to the user's two recipients in
-`.sops.yaml`; `sing-box.yaml`, `as3.yaml` and `lax.yaml` are also encrypted to
-the VPS that read them. A module declares the ones it needs by name and the file that
-contains the key is found automatically:
+`.sops.yaml`; `sing-box.yaml` is also encrypted to the VPS that read it. A
+module declares the ones it needs by name and the file that contains the key is
+found automatically:
 
 ```nix
 sops.secrets."frp-token" = { };
@@ -152,52 +152,55 @@ nix build .#checks.x86_64-linux.pi-rescue
 
 # Proxy
 
-The `proxy` selector uses Hysteria 2: `hysteria-lax` is the default and
-`hysteria-as3` is the alternate. Both nodes hop across UDP 18443–19443 every
-30 seconds with Salamander obfuscation, which works around the return-path loss
-on fixed UDP ports observed on the client network. The existing Lab relay and
-`auto` routing remain available.
+The `proxy` selector uses VLESS with XTLS Vision over TLS on TCP 8443: `lax`
+is the default and `as3` the alternate. The client's TLS looks like Chrome's
+(uTLS), and the nodes have ordinary Let's Encrypt certificates for
+`<node>.leak.moe`. The clients connect by name, so a node's address changes
+with its DNS record alone. The existing Lab relay and `auto` routing remain
+available.
 
 The cache file persists FakeIP mappings (`store_fakeip = true`) so DNS
 addresses cached by applications remain valid after a sing-box restart.
 
 ## Nodes
 
-`lib/proxy.nix` lists the nodes, their ports and their users; the clients and
+`lib/proxy.nix` lists the nodes, the VLESS port and the users; the clients and
 `modules/nixos/services/proxy-node` both read it. Each node
-(`hosts/x86_64-linux/LoliIsland-VPS-{AS3,lax}`, `my.services.proxy-node`) runs:
+(`hosts/x86_64-linux/LoliIsland-VPS-{AS3,lax}`, `my.services.proxy-node`) runs
+sing-box with the VLESS inbound. sing-box obtains and renews its certificate
+itself (a `certificate_providers` entry); Caddy holds ports 80 and 443 and
+forwards `http://<node>.leak.moe/.well-known/acme-challenge/` to it.
 
-- sing-box with Hysteria 2 on UDP 8443 (no obfuscation, for clients configured
-  with a fixed port) and on UDP 8444 with Salamander. An nftables table
-  (`inet hysteria-port-hopping`) redirects UDP 18443–19443 on `eth0` to 8444
-  for IPv4 and IPv6.
-- `proxy-config` (`pkgs/proxy-config`) behind Caddy, which serves each user's
-  sing-box profile (TUN, mainland China direct, all of the user's nodes; needs
-  sing-box 1.13 or later) at `https://<node>.leak.moe/config?token=<token>`.
-  Every node serves every user. Profiles are rendered and checked with
-  `sing-box check` when the service starts.
+sing-box's VLESS inbound has no fallback: a connection that is not VLESS is
+closed after the TLS handshake instead of reaching a web server.
 
-Secrets, all in sops:
+The node named by `profiles.node` (LAX) also runs `proxy-config`
+(`pkgs/proxy-config`) behind Caddy, which serves each user's sing-box profile
+at `https://config.leak.moe/query?token=<token>`. A user has one token, and the
+profile contains every node that lists the user (TUN, mainland China direct,
+`auto` picks the fastest node; needs sing-box 1.12 or later). Profiles are
+rendered and checked with `sing-box check` when the service starts.
+`config.leak.moe` must resolve to that node (a DNS-only CNAME to
+`lax.leak.moe` in Cloudflare); to move it, change `profiles.node`, deploy both
+nodes and repoint the record.
 
-| Key | File | What |
-| --- | --- | --- |
-| `sing-box-hysteria-<node>-{server,password,pin,obfs-password}` | `sing-box.yaml` | address, the flake clients' password (user `flakes`), public-key pin, Salamander password |
-| `sing-box-users.<user>.{token,<node>}` | `sing-box.yaml` | profile token and Hysteria password per node |
-| `sing-box-hysteria-<node>-tls.{certificate,key}` | `<node>.yaml` | the node's self-signed ECDSA certificate |
+Secrets, all in `secrets/sing-box.yaml`:
 
-To add a user, add the name to the nodes in `lib/proxy.nix` and its
-`token` (`openssl rand -hex 16`) and passwords under `sing-box-users` with
+| Key | What |
+| --- | --- |
+| `sing-box-vless-uuid` | the flake clients' UUID (user `flakes` on every node) |
+| `sing-box-users.<user>.{uuid,token}` | the user's UUID on every node, and the profile token |
+
+To add a user, add the name to the nodes in `lib/proxy.nix` and its `uuid`
+(`uuidgen`) and `token` (`openssl rand -hex 16`) under `sing-box-users` with
 `sops secrets/sing-box.yaml`, then deploy both nodes. To print a user's
 profile URL:
 
 ```bash
 nix shell nixpkgs#sops nixpkgs#age-plugin-yubikey -c sops decrypt \
   --extract '["sing-box-users"]["ada"]["token"]' secrets/sing-box.yaml |
-  sed 's|^|https://lax.leak.moe/config?token=|'
+  sed 's|^|https://config.leak.moe/query?token=|'
 ```
-
-Replacing a node's TLS key requires updating its `sing-box-hysteria-<node>-pin`
-(base64 SHA-256 of the DER public key).
 
 ## Deploying a VPS
 
@@ -223,6 +226,12 @@ nixos-rebuild switch --flake .#LoliIsland-VPS-AS3 --target-host as3 --use-substi
 
 `/etc/nixos` on the VPS is empty; the old channel configuration is archived in
 `/root/nixos-legacy-20261117.tar.gz`.
+
+The provider (Proxmox) hands out each VPS's addresses on a cloud-init drive,
+and cloud-init writes them for systemd-networkd at every boot
+(`my.system.vps`). To change a node's IP, use the provider's panel, which
+needs the QEMU guest agent (running) and reboots the VPS with the new
+address, then update `<node>.leak.moe` in Cloudflare.
 
 # Claude Code providers
 

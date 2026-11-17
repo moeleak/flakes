@@ -1,8 +1,32 @@
 keys:
   - &loliIsland age1kfzd6saww8rsfhe5zs7gky2pyk6yl5jkew9gypyrk00qmadw7p3qdkdlys
   - &loliIslandCanokey age1yubikey1qdt7dcx4973y9gj98yety02xf5dp9q4xpmkrp9tdwcntmc0t0sz8vvuywml
+  # SSH host keys of the proxy nodes: ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub
+  - &as3 age1fmyq2lkr79mwr7h3xq4pf7st9qwuthu357m3xydf7auhw27jzyqs3vdqzl
+  - &lax age12h6yc3xrqkjkgflpagtnlyqdzvxl4qlcna7j8cpg7a6ffz330ets8zfj08
 
 creation_rules:
+  # Read by the clients and by every node (each serves all users' profiles).
+  - path_regex: ^secrets/sing-box\.yaml$
+    key_groups:
+      - age:
+          - *loliIsland
+          - *loliIslandCanokey
+          - *as3
+          - *lax
+  # One node's TLS key.
+  - path_regex: ^secrets/as3\.yaml$
+    key_groups:
+      - age:
+          - *loliIsland
+          - *loliIslandCanokey
+          - *as3
+  - path_regex: ^secrets/lax\.yaml$
+    key_groups:
+      - age:
+          - *loliIsland
+          - *loliIslandCanokey
+          - *lax
   - path_regex: ^secrets/.*\.ya?ml$
     key_groups:
       - age:

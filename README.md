@@ -92,8 +92,9 @@ Check with `nixos-rebuild build --flake .#<host>` before switching.
 
 # Secrets
 
-Secrets live in `secrets/*.yaml`, encrypted to the two recipients in
-`.sops.yaml`. A module declares the ones it needs by name and the file that
+Secrets live in `secrets/*.yaml`, encrypted to the user's two recipients in
+`.sops.yaml`; `sing-box.yaml`, `as3.yaml` and `lax.yaml` are also encrypted to
+the VPS that read them. A module declares the ones it needs by name and the file that
 contains the key is found automatically:
 
 ```nix
@@ -106,7 +107,11 @@ Edit or create a file with:
 nix shell nixpkgs#sops nixpkgs#age-plugin-yubikey -c sops secrets/<file>.yaml
 ```
 
-Hosts decrypt with the main user's `~/.ssh/id_ed25519`. Hosts that set
+Hosts decrypt with the main user's `~/.ssh/id_ed25519`; the VPS
+(`my.sops.hostKey = true`) with their `/etc/ssh/ssh_host_ed25519_key`, whose age
+recipient is `ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub`. After changing
+the recipients of a file, run `sops updatekeys secrets/<file>.yaml`. A nested
+key such as `sing-box-users/ada/token` is found by its top-level part. Hosts that set
 `my.sops.yubikey = true` (the Mac and the laptop) instead need the YubiKey
 plugged in during a rebuild, with its identity exported once:
 
@@ -148,27 +153,76 @@ nix build .#checks.x86_64-linux.pi-rescue
 # Proxy
 
 The `proxy` selector uses Hysteria 2: `hysteria-lax` is the default and
-`hysteria-as3` is the alternate. LAX uses UDP 8443. AS3 hops across UDP
-18443–19443 every 30 seconds with Salamander obfuscation to work around the
-UDP 8443 return-path loss observed on the client network. VLESS outbounds are
-retired. The existing Lab relay and `auto` routing remain available.
+`hysteria-as3` is the alternate. Both nodes hop across UDP 18443–19443 every
+30 seconds with Salamander obfuscation, which works around the return-path loss
+on fixed UDP ports observed on the client network. The existing Lab relay and
+`auto` routing remain available.
 
 The cache file persists FakeIP mappings (`store_fakeip = true`) so DNS
 addresses cached by applications remain valid after a sing-box restart.
 
-Node addresses, separate passwords, and TLS public-key pins are encrypted in
-`secrets/sing-box.yaml`. Each VPS stores its Hysteria configuration in
-`/etc/nixos/hysteria.nix`, its password in
-`/etc/nixos/secrets/hysteria-password`, and its ECDSA certificate/key under
-`/var/lib/sing-box/hysteria/`. Clients authenticate the pinned key; replacing a
-server key requires updating that node's encrypted `sing-box-hysteria-*-pin`.
-AS3's `hysteria.nix` also declares the `hysteria-port-hopping` systemd service,
-which redirects UDP 18443–19443 on `eth0` to the Salamander listener on UDP
-8444 for both IPv4 and IPv6. Its independent obfuscation key is encrypted as
-`sing-box-hysteria-as3-obfs-password` and stored on AS3 in
-`/etc/nixos/secrets/hysteria-obfs-password`. The original UDP 8443 listener
-remains available to clients that use a fixed port without obfuscation.
-The servers retain their existing VLESS listeners for other clients.
+## Nodes
+
+`lib/proxy.nix` lists the nodes, their ports and their users; the clients and
+`modules/nixos/services/proxy-node` both read it. Each node
+(`hosts/x86_64-linux/LoliIsland-VPS-{AS3,lax}`, `my.services.proxy-node`) runs:
+
+- sing-box with Hysteria 2 on UDP 8443 (no obfuscation, for clients configured
+  with a fixed port) and on UDP 8444 with Salamander. An nftables table
+  (`inet hysteria-port-hopping`) redirects UDP 18443–19443 on `eth0` to 8444
+  for IPv4 and IPv6.
+- `proxy-config` (`pkgs/proxy-config`) behind Caddy, which serves each user's
+  sing-box profile (TUN, mainland China direct, all of the user's nodes; needs
+  sing-box 1.13 or later) at `https://<node>.leak.moe/config?token=<token>`.
+  Every node serves every user. Profiles are rendered and checked with
+  `sing-box check` when the service starts.
+
+Secrets, all in sops:
+
+| Key | File | What |
+| --- | --- | --- |
+| `sing-box-hysteria-<node>-{server,password,pin,obfs-password}` | `sing-box.yaml` | address, the flake clients' password (user `flakes`), public-key pin, Salamander password |
+| `sing-box-users.<user>.{token,<node>}` | `sing-box.yaml` | profile token and Hysteria password per node |
+| `sing-box-hysteria-<node>-tls.{certificate,key}` | `<node>.yaml` | the node's self-signed ECDSA certificate |
+
+To add a user, add the name to the nodes in `lib/proxy.nix` and its
+`token` (`openssl rand -hex 16`) and passwords under `sing-box-users` with
+`sops secrets/sing-box.yaml`, then deploy both nodes. To print a user's
+profile URL:
+
+```bash
+nix shell nixpkgs#sops nixpkgs#age-plugin-yubikey -c sops decrypt \
+  --extract '["sing-box-users"]["ada"]["token"]' secrets/sing-box.yaml |
+  sed 's|^|https://lax.leak.moe/config?token=|'
+```
+
+Replacing a node's TLS key requires updating its `sing-box-hysteria-<node>-pin`
+(base64 SHA-256 of the DER public key).
+
+## Deploying a VPS
+
+The VPS are too small to evaluate or build their systems, so Lab builds them.
+`my.programs.ssh` provides the `as3` and `lax` SSH aliases (root, port 2333)
+and their host keys on every machine here:
+
+```bash
+nixos-rebuild switch --flake .#LoliIsland-VPS-AS3 --target-host as3 --build-host Lab --use-substitutes
+nixos-rebuild switch --flake .#LoliIsland-VPS-lax --target-host lax --build-host Lab --use-substitutes
+```
+
+`--build-host` copies every derivation to Lab one round trip at a time, which
+takes tens of minutes from a machine far from Lab. From there (or from the
+Mac, which has no `nixos-rebuild`), run the same command on Lab without
+`--build-host`, after pushing:
+
+```bash
+ssh Lab
+cd ~/Projects/flakes && git pull
+nixos-rebuild switch --flake .#LoliIsland-VPS-AS3 --target-host as3 --use-substitutes
+```
+
+`/etc/nixos` on the VPS is empty; the old channel configuration is archived in
+`/root/nixos-legacy-20261117.tar.gz`.
 
 # Claude Code providers
 

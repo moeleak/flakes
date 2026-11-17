@@ -1,8 +1,9 @@
 # Secrets. A module declares what it needs with `sops.secrets."name" = { };`
 # and the file under secrets/ that contains that key is found automatically.
 #
-# Hosts decrypt with the main user's SSH key, or with the YubiKey when
-# `my.sops.yubikey` is set (identity exported to keys.txt once, see README).
+# Hosts decrypt with the main user's SSH key, with the YubiKey when
+# `my.sops.yubikey` is set (identity exported to keys.txt once, see README), or
+# with their own SSH host key when `my.sops.hostKey` is set.
 # Home Manager follows the same choice through osConfig.
 {
   config,
@@ -48,12 +49,20 @@ in
     default = false;
   };
 
+  # For machines without a human user, such as the VPS. The host's age
+  # recipient is `ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub`.
+  options.my.sops.hostKey = lib.mkOption {
+    type = lib.types.bool;
+    default = false;
+  };
+
   options.sops.secrets = lib.mkOption {
     type = lib.types.attrsOf (
       lib.types.submodule (
         { config, ... }:
         {
-          config.sopsFile = lib.mkDefault (fileOf config.key);
+          # A nested key ("a/b/c") is found by its top-level part.
+          config.sopsFile = lib.mkDefault (fileOf (lib.head (lib.splitString "/" config.key)));
         }
       )
     );
@@ -63,7 +72,11 @@ in
     {
       sops = {
         gnupg.sshKeyPaths = [ ];
-        age.sshKeyPaths = lib.optional (!cfg.yubikey) "${home}/.ssh/id_ed25519";
+        age.sshKeyPaths =
+          if cfg.hostKey then
+            [ "/etc/ssh/ssh_host_ed25519_key" ]
+          else
+            lib.optional (!cfg.yubikey) "${home}/.ssh/id_ed25519";
       };
     }
 

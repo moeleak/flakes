@@ -17,28 +17,30 @@ let
     _secret = config.sops.secrets.${name}.path;
   };
 
+  proxy = import ../../../../lib/proxy.nix;
+  inherit (proxy.hysteria) hopPorts;
+
+  # Every node hops across hopPorts with Salamander obfuscation, which works
+  # around the UDP return-path loss seen on fixed ports from the client network.
   mkHysteria = node: {
     type = "hysteria2";
     tag = "hysteria-${node}";
     server = secret "sing-box-hysteria-${node}-server";
+    server_ports = [ "${toString hopPorts.from}:${toString hopPorts.to}" ];
+    hop_interval = proxy.hysteria.hopInterval;
     # Bootstrap the node without resolving it through the proxy itself.
     domain_resolver = "doh-cn";
     password = secret "sing-box-hysteria-${node}-password";
-    tls = {
-      enabled = true;
-      server_name = "${node}.leak.moe";
-      certificate_public_key_sha256 = [ (secret "sing-box-hysteria-${node}-pin") ];
-    };
-  } // (if node == "as3" then {
-    server_ports = [ "18443:19443" ];
-    hop_interval = "30s";
     obfs = {
       type = "salamander";
-      password = secret "sing-box-hysteria-as3-obfs-password";
+      password = secret "sing-box-hysteria-${node}-obfs-password";
     };
-  } else {
-    server_port = 8443;
-  });
+    tls = {
+      enabled = true;
+      server_name = "${node}.${proxy.domain}";
+      certificate_public_key_sha256 = [ (secret "sing-box-hysteria-${node}-pin") ];
+    };
+  };
 
 in
 {

@@ -51,6 +51,13 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # The same version as nixpkgs' colmena CLI, which reads `colmenaHive`.
+    colmena = {
+      url = "github:nix-community/colmena/v0.5.0";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.stable.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -59,6 +66,7 @@
       nixpkgs,
       nixos-licheepi4a,
       nix-darwin,
+      colmena,
       ...
     }@inputs:
     let
@@ -73,17 +81,34 @@
           lib.filterAttrs (_: type: type == "directory") (builtins.readDir dir)
         );
 
+      # A host in hosts/x86_64-linux, as both nixosConfigurations and colmena
+      # build it.
+      x86Modules = name: host: [
+        ./modules/nixos
+        host
+        { networking.hostName = name; }
+      ];
+
+      # What lib.nixosSystem adds to nixos/lib/eval-config.nix, which colmena
+      # calls itself: without it a node would differ from its
+      # nixosConfiguration (version, revision, flake registry).
+      nixosSystemModule = nixpkgs': {
+        nixpkgs.flake.source = nixpkgs'.outPath;
+        system.nixos = {
+          versionSuffix = nixpkgs'.lib.trivial.versionSuffix;
+          revision = nixpkgs'.lib.trivial.revisionWithDefault null;
+        };
+      };
+
+      # Hosts colmena deploys as root over SSH on port 2333 (like the `as3`
+      # and `lax` aliases of my.programs.ssh), all tagged `vps`.
+      vpsTargets = {
+        LoliIsland-VPS-AS3 = "as3.leak.moe";
+        LoliIsland-VPS-lax = "lax.leak.moe";
+      };
+
       lp4aSystem = "x86_64-linux";
       lp4aNixpkgs = import nixos-licheepi4a.inputs.nixpkgs {
-        system = lp4aSystem;
-      };
-      lp4aColmenaNixpkgs = {
-        inherit (lp4aNixpkgs)
-          config
-          lib
-          overlays
-          ;
-        path = nixos-licheepi4a.inputs.nixpkgs.outPath;
         system = lp4aSystem;
       };
       lp4aSpecialArgs = {
@@ -129,11 +154,7 @@
           lib.nixosSystem {
             system = "x86_64-linux";
             inherit specialArgs;
-            modules = [
-              ./modules/nixos
-              host
-              { networking.hostName = name; }
-            ];
+            modules = x86Modules name host;
           }
         )
         // {
@@ -144,21 +165,32 @@
           };
         };
 
+      # `colmena apply --on @vps`; see the README.
+      colmenaHive = colmena.lib.makeHive self.colmena;
       colmena = {
         meta = {
-          nixpkgs = lp4aColmenaNixpkgs;
-          specialArgs = lp4aSpecialArgs;
+          nixpkgs = import nixpkgs { system = "x86_64-linux"; };
+          inherit specialArgs;
+          nodeNixpkgs.lp4a = lp4aNixpkgs;
+          nodeSpecialArgs.lp4a = lp4aSpecialArgs;
         };
 
-        lp4a =
-          { ... }:
-          {
-            deployment.targetHost = "100.76.208.19";
-            deployment.targetPort = 2333;
-            deployment.targetUser = "root";
-            imports = lp4aModules;
-          };
-      };
+        lp4a = {
+          deployment.targetHost = "100.76.208.19";
+          deployment.targetPort = 2333;
+          deployment.targetUser = "root";
+          imports = lp4aModules ++ [ (nixosSystemModule nixos-licheepi4a.inputs.nixpkgs) ];
+        };
+      }
+      // lib.mapAttrs (name: targetHost: {
+        deployment = {
+          inherit targetHost;
+          targetPort = 2333;
+          targetUser = "root";
+          tags = [ "vps" ];
+        };
+        imports = x86Modules name (./hosts/x86_64-linux + "/${name}") ++ [ (nixosSystemModule nixpkgs) ];
+      }) vpsTargets;
 
       darwinConfigurations = hostsIn ./hosts/aarch64-darwin (
         name: host:

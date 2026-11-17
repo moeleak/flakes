@@ -218,25 +218,32 @@ nix shell nixpkgs#sops nixpkgs#age-plugin-yubikey -c sops decrypt \
 
 ## Deploying a VPS
 
-The VPS are too small to evaluate or build their systems, so Lab builds them.
-`my.programs.ssh` provides the `as3` and `lax` SSH aliases (root, port 2333)
-and their host keys on every machine here:
+The VPS are deployed with [colmena](https://github.com/nix-community/colmena)
+(0.5, in nixpkgs and installed on Lab). The flake's `colmenaHive` has a node
+for each VPS, tagged `vps`, built from the same modules as its
+`nixosConfigurations` entry (the same system, down to the derivation), and
+reached as root on port 2333; `my.programs.ssh` provides the host keys on
+every machine here. colmena reads the flake through git, so `git add` new
+files first. From the repository:
 
 ```bash
-nixos-rebuild switch --flake .#LoliIsland-VPS-AS3 --target-host as3 --build-host Lab --use-substitutes
-nixos-rebuild switch --flake .#LoliIsland-VPS-lax --target-host lax --build-host Lab --use-substitutes
+colmena apply --on @vps                         # both, switch
+colmena apply --on LoliIsland-VPS-lax           # one
+colmena apply --on @vps boot                    # activate at the next boot
+colmena build --on @vps                         # build only
+colmena exec --on @vps -- systemctl status sing-box
 ```
 
-`--build-host` copies every derivation to Lab one round trip at a time, which
-takes tens of minutes from a machine far from Lab. From there (or from the
-Mac, which has no `nixos-rebuild`), run the same command on Lab without
-`--build-host`, after pushing:
+Without `colmena` installed, `nix run nixpkgs#colmena -- apply --on @vps`.
 
-```bash
-ssh Lab
-cd ~/Projects/flakes && git pull
-nixos-rebuild switch --flake .#LoliIsland-VPS-AS3 --target-host as3 --use-substitutes
-```
+By default colmena evaluates and builds on the machine running it, then copies
+the closure; the VPS fetch whatever cache.nixos.org has themselves, so only
+the paths built here cross the network. That suits Lab and the PC (the VPS
+are too small to evaluate their systems). `--build-on-target` instead copies
+the derivations and builds on the VPS, which is quicker from a machine close
+to them or one of another architecture, such as the Mac.
+
+`lp4a` is in the hive too, without a tag (`colmena apply --on lp4a`).
 
 `/etc/nixos` on the VPS is empty; the old channel configuration is archived in
 `/root/nixos-legacy-20261117.tar.gz`.

@@ -9,7 +9,16 @@ let
 in
 {
   options.my.system.nix = lib.mkOption {
-    type = lib.types.nullOr (lib.types.submodule { });
+    type = lib.types.nullOr (
+      lib.types.submodule {
+        # Mirrors of cache.nixos.org, tried before it. NJU was by far the
+        # fastest from Lab (cache.nixos.org itself: under 0.1 MB/s).
+        options.mirrors = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ "https://mirror.nju.edu.cn/nix-channels/store" ];
+        };
+      }
+    );
     default = { };
   };
 
@@ -21,6 +30,9 @@ in
     ];
 
     nix.settings = {
+      # Same priority as cache.nixos.org, which NixOS and nix-darwin append
+      # after these, so the mirrors are asked first.
+      substituters = cfg.mirrors;
       extra-substituters = [
         "https://devenv.cachix.org"
       ];

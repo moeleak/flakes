@@ -23,6 +23,8 @@ in
       sops.hostKey = true;
       services.sing-box = lib.mkDefault null;
       programs.neovim = lib.mkDefault null;
+      # In the US: cache.nixos.org is fast, a mirror in China is not.
+      system.nix.mirrors = [ ];
     };
 
     time.timeZone = "Asia/Shanghai";

@@ -16,12 +16,11 @@
     sops.yubikey = true;
   };
 
-  boot = {
-    initrd.verbose = false;
-    kernelParams = lib.mkAfter [
-      "nosgx"
-    ];
-  };
+  boot.kernelParams = lib.mkAfter [
+    "nosgx"
+    # A quiet stage 1: systemd's status only on errors and delays.
+    "rd.systemd.show_status=auto"
+  ];
 
   hardware.graphics = {
     enable = true;

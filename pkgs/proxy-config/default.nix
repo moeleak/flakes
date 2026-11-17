@@ -1,5 +1,6 @@
 # Serves each proxy user's client configuration by token; see main.go. The
-# page's script, with its Material Web components, is bundled from web/.
+# page's script, with its Material Web components, is bundled from web/, and
+# Material's type scale is exported as CSS for the server to inline.
 {
   buildGoModule,
   buildNpmPackage,
@@ -7,7 +8,7 @@
 }:
 
 let
-  version = "0.4.0";
+  version = "0.4.1";
 
   web = buildNpmPackage {
     pname = "proxy-config-web";
@@ -19,11 +20,16 @@ let
     buildPhase = ''
       runHook preBuild
       esbuild page.js --bundle --minify --format=esm --target=es2021 --outfile=bundle.js
+      node --input-type=module -e "
+        const { styles } = await import('@material/web/typography/md-typescale-styles.js');
+        process.stdout.write(styles.cssText);
+      " > typescale.css
       runHook postBuild
     '';
     installPhase = ''
       runHook preInstall
       install -Dm644 bundle.js $out/page.js
+      install -Dm644 typescale.css $out/typescale.css
       runHook postInstall
     '';
   };

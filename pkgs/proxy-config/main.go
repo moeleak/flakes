@@ -38,7 +38,7 @@ func main() {
 	listen := flag.String("listen", "127.0.0.1:8090", "address to listen on")
 	usersFile := flag.String("users", "", "JSON object of user name to token and configs")
 	publicURL := flag.String("url", "", "public URL of /query, for the import links")
-	assets := flag.String("assets", "", "directory with the page's page.js")
+	assets := flag.String("assets", "", "directory with the page's page.js and typescale.css")
 	flag.Parse()
 	log.SetFlags(0)
 
@@ -62,6 +62,11 @@ func main() {
 	if _, err := os.Stat(*assets + "/page.js"); err != nil {
 		log.Fatalf("-assets: %v", err)
 	}
+	typescale, err := os.ReadFile(*assets + "/typescale.css")
+	if err != nil {
+		log.Fatalf("-assets: %v", err)
+	}
+	pageCSS = template.CSS(typescale)
 	assetsFS := os.DirFS(*assets)
 
 	http.HandleFunc("GET /assets/{name}", func(w http.ResponseWriter, r *http.Request) {
@@ -147,6 +152,7 @@ var page = template.Must(template.New("page").Parse(`<!doctype html>
 <meta name="color-scheme" content="light dark">
 <title>leak.moe</title>
 <script type="module" src="/assets/page.js"></script>
+<style>{{.Typescale}}</style>
 <style>
 /* Material 3 baseline scheme. */
 :root {
@@ -183,6 +189,10 @@ var page = template.Must(template.New("page").Parse(`<!doctype html>
   }
 }
 [hidden] { display: none !important; }
+/* Hold the components' final size until page.js defines them. */
+md-filled-button:not(:defined), md-text-button:not(:defined) { display: block; height: 40px; visibility: hidden; }
+md-switch:not(:defined) { display: block; flex: none; width: 52px; height: 32px; visibility: hidden; }
+md-elevation:not(:defined) { display: none; }
 body {
   margin: 0;
   background: var(--md-sys-color-surface);
@@ -239,6 +249,9 @@ h1 { margin: 0 0 4px; }
 </html>
 `))
 
+// pageCSS is Material's type scale, read from -assets at startup.
+var pageCSS template.CSS
+
 type variant struct {
 	Key        string
 	Shown      bool
@@ -280,7 +293,7 @@ func servePage(w http.ResponseWriter, base *url.URL, token string, tailscale boo
 	w.Header().Set("Content-Security-Policy", "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'")
 	w.Header().Set("Referrer-Policy", "no-referrer")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	err := page.Execute(w, map[string]any{"Variants": variants, "Tailscale": tailscale})
+	err := page.Execute(w, map[string]any{"Variants": variants, "Tailscale": tailscale, "Typescale": pageCSS})
 	if err != nil {
 		log.Print(err)
 	}

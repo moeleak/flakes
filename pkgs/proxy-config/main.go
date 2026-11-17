@@ -7,7 +7,7 @@
 // the profile as a remote one, and the switches; everything else, such as
 // the apps updating the profile, gets the JSON. &qr-code=true or
 // &qr-code=false chooses explicitly. The page's script and its Material Web
-// components are served from -assets at /assets/.
+// components are served from -assets at /assets/page.js.
 //
 // The file given with -users maps each user name to its token and its
 // configurations (any JSON values), keyed by the enabled switches in the
@@ -16,7 +16,10 @@
 package main
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"crypto/subtle"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -28,6 +31,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"rsc.io/qr"
 )
@@ -92,7 +96,8 @@ func main() {
 			}
 		}
 	}
-	if _, err := os.Stat(*assets + "/page.js"); err != nil {
+	script, err := os.ReadFile(*assets + "/page.js")
+	if err != nil {
 		log.Fatalf("-assets: %v", err)
 	}
 	typescale, err := os.ReadFile(*assets + "/typescale.css")
@@ -100,11 +105,17 @@ func main() {
 		log.Fatalf("-assets: %v", err)
 	}
 	pageCSS = template.CSS(typescale)
-	assetsFS := os.DirFS(*assets)
+	// The page names the script by its content, so a browser never keeps an
+	// old one. (Files from the Nix store all carry the same modification
+	// time, which is no use for revalidating.)
+	sum := sha256.Sum256(script)
+	scriptVersion = hex.EncodeToString(sum[:6])
 
-	http.HandleFunc("GET /assets/{name}", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", "public, max-age=3600")
-		http.ServeFileFS(w, r, assetsFS, r.PathValue("name"))
+	http.HandleFunc("GET /assets/page.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+		w.Header().Set("ETag", `"`+scriptVersion+`"`)
+		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		http.ServeContent(w, r, "page.js", time.Time{}, bytes.NewReader(script))
 	})
 
 	http.HandleFunc("GET /query", func(w http.ResponseWriter, r *http.Request) {
@@ -167,13 +178,16 @@ func boolParam(query url.Values, name string, fallback bool) (bool, error) {
 	return b, nil
 }
 
-// profileURL is where the apps fetch the profile with the given switches on.
-func profileURL(base *url.URL, token string, on []string, qrCode bool) string {
+// profileURL is the profile with the given switches on. The apps get its
+// JSON as it is; a browser needs &qr-code=false, which `inBrowser` adds.
+func profileURL(base *url.URL, token string, on []string, inBrowser bool) string {
 	query := url.Values{"token": {token}}
 	for _, name := range on {
 		query.Set(name, "true")
 	}
-	query.Set("qr-code", strconv.FormatBool(qrCode))
+	if inBrowser {
+		query.Set("qr-code", "false")
+	}
 	u := *base
 	u.RawQuery = query.Encode()
 	return u.String()
@@ -187,7 +201,7 @@ var page = template.Must(template.New("page").Parse(`<!doctype html>
 <meta name="referrer" content="no-referrer">
 <meta name="color-scheme" content="light dark">
 <title>leak.moe</title>
-<script type="module" src="/assets/page.js"></script>
+<script type="module" src="/assets/page.js?v={{.Script}}"></script>
 <style>{{.Typescale}}</style>
 <style>
 /* Material 3 baseline scheme. */
@@ -287,8 +301,12 @@ h1 { margin: 0 0 4px; }
 </html>
 `))
 
-// pageCSS is Material's type scale, read from -assets at startup.
-var pageCSS template.CSS
+// pageCSS is Material's type scale, read from -assets at startup, and
+// scriptVersion a hash of page.js.
+var (
+	pageCSS       template.CSS
+	scriptVersion string
+)
 
 type variant struct {
 	Key        string
@@ -307,12 +325,11 @@ func servePage(w http.ResponseWriter, base *url.URL, token string, current strin
 				name += " + " + s.Title
 			}
 		}
-		jsonURL := profileURL(base, token, on, false)
 		// As libbox.GenerateRemoteProfileImportLink builds it.
 		importLink := (&url.URL{
 			Scheme:   "sing-box",
 			Host:     "import-remote-profile",
-			RawQuery: url.Values{"url": {jsonURL}}.Encode(),
+			RawQuery: url.Values{"url": {profileURL(base, token, on, false)}}.Encode(),
 			Fragment: name,
 		}).String()
 		code, err := qr.Encode(importLink, qr.M)
@@ -325,7 +342,7 @@ func servePage(w http.ResponseWriter, base *url.URL, token string, current strin
 			Shown:      key == current,
 			QR:         template.HTML(svg(code)),
 			ImportLink: template.URL(importLink),
-			JSON:       jsonURL,
+			JSON:       profileURL(base, token, on, true),
 		})
 	}
 
@@ -341,7 +358,7 @@ func servePage(w http.ResponseWriter, base *url.URL, token string, current strin
 	for _, s := range switches {
 		pageSwitches = append(pageSwitches, pageSwitch{s, slices.Contains(strings.Split(current, ","), s.Name)})
 	}
-	err := page.Execute(w, map[string]any{"Variants": variants, "Switches": pageSwitches, "Typescale": pageCSS})
+	err := page.Execute(w, map[string]any{"Variants": variants, "Switches": pageSwitches, "Typescale": pageCSS, "Script": scriptVersion})
 	if err != nil {
 		log.Print(err)
 	}

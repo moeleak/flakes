@@ -8,7 +8,7 @@
 }:
 
 let
-  version = "0.5.1";
+  version = "0.5.3";
 
   web = buildNpmPackage {
     pname = "proxy-config-web";

@@ -1,0 +1,9 @@
+{
+  "name": "proxy-config-web",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@material/web": "2.5.0",
+    "lit": "3.3.3"
+  }
+}

@@ -26,7 +26,7 @@ let
     tag = name;
     format = "binary";
     url = "https://raw.githubusercontent.com/SagerNet/${repo}/rule-set/${name}.srs";
-    # Downloaded through the default outbound (route.final).
+    http_client.detour = "proxy";
   };
 in
 {

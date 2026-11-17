@@ -29,6 +29,7 @@ let
   # Where sing-box answers the ACME HTTP challenge, forwarded from port 80.
   acmePort = 18080;
   serveProfiles = cfg.name == proxy.profiles.node;
+  proxyConfig = pkgs.callPackage ../../../../pkgs/proxy-config { };
 
   allUsers = lib.unique (lib.concatMap (node: node.users) (lib.attrValues proxy.nodes));
   nodesOf = user: lib.filter (node: lib.elem user proxy.nodes.${node}.users) (lib.attrNames proxy.nodes);
@@ -176,9 +177,13 @@ in
           done
           rm /run/proxy-config/check.json
         '';
-        ExecStart = "${
-          lib.getExe (pkgs.callPackage ../../../../pkgs/proxy-config { })
-        } -listen 127.0.0.1:${toString configPort} -users /run/proxy-config/users.json -url https://${proxy.profiles.host}/query";
+        ExecStart = lib.concatStringsSep " " [
+          (lib.getExe proxyConfig)
+          "-listen 127.0.0.1:${toString configPort}"
+          "-users /run/proxy-config/users.json"
+          "-url https://${proxy.profiles.host}/query"
+          "-assets ${proxyConfig.web}"
+        ];
         LoadCredential = profiles.credentials;
         Restart = "on-failure";
 
@@ -229,6 +234,9 @@ in
           logFormat = "output discard";
           extraConfig = ''
             handle /query {
+              reverse_proxy 127.0.0.1:${toString configPort}
+            }
+            handle /assets/* {
               reverse_proxy 127.0.0.1:${toString configPort}
             }
             handle {

@@ -1,6 +1,11 @@
 # The sing-box profile a proxy user downloads: TUN, mainland China direct,
 # everything else through the user's nodes. Needs sing-box 1.12 or later.
 #
+# With `tailscale`, the device also joins a tailnet (1.13 or later): its
+# addresses, subnet routes and *.ts.net names go through Tailscale. The
+# profile carries no auth key; sing-box logs a login URL on the first start,
+# and Tailscale's own connections go through the proxy.
+#
 # `secret` turns a sops secret name into a `_secret` reference, `nodes` lists the
 # nodes this user may use.
 {
@@ -8,10 +13,13 @@
   secret,
   user,
   nodes,
+  tailscale ? false,
 }:
 
 let
   tag = node: node;
+  optionals = cond: list: if cond then list else [ ];
+  optionalAttrs = cond: attrs: if cond then attrs else { };
 
   ruleSet = repo: name: {
     type = "remote";
@@ -37,13 +45,27 @@ in
         tag = "dns-cn";
         server = "223.5.5.5";
       }
-    ];
-    rules = [
+    ]
+    ++ optionals tailscale [
       {
-        rule_set = [ "geosite-cn" ];
-        server = "dns-cn";
+        type = "tailscale";
+        tag = "dns-tailscale";
+        endpoint = "tailscale";
       }
     ];
+    rules =
+      optionals tailscale [
+        {
+          domain_suffix = [ "ts.net" ];
+          server = "dns-tailscale";
+        }
+      ]
+      ++ [
+        {
+          rule_set = [ "geosite-cn" ];
+          server = "dns-cn";
+        }
+      ];
     final = "dns-remote";
     strategy = "prefer_ipv4";
   };
@@ -105,6 +127,15 @@ in
         protocol = "dns";
         action = "hijack-dns";
       }
+    ]
+    # Before the private ranges, which include Tailscale's IPv6 addresses.
+    ++ optionals tailscale [
+      {
+        preferred_by = [ "tailscale" ];
+        outbound = "tailscale";
+      }
+    ]
+    ++ [
       {
         ip_is_private = true;
         outbound = "direct";
@@ -127,4 +158,14 @@ in
   };
 
   experimental.cache_file.enabled = true;
+}
+// optionalAttrs tailscale {
+  endpoints = [
+    {
+      type = "tailscale";
+      tag = "tailscale";
+      accept_routes = true;
+      detour = "proxy";
+    }
+  ];
 }

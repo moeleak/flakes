@@ -6,7 +6,9 @@
 #   HTTP challenge behind Caddy's port 80;
 # - on the node named by `profiles.node` only:
 #   https://<profiles.host>/query?token=<token>, each user's sing-box profile
-#   with all of that user's nodes, behind Caddy.
+#   with all of that user's nodes, behind Caddy; `&tailscale=true` adds a
+#   Tailscale endpoint. Browsers get a QR code to import it into the sing-box
+#   apps, unless `&qr-code=false`.
 #
 # Secrets: `sing-box-vless-uuid` (the flake's own clients, user "flakes") and
 # `sing-box-users.<user>` (`uuid`, and the profile `token`).
@@ -32,13 +34,27 @@ let
   nodesOf = user: lib.filter (node: lib.elem user proxy.nodes.${node}.users) (lib.attrNames proxy.nodes);
 
   # What the config server hands out, rendered with the secrets at start.
-  profiles = utils.genJqSecretsReplacement { loadCredential = true; } (lib.genAttrs allUsers (user: {
-    token = secret "sing-box-users/${user}/token";
-    config = import ./client.nix {
-      inherit proxy secret user;
-      nodes = nodesOf user;
-    };
-  })) "/run/proxy-config/users.json";
+  profiles = utils.genJqSecretsReplacement { loadCredential = true; } (lib.genAttrs allUsers (
+    user:
+    let
+      profile =
+        tailscale:
+        import ./client.nix {
+          inherit
+            proxy
+            secret
+            user
+            tailscale
+            ;
+          nodes = nodesOf user;
+        };
+    in
+    {
+      token = secret "sing-box-users/${user}/token";
+      config = profile false;
+      tailscale = profile true;
+    }
+  )) "/run/proxy-config/users.json";
 in
 {
   options.my.services.proxy-node = lib.mkOption {
@@ -153,14 +169,16 @@ in
           ${profiles.script}
           # Refuse to serve a profile that sing-box would reject.
           for user in $(${lib.getExe pkgs.jq} -r 'keys[]' /run/proxy-config/users.json); do
-            ${lib.getExe pkgs.jq} --arg user "$user" '.[$user].config' /run/proxy-config/users.json > /run/proxy-config/check.json
-            ${lib.getExe pkgs.sing-box} check -c /run/proxy-config/check.json || { echo "profile of $user is invalid" >&2; exit 1; }
+            for variant in config tailscale; do
+              ${lib.getExe pkgs.jq} --arg user "$user" --arg variant "$variant" '.[$user][$variant]' /run/proxy-config/users.json > /run/proxy-config/check.json
+              ${lib.getExe pkgs.sing-box} check -c /run/proxy-config/check.json || { echo "profile $variant of $user is invalid" >&2; exit 1; }
+            done
           done
           rm /run/proxy-config/check.json
         '';
         ExecStart = "${
           lib.getExe (pkgs.callPackage ../../../../pkgs/proxy-config { })
-        } -listen 127.0.0.1:${toString configPort} -users /run/proxy-config/users.json";
+        } -listen 127.0.0.1:${toString configPort} -users /run/proxy-config/users.json -url https://${proxy.profiles.host}/query";
         LoadCredential = profiles.credentials;
         Restart = "on-failure";
 

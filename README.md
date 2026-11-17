@@ -178,8 +178,15 @@ The node named by `profiles.node` (LAX) also runs `proxy-config`
 (`pkgs/proxy-config`) behind Caddy, which serves each user's sing-box profile
 at `https://config.leak.moe/query?token=<token>`. A user has one token, and the
 profile contains every node that lists the user (TUN, mainland China direct,
-`auto` picks the fastest node; needs sing-box 1.12 or later). Profiles are
-rendered and checked with `sing-box check` when the service starts.
+`auto` picks the fastest node; needs sing-box 1.12 or later). Adding
+`&tailscale=true` returns the same profile with a Tailscale endpoint (sing-box
+1.13 or later): tailnet addresses, subnet routes and `*.ts.net` names go
+through Tailscale, whose own connections use the proxy. It carries no auth
+key; on the first start sing-box logs a login URL, and the user signs in to
+whichever tailnet they like. Opened in a browser, the URL shows a QR code
+(and a link) that the sing-box apps import as a remote profile; the apps
+themselves, curl and `&qr-code=false` get the JSON. Profiles are rendered and
+checked with `sing-box check` when the service starts.
 `config.leak.moe` must resolve to that node (a DNS-only CNAME to
 `lax.leak.moe` in Cloudflare); to move it, change `profiles.node`, deploy both
 nodes and repoint the record.

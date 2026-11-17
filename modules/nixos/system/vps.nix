@@ -37,7 +37,45 @@ in
     };
     zramSwap.enable = true;
 
-    networking.firewall.enable = false;
+    # The provider (Proxmox) hands out the addresses on a cloud-init drive and
+    # changes them from its panel, which needs the guest agent. cloud-init
+    # writes them for systemd-networkd on every boot and does nothing else:
+    # its other modules would replace the SSH host keys sops decrypts with, and
+    # set the users and passwords from the drive.
+    services.qemuGuest.enable = true;
+    services.cloud-init = {
+      enable = true;
+      network.enable = true;
+      settings = {
+        datasource_list = [ "NoCloud" ];
+        updates.network.when = [ "boot" ];
+        preserve_hostname = true;
+        cloud_init_modules = [ ];
+        cloud_config_modules = [ ];
+        cloud_final_modules = [ ];
+      };
+    };
+    # The drive asks for SLAAC, which cloud-init's networkd output leaves out.
+    environment.etc."systemd/network/10-cloud-init-eth0.network.d/ipv6.conf".text = ''
+      [Network]
+      IPv6AcceptRA=yes
+    '';
+    # Leave the routes and rules of Tailscale and Docker alone.
+    systemd.network.config.networkConfig = {
+      ManageForeignRoutes = false;
+      ManageForeignRoutingPolicyRules = false;
+    };
+    # Keep resolv.conf listing `nameservers` for the host and the containers.
+    services.resolved.enable = false;
+    networking = {
+      useDHCP = false;
+      usePredictableInterfaceNames = false;
+      nameservers = [
+        "1.1.1.1"
+        "1.0.0.1"
+      ];
+      firewall.enable = false;
+    };
 
     services.openssh = {
       enable = true;

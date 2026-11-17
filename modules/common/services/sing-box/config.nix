@@ -8,9 +8,9 @@
 
 let
   internetOutbound = if isLabClient then "egress" else "proxy";
-  labAddress = "10.90.0.3";
-  labPort = 8388;
-  labDirectPort = 8389;
+  labAddress = proxy.lab.address;
+  labPort = proxy.lab.port;
+  labDirectPort = proxy.lab.directPort;
   autoPort = 1081;
 
   secret = name: {

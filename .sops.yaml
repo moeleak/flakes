@@ -14,6 +14,14 @@ creation_rules:
           - *loliIslandCanokey
           - *as3
           - *lax
+  # The Lab relay's password, also rendered into the profiles by the node
+  # that serves them (profiles.node in lib/proxy.nix).
+  - path_regex: ^secrets/sing-box-lab\.yaml$
+    key_groups:
+      - age:
+          - *loliIsland
+          - *loliIslandCanokey
+          - *lax
   - path_regex: ^secrets/.*\.ya?ml$
     key_groups:
       - age:

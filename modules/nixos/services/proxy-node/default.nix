@@ -7,8 +7,8 @@
 # - on the node named by `profiles.node` only:
 #   https://<profiles.host>/query?token=<token>, each user's sing-box profile
 #   with all of that user's nodes, behind Caddy; `&tailscale=true` adds a
-#   Tailscale endpoint. Browsers get a QR code to import it into the sing-box
-#   apps, unless `&qr-code=false`.
+#   Tailscale endpoint and `&lab=true` the Lab relay. Browsers get a QR code
+#   to import it into the sing-box apps, unless `&qr-code=false`.
 #
 # Secrets: `sing-box-vless-uuid` (the flake's own clients, user "flakes") and
 # `sing-box-users.<user>` (`uuid`, and the profile `token`).
@@ -34,28 +34,29 @@ let
   allUsers = lib.unique (lib.concatMap (node: node.users) (lib.attrValues proxy.nodes));
   nodesOf = user: lib.filter (node: lib.elem user proxy.nodes.${node}.users) (lib.attrNames proxy.nodes);
 
+  # The profile's switches, and every combination of them, named as the
+  # server looks them up: the enabled ones in this order, joined with commas.
+  switches = [
+    "lab"
+    "tailscale"
+  ];
+  combinations = lib.foldr (switch: rest: rest ++ map (on: [ switch ] ++ on) rest) [ [ ] ] switches;
+
   # What the config server hands out, rendered with the secrets at start.
-  profiles = utils.genJqSecretsReplacement { loadCredential = true; } (lib.genAttrs allUsers (
-    user:
-    let
-      profile =
-        tailscale:
-        import ./client.nix {
-          inherit
-            proxy
-            secret
-            user
-            tailscale
-            ;
+  profiles = utils.genJqSecretsReplacement { loadCredential = true; } (lib.genAttrs allUsers (user: {
+    token = secret "sing-box-users/${user}/token";
+    configs = lib.listToAttrs (
+      map (on: {
+        name = lib.concatStringsSep "," on;
+        value = import ./client.nix {
+          inherit proxy secret user;
           nodes = nodesOf user;
+          lab = lib.elem "lab" on;
+          tailscale = lib.elem "tailscale" on;
         };
-    in
-    {
-      token = secret "sing-box-users/${user}/token";
-      config = profile false;
-      tailscale = profile true;
-    }
-  )) "/run/proxy-config/users.json";
+      }) combinations
+    );
+  })) "/run/proxy-config/users.json";
 in
 {
   options.my.services.proxy-node = lib.mkOption {
@@ -85,7 +86,8 @@ in
         ++ map (user: "sing-box-users/${user}/uuid") proxy.nodes.${cfg.name}.users;
         # Rendered into the profiles.
         profileSecrets = lib.optionals serveProfiles (
-          lib.concatMap (user: [
+          [ "sing-box-lab-password" ]
+          ++ lib.concatMap (user: [
             "sing-box-users/${user}/token"
             "sing-box-users/${user}/uuid"
           ]) allUsers
@@ -170,9 +172,9 @@ in
           ${profiles.script}
           # Refuse to serve a profile that sing-box would reject.
           for user in $(${lib.getExe pkgs.jq} -r 'keys[]' /run/proxy-config/users.json); do
-            for variant in config tailscale; do
-              ${lib.getExe pkgs.jq} --arg user "$user" --arg variant "$variant" '.[$user][$variant]' /run/proxy-config/users.json > /run/proxy-config/check.json
-              ${lib.getExe pkgs.sing-box} check -c /run/proxy-config/check.json || { echo "profile $variant of $user is invalid" >&2; exit 1; }
+            for variant in ${lib.escapeShellArgs (map (lib.concatStringsSep ",") combinations)}; do
+              ${lib.getExe pkgs.jq} --arg user "$user" --arg variant "$variant" '.[$user].configs[$variant]' /run/proxy-config/users.json > /run/proxy-config/check.json
+              ${lib.getExe pkgs.sing-box} check -c /run/proxy-config/check.json || { echo "profile '$variant' of $user is invalid" >&2; exit 1; }
             done
           done
           rm /run/proxy-config/check.json

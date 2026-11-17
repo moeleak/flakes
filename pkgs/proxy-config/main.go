@@ -1,15 +1,18 @@
 // proxy-config serves each proxy user's client configuration. The user is
-// named by a secret token in the query: GET /query?token=<token>, and
-// &tailscale=true selects the variant with Tailscale.
+// named by a secret token in the query: GET /query?token=<token>. Each of the
+// switches below is a query parameter too (&tailscale=true, &lab=true), and
+// every combination of them is a variant of the configuration.
 //
 // Browsers get a page with a QR code that the sing-box apps scan to import
-// the profile as a remote one, and a switch between the two variants;
-// everything else, such as the apps updating the profile, gets the JSON.
-// &qr-code=true or &qr-code=false chooses explicitly. The page's script and
-// its Material Web components are served from -assets at /assets/.
+// the profile as a remote one, and the switches; everything else, such as
+// the apps updating the profile, gets the JSON. &qr-code=true or
+// &qr-code=false chooses explicitly. The page's script and its Material Web
+// components are served from -assets at /assets/.
 //
-// The file given with -users maps each user name to its token and its two
-// configurations (any JSON values), and is read once at startup.
+// The file given with -users maps each user name to its token and its
+// configurations (any JSON values), keyed by the enabled switches in the
+// order below, joined with commas: "", "lab", "tailscale", "lab,tailscale".
+// It is read once at startup.
 package main
 
 import (
@@ -22,6 +25,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -29,9 +33,33 @@ import (
 )
 
 type user struct {
-	Token     string          `json:"token"`
-	Config    json.RawMessage `json:"config"`
-	Tailscale json.RawMessage `json:"tailscale"`
+	Token   string                     `json:"token"`
+	Configs map[string]json.RawMessage `json:"configs"`
+}
+
+// A profile option: a query parameter, and a switch on the page.
+type option struct {
+	Name, Title, Label, Description string
+}
+
+var switches = []option{
+	{"lab", "Lab", "Lab 中转", "经 Lab 转发，只在 Lab 所在的校园网里能用"},
+	{"tailscale", "Tailscale", "Tailscale", "同时加入 tailnet，首次启动时用日志里的链接登录"},
+}
+
+// combinations lists every set of enabled switches, in switch order.
+func combinations() [][]string {
+	var all [][]string
+	for bits := 0; bits < 1<<len(switches); bits++ {
+		var on []string
+		for i, s := range switches {
+			if bits&(1<<i) != 0 {
+				on = append(on, s.Name)
+			}
+		}
+		all = append(all, on)
+	}
+	return all
 }
 
 func main() {
@@ -55,8 +83,13 @@ func main() {
 		log.Fatalf("%s: %v", *usersFile, err)
 	}
 	for name, u := range users {
-		if u.Token == "" || len(u.Config) == 0 || len(u.Tailscale) == 0 {
-			log.Fatalf("%s: user %q needs a token, a config and a tailscale config", *usersFile, name)
+		if u.Token == "" {
+			log.Fatalf("%s: user %q has no token", *usersFile, name)
+		}
+		for _, on := range combinations() {
+			if len(u.Configs[strings.Join(on, ",")]) == 0 {
+				log.Fatalf("%s: user %q has no config %q", *usersFile, name, strings.Join(on, ","))
+			}
 		}
 	}
 	if _, err := os.Stat(*assets + "/page.js"); err != nil {
@@ -88,11 +121,18 @@ func main() {
 			http.NotFound(w, r)
 			return
 		}
-		tailscale, err := boolParam(query, "tailscale", false)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+		var on []string
+		for _, s := range switches {
+			enabled, err := boolParam(query, s.Name, false)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if enabled {
+				on = append(on, s.Name)
+			}
 		}
+		key := strings.Join(on, ",")
 		showQR, err := boolParam(query, "qr-code", strings.Contains(r.Header.Get("Accept"), "text/html"))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -101,17 +141,13 @@ func main() {
 
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("Vary", "Accept")
-		log.Printf("config for %s (tailscale: %t, qr-code: %t)", match, tailscale, showQR)
+		log.Printf("config for %s (switches: %q, qr-code: %t)", match, key, showQR)
 		if showQR {
-			servePage(w, base, string(token), tailscale)
+			servePage(w, base, string(token), key)
 			return
 		}
-		config := users[match].Config
-		if tailscale {
-			config = users[match].Tailscale
-		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(config)
+		w.Write(users[match].Configs[key])
 	})
 
 	log.Printf("listening on %s, %d users", *listen, len(users))
@@ -131,11 +167,11 @@ func boolParam(query url.Values, name string, fallback bool) (bool, error) {
 	return b, nil
 }
 
-// profileURL is where the apps fetch the profile: always the JSON.
-func profileURL(base *url.URL, token string, tailscale bool, qrCode bool) string {
+// profileURL is where the apps fetch the profile with the given switches on.
+func profileURL(base *url.URL, token string, on []string, qrCode bool) string {
 	query := url.Values{"token": {token}}
-	if tailscale {
-		query.Set("tailscale", "true")
+	for _, name := range on {
+		query.Set(name, "true")
 	}
 	query.Set("qr-code", strconv.FormatBool(qrCode))
 	u := *base
@@ -236,13 +272,15 @@ h1 { margin: 0 0 4px; }
 </div>
 </section>
 {{end}}
+{{range .Switches}}
 <label class="row">
 <span>
-<span class="md-typescale-body-large">Tailscale</span>
-<span class="md-typescale-body-medium muted">同时加入 tailnet，首次启动时用日志里的链接登录</span>
+<span class="md-typescale-body-large">{{.Label}}</span>
+<span class="md-typescale-body-medium muted">{{.Description}}</span>
 </span>
-<md-switch id="tailscale"{{if .Tailscale}} selected{{end}}></md-switch>
+<md-switch data-switch="{{.Name}}"{{if .On}} selected{{end}}></md-switch>
 </label>
+{{end}}
 </div>
 </main>
 </body>
@@ -260,14 +298,16 @@ type variant struct {
 	JSON       string
 }
 
-func servePage(w http.ResponseWriter, base *url.URL, token string, tailscale bool) {
+func servePage(w http.ResponseWriter, base *url.URL, token string, current string) {
 	var variants []variant
-	for _, withTailscale := range []bool{false, true} {
-		key, name := "plain", "leak.moe"
-		if withTailscale {
-			key, name = "tailscale", "leak.moe + Tailscale"
+	for _, on := range combinations() {
+		key, name := strings.Join(on, ","), "leak.moe"
+		for _, s := range switches {
+			if slices.Contains(on, s.Name) {
+				name += " + " + s.Title
+			}
 		}
-		jsonURL := profileURL(base, token, withTailscale, false)
+		jsonURL := profileURL(base, token, on, false)
 		// As libbox.GenerateRemoteProfileImportLink builds it.
 		importLink := (&url.URL{
 			Scheme:   "sing-box",
@@ -282,7 +322,7 @@ func servePage(w http.ResponseWriter, base *url.URL, token string, tailscale boo
 		}
 		variants = append(variants, variant{
 			Key:        key,
-			Shown:      withTailscale == tailscale,
+			Shown:      key == current,
 			QR:         template.HTML(svg(code)),
 			ImportLink: template.URL(importLink),
 			JSON:       jsonURL,
@@ -293,7 +333,15 @@ func servePage(w http.ResponseWriter, base *url.URL, token string, tailscale boo
 	w.Header().Set("Content-Security-Policy", "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'")
 	w.Header().Set("Referrer-Policy", "no-referrer")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	err := page.Execute(w, map[string]any{"Variants": variants, "Tailscale": tailscale, "Typescale": pageCSS})
+	type pageSwitch struct {
+		option
+		On bool
+	}
+	var pageSwitches []pageSwitch
+	for _, s := range switches {
+		pageSwitches = append(pageSwitches, pageSwitch{s, slices.Contains(strings.Split(current, ","), s.Name)})
+	}
+	err := page.Execute(w, map[string]any{"Variants": variants, "Switches": pageSwitches, "Typescale": pageCSS})
 	if err != nil {
 		log.Print(err)
 	}

@@ -12,6 +12,15 @@
     flow = "xtls-rprx-vision";
   };
 
+  # The Shadowsocks 2022 relay on Lab (biuh-lab), reachable only from its
+  # campus network; password `sing-box-lab-password`. The flake's clients use it
+  # as `lab`, and so do the profiles with &lab=true.
+  lab = {
+    address = "10.90.0.3";
+    port = 8388;
+    directPort = 8389;
+  };
+
   # Every user downloads one profile from https://<host>/query?token=<token>,
   # with all the nodes below that list them. One node serves it; DNS for
   # `host` must point there.

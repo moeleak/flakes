@@ -6,6 +6,9 @@
 # profile carries no auth key; sing-box logs a login URL on the first start,
 # and Tailscale's own connections go through the proxy.
 #
+# With `lab`, `proxy` defaults to the Lab relay, which only answers on Lab's
+# campus network; the nodes stay selectable.
+#
 # `secret` turns a sops secret name into a `_secret` reference, `nodes` lists the
 # nodes this user may use.
 {
@@ -14,6 +17,7 @@
   user,
   nodes,
   tailscale ? false,
+  lab ? false,
 }:
 
 let
@@ -87,8 +91,8 @@ in
     {
       type = "selector";
       tag = "proxy";
-      outbounds = [ "auto" ] ++ map tag nodes;
-      default = "auto";
+      outbounds = optionals lab [ "lab" ] ++ [ "auto" ] ++ map tag nodes;
+      default = if lab then "lab" else "auto";
     }
     {
       type = "urltest";
@@ -113,6 +117,23 @@ in
       };
     };
   }) nodes
+  ++ optionals lab [
+    {
+      type = "shadowsocks";
+      tag = "lab";
+      server = proxy.lab.address;
+      server_port = proxy.lab.port;
+      method = "2022-blake3-aes-128-gcm";
+      password = secret "sing-box-lab-password";
+      connect_timeout = "5s";
+      multiplex = {
+        enabled = true;
+        protocol = "smux";
+        max_connections = 4;
+        min_streams = 4;
+      };
+    }
+  ]
   ++ [
     {
       type = "direct";

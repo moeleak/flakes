@@ -183,10 +183,13 @@ profile contains every node that lists the user (TUN, mainland China direct,
 1.13 or later): tailnet addresses, subnet routes and `*.ts.net` names go
 through Tailscale, whose own connections use the proxy. It carries no auth
 key; on the first start sing-box logs a login URL, and the user signs in to
-whichever tailnet they like. Opened in a browser, the URL shows a page with a
-QR code (and a link) that the sing-box apps import as a remote profile, and a
-Tailscale switch; the apps themselves, curl and `&qr-code=false` get the
-JSON. The page uses Material Web, bundled with esbuild from
+whichever tailnet they like. `&lab=true` makes the Lab relay (`lab` in
+`lib/proxy.nix`) the default for `proxy`; it only answers on Lab's campus
+network, so the nodes stay selectable. The two combine, and each user has a
+profile for every combination. Opened in a browser, the URL shows a page with
+a QR code (and a link) that the sing-box apps import as a remote profile, and
+a switch for each option; the apps themselves, curl and `&qr-code=false` get
+the JSON. The page uses Material Web, bundled with esbuild from
 `pkgs/proxy-config/web` (pinned in its `package-lock.json`) and served from
 `/assets/`. Profiles are rendered and
 checked with `sing-box check` when the service starts.
@@ -194,12 +197,13 @@ checked with `sing-box check` when the service starts.
 `lax.leak.moe` in Cloudflare); to move it, change `profiles.node`, deploy both
 nodes and repoint the record.
 
-Secrets, all in `secrets/sing-box.yaml`:
+Secrets, in `secrets/sing-box.yaml` unless noted:
 
 | Key | What |
 | --- | --- |
 | `sing-box-vless-uuid` | the flake clients' UUID (user `flakes` on every node) |
 | `sing-box-users.<user>.{uuid,token}` | the user's UUID on every node, and the profile token |
+| `sing-box-lab-password` (`sing-box-lab.yaml`) | the Lab relay's password; also encrypted to the node in `profiles.node`, which renders it into the profiles |
 
 To add a user, add the name to the nodes in `lib/proxy.nix` and its `uuid`
 (`uuidgen`) and `token` (`openssl rand -hex 16`) under `sing-box-users` with

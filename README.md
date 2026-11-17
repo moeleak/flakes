@@ -147,10 +147,14 @@ nix build .#checks.x86_64-linux.pi-rescue
 
 # Proxy
 
-The `proxy` selector uses Hysteria 2 on UDP 8443: `hysteria-lax` is the
-default and `hysteria-as3` is the alternate. VLESS outbounds are retired.
-The existing Lab relay and `auto` routing remain available.
-UDP 8443 avoids the UDP 443 filtering observed on the current client network.
+The `proxy` selector uses Hysteria 2: `hysteria-lax` is the default and
+`hysteria-as3` is the alternate. LAX uses UDP 8443. AS3 hops across UDP
+18443–19443 every 30 seconds with Salamander obfuscation to work around the
+UDP 8443 return-path loss observed on the client network. VLESS outbounds are
+retired. The existing Lab relay and `auto` routing remain available.
+
+The cache file persists FakeIP mappings (`store_fakeip = true`) so DNS
+addresses cached by applications remain valid after a sing-box restart.
 
 Node addresses, separate passwords, and TLS public-key pins are encrypted in
 `secrets/sing-box.yaml`. Each VPS stores its Hysteria configuration in
@@ -158,6 +162,12 @@ Node addresses, separate passwords, and TLS public-key pins are encrypted in
 `/etc/nixos/secrets/hysteria-password`, and its ECDSA certificate/key under
 `/var/lib/sing-box/hysteria/`. Clients authenticate the pinned key; replacing a
 server key requires updating that node's encrypted `sing-box-hysteria-*-pin`.
+AS3's `hysteria.nix` also declares the `hysteria-port-hopping` systemd service,
+which redirects UDP 18443–19443 on `eth0` to the Salamander listener on UDP
+8444 for both IPv4 and IPv6. Its independent obfuscation key is encrypted as
+`sing-box-hysteria-as3-obfs-password` and stored on AS3 in
+`/etc/nixos/secrets/hysteria-obfs-password`. The original UDP 8443 listener
+remains available to clients that use a fixed port without obfuscation.
 The servers retain their existing VLESS listeners for other clients.
 
 # Claude Code providers

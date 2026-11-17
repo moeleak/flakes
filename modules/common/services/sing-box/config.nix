@@ -21,7 +21,6 @@ let
     type = "hysteria2";
     tag = "hysteria-${node}";
     server = secret "sing-box-hysteria-${node}-server";
-    server_port = 8443;
     # Bootstrap the node without resolving it through the proxy itself.
     domain_resolver = "doh-cn";
     password = secret "sing-box-hysteria-${node}-password";
@@ -30,7 +29,16 @@ let
       server_name = "${node}.leak.moe";
       certificate_public_key_sha256 = [ (secret "sing-box-hysteria-${node}-pin") ];
     };
-  };
+  } // (if node == "as3" then {
+    server_ports = [ "18443:19443" ];
+    hop_interval = "30s";
+    obfs = {
+      type = "salamander";
+      password = secret "sing-box-hysteria-as3-obfs-password";
+    };
+  } else {
+    server_port = 8443;
+  });
 
 in
 {
@@ -48,6 +56,7 @@ in
     };
     cache_file = {
       enabled = true;
+      store_fakeip = true;
     };
   };
 

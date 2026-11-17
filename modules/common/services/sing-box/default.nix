@@ -52,6 +52,7 @@ in
           "sing-box-hysteria-as3-server"
           "sing-box-hysteria-as3-password"
           "sing-box-hysteria-as3-pin"
+          "sing-box-hysteria-as3-obfs-password"
         ]
         ++ lib.optional (cfg.lab != null) "sing-box-lab-password"
       ) (_: { });

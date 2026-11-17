@@ -11,7 +11,7 @@ let
   labAddress = proxy.lab.address;
   labPort = proxy.lab.port;
   labDirectPort = proxy.lab.directPort;
-  autoPort = 1081;
+  splitPort = 1081;
 
   secret = name: {
     _secret = config.sops.secrets.${name}.path;
@@ -51,7 +51,7 @@ in
       external_controller = "localhost:9090";
       external_ui = "ui";
       external_ui_download_url = "https://github.com/MetaCubeX/Yacd-meta/archive/gh-pages.zip";
-      # Downloads run before the local auto inbound starts.
+      # Downloads run before the local split inbound starts.
       external_ui_download_detour = "proxy";
     };
     cache_file = {
@@ -197,11 +197,11 @@ in
   ]
   ++ lib.optionals isLabClient [
     {
-      # Re-enter the local routing rules when egress selects auto.
+      # Re-enter the local routing rules when egress selects split.
       type = "socks";
-      tag = "auto-in";
+      tag = "split-in";
       listen = "127.0.0.1";
-      listen_port = autoPort;
+      listen_port = splitPort;
     }
   ]
   ++ lib.optionals isLabServer [
@@ -258,7 +258,7 @@ in
       tag = "egress";
       outbounds = [
         "lab"
-        "auto"
+        "split"
         "proxy"
         "direct"
       ];
@@ -267,9 +267,9 @@ in
     }
     {
       type = "socks";
-      tag = "auto";
+      tag = "split";
       server = "127.0.0.1";
-      server_port = autoPort;
+      server_port = splitPort;
       # Keep the local hop off the physical interface selected for Internet traffic.
       inet4_bind_address = "127.0.0.1";
     }
@@ -293,7 +293,7 @@ in
 
   route = {
     default_domain_resolver = {
-      # Bootstrap proxy nodes and downloads without depending on the auto inbound.
+      # Bootstrap proxy nodes and downloads without depending on the split inbound.
       server = if isLabClient then "doh-cn" else "doh-proxy";
     };
 
@@ -303,7 +303,7 @@ in
         tag = "geosite-cn";
         format = "binary";
         url = "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs";
-        # Rule sets are loaded before the local auto inbound starts.
+        # Rule sets are loaded before the local split inbound starts.
         http_client.detour = "proxy";
       }
       {
@@ -377,7 +377,7 @@ in
           outbound = "direct";
         }
         {
-          # auto-in continues through the local rules instead of entering egress again.
+          # split-in continues through the local rules instead of entering egress again.
           type = "logical";
           mode = "and";
           rules = [
@@ -388,7 +388,7 @@ in
               ];
             }
             {
-              inbound = [ "auto-in" ];
+              inbound = [ "split-in" ];
               invert = true;
             }
           ];
@@ -437,7 +437,7 @@ in
       ]
       ++ lib.optionals isLabClient [
         {
-          inbound = [ "auto-in" ];
+          inbound = [ "split-in" ];
           outbound = "proxy";
         }
       ];

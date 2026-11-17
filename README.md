@@ -156,7 +156,7 @@ The `proxy` selector uses VLESS with XTLS Vision over TLS on TCP 8443: `lax`
 is the default and `as3` the alternate. The client's TLS looks like Chrome's
 (uTLS), and the nodes have ordinary Let's Encrypt certificates for
 `<node>.leak.moe`. The clients connect by name, so a node's address changes
-with its DNS record alone. The existing Lab relay and `auto` routing remain
+with its DNS record alone. The existing Lab relay and `split` routing remain
 available.
 
 The cache file persists FakeIP mappings (`store_fakeip = true`) so DNS

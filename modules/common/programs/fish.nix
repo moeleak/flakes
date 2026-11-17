@@ -1,7 +1,6 @@
 # fish as the system shell, plus the user's prompt and shell helpers.
 {
   config,
-  inputs,
   lib,
   pkgs,
   ...
@@ -9,53 +8,6 @@
 let
   cfg = config.my.programs.fish;
   inherit (pkgs.stdenv.hostPlatform) isDarwin isLinux;
-
-  # colmena's generated completion knows neither this flake's nodes nor the
-  # goals, and offers files for both; add them, the nodes and tags taken from
-  # the hive.
-  colmenaCompletion =
-    let
-      hive = lib.removeAttrs inputs.self.colmena [
-        "meta"
-        "defaults"
-        "network"
-      ];
-      tags = lib.unique (lib.concatMap (node: node.deployment.tags or [ ]) (lib.attrValues hive));
-      selectors = lib.concatStringsSep " " (map (tag: "@${tag}") tags ++ lib.attrNames hive);
-      goals = {
-        switch = "Activate now and at boot";
-        boot = "Activate at the next boot";
-        test = "Activate now, not at boot";
-        dry-activate = "Show what activation would do";
-        build = "Build only";
-        push = "Build and copy only";
-        upload-keys = "Upload keys only";
-      };
-      when = subcommands: lib.concatMapStringsSep "; or " (sub: "__fish_colmena_using_subcommand ${sub}") subcommands;
-      goalLines = lib.mapAttrsToList (
-        goal: description:
-        "complete -c colmena -n \"${
-          when [
-            "apply"
-            "apply-local"
-          ]
-        }\" -f -a ${goal} -d '${description}'"
-      ) goals;
-    in
-    ''
-      source ${pkgs.colmena}/share/fish/vendor_completions.d/colmena.fish
-
-      complete -c colmena -e -l on
-      complete -c colmena -n "${
-        when [
-          "apply"
-          "build"
-          "exec"
-          "upload-keys"
-        ]
-      }" -l on -d 'Node selector' -x -a "(__fish_append , ${selectors})"
-      ${lib.concatStringsSep "\n" goalLines}
-    '';
 in
 {
   options.my.programs.fish = lib.mkOption {
@@ -71,7 +23,6 @@ in
         enable = true;
 
         completions.cargo = builtins.readFile "${pkgs.fish.src}/share/completions/cargo.fish";
-        completions.colmena = colmenaCompletion;
 
         shellInit = lib.mkIf isDarwin ''
           source /Users/lolimaster/miniconda3/etc/fish/conf.d/conda.fish

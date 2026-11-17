@@ -219,15 +219,16 @@ nix shell nixpkgs#sops nixpkgs#age-plugin-yubikey -c sops decrypt \
   sed 's|^|https://config.leak.moe/query?token=|'
 ```
 
-## Deploying a VPS
+## Deploying with colmena
 
-The VPS are deployed with [colmena](https://github.com/nix-community/colmena)
-(0.5, in nixpkgs and installed on Lab). The flake's `colmenaHive` has a node
-for each VPS, tagged `vps`, built from the same modules as its
-`nixosConfigurations` entry (the same system, down to the derivation), and
-reached as root on port 2333; `my.programs.ssh` provides the host keys on
-every machine here. colmena reads the flake through git, so `git add` new
-files first. From the repository:
+The VPS and Lab are deployed with
+[colmena](https://github.com/nix-community/colmena) (0.5, in nixpkgs and
+installed on Lab). The flake's `colmenaHive` has a node for each host in
+`deployTargets` (`flake.nix`), built from the same modules as its
+`nixosConfigurations` entry (the same system, down to the derivation) and
+reached as root over SSH; `my.programs.ssh` pins their host keys on every
+machine here. colmena reads the flake through git, so `git add` new files
+first. From the repository:
 
 ```bash
 colmena apply --on @vps                         # both, switch
@@ -235,6 +236,9 @@ colmena apply --on LoliIsland-VPS-lax           # one
 colmena apply --on @vps boot                    # activate at the next boot
 colmena build --on @vps                         # build only
 colmena exec --on @vps -- systemctl status sing-box
+colmena apply --on @lab                         # Lab, over Tailscale
+colmena apply --on @lab dry-activate            # what Lab would restart
+colmena apply-local --sudo                      # on Lab itself
 ```
 
 Without `colmena` installed, `nix run nixpkgs#colmena -- apply --on @vps`.
@@ -245,6 +249,11 @@ the paths built here cross the network. That suits Lab and the PC (the VPS
 are too small to evaluate their systems). `--build-on-target` instead copies
 the derivations and builds on the VPS, which is quicker from a machine close
 to them or one of another architecture, such as the Mac.
+
+Lab (`biuh-lab`, tag `lab`) always builds its own system, being the
+strongest machine here, and allows local deployment: on Lab,
+`colmena apply-local --sudo` asks for the sudo password and switches it. Root
+logs in to Lab with the key in its `/root/.ssh/authorized_keys`.
 
 `lp4a` is in the hive too, without a tag (`colmena apply --on lp4a`).
 

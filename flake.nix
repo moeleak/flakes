@@ -100,11 +100,28 @@
         };
       };
 
-      # Hosts colmena deploys as root over SSH on port 2333 (like the `as3`
-      # and `lax` aliases of my.programs.ssh), all tagged `vps`.
-      vpsTargets = {
-        LoliIsland-VPS-AS3 = "as3.leak.moe";
-        LoliIsland-VPS-lax = "lax.leak.moe";
+      # Hosts in hosts/x86_64-linux that colmena deploys, as root over SSH
+      # (my.programs.ssh pins their host keys); see the README.
+      deployTargets = {
+        # Port 2333, like the `as3` and `lax` aliases.
+        LoliIsland-VPS-AS3 = {
+          targetHost = "as3.leak.moe";
+          targetPort = 2333;
+          tags = [ "vps" ];
+        };
+        LoliIsland-VPS-lax = {
+          targetHost = "lax.leak.moe";
+          targetPort = 2333;
+          tags = [ "vps" ];
+        };
+        # Over Tailscale. Lab builds its own system, and `colmena apply-local
+        # --sudo` on Lab deploys it there.
+        biuh-lab = {
+          targetHost = "100.64.44.88";
+          tags = [ "lab" ];
+          buildOnTarget = true;
+          allowLocalDeployment = true;
+        };
       };
 
       lp4aSystem = "x86_64-linux";
@@ -165,7 +182,7 @@
           };
         };
 
-      # `colmena apply --on @vps`; see the README.
+      # `colmena apply --on @vps`, `--on @lab`; see the README.
       colmenaHive = colmena.lib.makeHive self.colmena;
       colmena = {
         meta = {
@@ -182,15 +199,13 @@
           imports = lp4aModules ++ [ (nixosSystemModule nixos-licheepi4a.inputs.nixpkgs) ];
         };
       }
-      // lib.mapAttrs (name: targetHost: {
+      // lib.mapAttrs (name: deployment: {
         deployment = {
-          inherit targetHost;
-          targetPort = 2333;
           targetUser = "root";
-          tags = [ "vps" ];
-        };
+        }
+        // deployment;
         imports = x86Modules name (./hosts/x86_64-linux + "/${name}") ++ [ (nixosSystemModule nixpkgs) ];
-      }) vpsTargets;
+      }) deployTargets;
 
       darwinConfigurations = hostsIn ./hosts/aarch64-darwin (
         name: host:

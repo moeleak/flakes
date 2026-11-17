@@ -1,5 +1,6 @@
-# SSH aliases and pinned host keys for the VPS, so that any machine here can
-# deploy them: `ssh as3`, `nixos-rebuild ... --target-host as3`.
+# SSH aliases and pinned host keys for the VPS, and Lab's host key on
+# Tailscale, so that any machine here can deploy them with colmena (or
+# `ssh as3`, `nixos-rebuild ... --target-host as3`).
 {
   config,
   lib,
@@ -19,10 +20,17 @@ in
   };
 
   config = lib.mkIf (cfg != null) {
-    programs.ssh.knownHosts = lib.mapAttrs (name: publicKey: {
-      hostNames = [ "[${name}.leak.moe]:2333" ];
-      inherit publicKey;
-    }) vps;
+    programs.ssh.knownHosts =
+      lib.mapAttrs (name: publicKey: {
+        hostNames = [ "[${name}.leak.moe]:2333" ];
+        inherit publicKey;
+      }) vps
+      // {
+        biuh-lab = {
+          hostNames = [ "100.64.44.88" ];
+          publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHOUTAuzAeGBKS7TMiGtX2NtHBtVZrYqj2+5fRlYMI6R";
+        };
+      };
 
     programs.ssh.extraConfig = ''
       Host ${lib.concatStringsSep " " (lib.attrNames vps)}

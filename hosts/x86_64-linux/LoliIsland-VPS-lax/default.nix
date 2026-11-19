@@ -7,6 +7,7 @@
   my = {
     system.vps = { };
     services.proxy-node.name = "lax";
+    services.dn42.name = "lax";
   };
 
   networking.domain = "lax.leak.moe";

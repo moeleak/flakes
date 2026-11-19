@@ -29,6 +29,7 @@ let
   # Where sing-box answers the ACME HTTP challenge, forwarded from port 80.
   acmePort = 18080;
   serveProfiles = cfg.name == proxy.profiles.node;
+  onDn42 = config.my.services.dn42 != null;
   proxyConfig = pkgs.callPackage ../../../../pkgs/proxy-config { };
 
   allUsers = lib.unique (lib.concatMap (node: node.users) (lib.attrValues proxy.nodes));
@@ -108,6 +109,14 @@ in
             type = "local";
             tag = "local";
           }
+        ]
+        ++ lib.optionals onDn42 [
+          {
+            # The anycast recursive resolver, reached over DN42.
+            type = "udp";
+            tag = "dn42";
+            server = "172.20.0.53";
+          }
         ];
         certificate_providers = [
           {
@@ -156,6 +165,15 @@ in
           }
         ];
         route = {
+          # The clients send DN42 here by name (lib/dn42.nix); BIRD's routes
+          # take the direct outbound there.
+          rules = lib.optionals onDn42 [
+            {
+              domain_suffix = [ "dn42" ];
+              action = "resolve";
+              server = "dn42";
+            }
+          ];
           final = "direct";
           default_domain_resolver = "local";
         };

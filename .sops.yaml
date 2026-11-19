@@ -25,6 +25,15 @@ creation_rules:
           - *loliIslandYubikey
           - *loliIslandCanokey
           - *lax
+  # The DN42 nodes' WireGuard keys (lib/dn42.nix).
+  - path_regex: ^secrets/dn42\.yaml$
+    key_groups:
+      - age:
+          - *loliIsland
+          - *loliIslandYubikey
+          - *loliIslandCanokey
+          - *as3
+          - *lax
   - path_regex: ^secrets/.*\.ya?ml$
     key_groups:
       - age:

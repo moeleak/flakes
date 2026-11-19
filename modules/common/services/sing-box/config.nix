@@ -25,6 +25,7 @@ let
   };
 
   proxy = import ../../../../lib/proxy.nix;
+  dn42 = import ../../../../lib/dn42.nix;
 
   # VLESS with XTLS Vision; TLS looks like Chrome's.
   mkVless = node: {
@@ -263,6 +264,12 @@ in
       default = "lax";
     }
     {
+      # The nodes on DN42.
+      type = "selector";
+      tag = "dn42";
+      outbounds = lib.attrNames dn42.nodes;
+    }
+    {
       type = "direct";
       tag = "direct";
       domain_resolver = {
@@ -392,6 +399,13 @@ in
           # Reach the portal directly, before egress routing.
           domain_suffix = [ portalDomain ];
           outbound = "direct";
+        }
+        {
+          # DN42 through its nodes, before egress routing and the private
+          # addresses (its ranges are private), by name or by address.
+          domain_suffix = [ "dn42" ];
+          ip_cidr = dn42.routed;
+          outbound = "dn42";
         }
       ]
       ++ lib.optionals isLabClient [

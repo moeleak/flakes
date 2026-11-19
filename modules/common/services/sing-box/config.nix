@@ -13,6 +13,13 @@ let
   labDirectPort = proxy.lab.directPort;
   splitPort = 1081;
 
+  # The campus learning portal. The campus DNS answers with its internal
+  # address; its public one is unreachable from inside the campus.
+  portalDomain = "learn.hibiuh.edu.cn";
+  # The network's own DNS server. macOS's system DNS is sing-box itself
+  # (networking.dns), so ask DHCP there.
+  portalDns = if pkgs.stdenv.hostPlatform.isDarwin then "dns-dhcp" else "dns-local";
+
   secret = name: {
     _secret = config.sops.secrets.${name}.path;
   };
@@ -113,7 +120,12 @@ in
         };
         detour = internetOutbound;
       }
-
+    ]
+    ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
+      {
+        type = "dhcp";
+        tag = "dns-dhcp";
+      }
     ];
 
     rules = [
@@ -136,6 +148,11 @@ in
       }
     ]
     ++ [
+      {
+        # The portal's real address, so that it is reached directly.
+        domain_suffix = [ portalDomain ];
+        server = portalDns;
+      }
       {
         query_type = [
           "A"
@@ -355,9 +372,17 @@ in
           outbound = "direct";
         }
         {
-          # Reach the learning portal through the campus relay before egress routing.
-          domain_suffix = [ "learn.hibiuh.edu.cn" ];
-          outbound = if isLabClient then "lab" else "direct";
+          # Connections can still name the portal by domain (FakeIPs handed out
+          # before, or what Lab relays): resolve it as the DNS rule does.
+          domain_suffix = [ portalDomain ];
+          action = "resolve";
+          server = portalDns;
+          strategy = "ipv4_only";
+        }
+        {
+          # Reach the portal directly, before egress routing.
+          domain_suffix = [ portalDomain ];
+          outbound = "direct";
         }
       ]
       ++ lib.optionals isLabClient [

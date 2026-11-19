@@ -18,6 +18,36 @@ in
 
   globals.mapleader = " ";
 
+  # Over SSH there is no clipboard tool, and Nvim turns on its OSC 52
+  # provider by itself only while 'clipboard' is empty. Yank to the local
+  # clipboard with OSC 52, but paste the last yank instead of reading the
+  # clipboard back, which kitty asks permission for every time; paste the
+  # local clipboard with the terminal's own paste key. Inside tmux, Nvim's
+  # tmux provider already reaches the local clipboard (load-buffer -w).
+  extraConfigLuaPre = ''
+    if vim.env.SSH_TTY and not vim.env.TMUX then
+      local osc52 = require("vim.ui.clipboard.osc52")
+      local last = {}
+      local function copy(reg)
+        local send = osc52.copy(reg)
+        return function(lines, regtype)
+          last[reg] = { lines, regtype }
+          send(lines)
+        end
+      end
+      local function paste(reg)
+        return function()
+          return last[reg] or { { "" }, "v" }
+        end
+      end
+      vim.g.clipboard = {
+        name = "OSC 52",
+        copy = { ["+"] = copy("+"), ["*"] = copy("*") },
+        paste = { ["+"] = paste("+"), ["*"] = paste("*") },
+      }
+    end
+  '';
+
   opts = {
     number = true;
     relativenumber = true;

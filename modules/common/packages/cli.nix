@@ -23,6 +23,8 @@ in
         pkgs.ffmpeg
         pkgs.openssh
         pkgs.gnupg
+        pkgs.sops
+        pkgs.age-plugin-yubikey
         pkgs.fastfetch
         pkgs.yazi
         pkgs.colmena

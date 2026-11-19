@@ -83,7 +83,7 @@ in
         type = "fakeip";
         tag = "fakeip";
         inet4_range = "198.18.0.0/15";
-        # inet6_range = "fc00::/18";
+        inet6_range = "fc00::/18";
       }
       {
         type = "tcp";
@@ -149,6 +149,13 @@ in
     ]
     ++ [
       {
+        # No IPv6 for the portal: the campus network has none. An empty answer,
+        # as a per-rule strategy cannot sit beside query_type rules in 1.14.
+        domain_suffix = [ portalDomain ];
+        query_type = [ "AAAA" ];
+        action = "predefined";
+      }
+      {
         # The portal's real address, so that it is reached directly.
         domain_suffix = [ portalDomain ];
         server = portalDns;
@@ -171,7 +178,9 @@ in
     ];
 
     final = "doh-proxy";
-    strategy = "ipv4_only";
+    # IPv6 is reached through the proxy (FakeIPs); the direct outbound and the
+    # portal stay on IPv4.
+    strategy = "prefer_ipv4";
   };
 
   endpoints = [
@@ -193,7 +202,7 @@ in
         tag = "tun-in";
         address = [
           "172.19.0.1/30"
-          # "fdfe:dcba:9876::1/126"
+          "fdfe:dcba:9876::1/126"
         ];
         mtu = 9000;
         auto_route = true;

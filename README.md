@@ -92,8 +92,9 @@ Check with `nixos-rebuild build --flake .#<host>` before switching.
 
 # Secrets
 
-Secrets live in `secrets/*.yaml`, encrypted to the user's two recipients in
-`.sops.yaml`; `sing-box.yaml` is also encrypted to the VPS that read it. A
+Secrets live in `secrets/*.yaml`, encrypted to the user's recipients in
+`.sops.yaml` (the SSH key, the YubiKey and the Canokey); `sing-box.yaml` is
+also encrypted to the VPS that read it. A
 module declares the ones it needs by name and the file that contains the key is
 found automatically:
 
@@ -110,14 +111,24 @@ nix shell nixpkgs#sops nixpkgs#age-plugin-yubikey -c sops secrets/<file>.yaml
 Hosts decrypt with the main user's `~/.ssh/id_ed25519`; the VPS
 (`my.sops.hostKey = true`) with their `/etc/ssh/ssh_host_ed25519_key`, whose age
 recipient is `ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub`. After changing
-the recipients of a file, run `sops updatekeys secrets/<file>.yaml`. A nested
-key such as `sing-box-users/ada/token` is found by its top-level part. Hosts that set
-`my.sops.yubikey = true` (the Mac and the laptop) instead need the YubiKey
-plugged in during a rebuild, with its identity exported once:
+the recipients of a file, run `sops updatekeys secrets/<file>.yaml`; sops does
+not match an `ssh-to-age` recipient with the SSH key itself, so to decrypt with
+the SSH key, give it the converted key:
+
+```bash
+nix shell nixpkgs#sops nixpkgs#ssh-to-age nixpkgs#age-plugin-yubikey -c bash -c \
+  'SOPS_AGE_KEY_CMD="ssh-to-age -private-key -i $HOME/.ssh/id_ed25519" \
+   sops updatekeys secrets/<file>.yaml'
+```
+
+A nested key such as `sing-box-users/ada/token` is found by its top-level part.
+Hosts that set `my.sops.yubikey = true` (the Mac and the laptop) instead need
+the YubiKey or the Canokey plugged in during a rebuild, with the identity of
+each exported once, one key plugged in at a time (`>>` keeps the other one):
 
 ```
 $ nix shell nixpkgs#age-plugin-yubikey
-$ age-plugin-yubikey --identity --slot 1 > $HOME/.config/sops/age/keys.txt
+$ age-plugin-yubikey --identity --slot 1 >> $HOME/.config/sops/age/keys.txt
 ```
 
 # Pi extensions

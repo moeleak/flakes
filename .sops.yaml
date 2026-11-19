@@ -1,5 +1,6 @@
 keys:
   - &loliIsland age1kfzd6saww8rsfhe5zs7gky2pyk6yl5jkew9gypyrk00qmadw7p3qdkdlys
+  - &loliIslandYubikey age1yubikey1qgpjhn3affeaux9t5espv5e9p4gt3576h7rxvlk0n0wgwcwzcvm2kgrj2w8
   - &loliIslandCanokey age1yubikey1qdt7dcx4973y9gj98yety02xf5dp9q4xpmkrp9tdwcntmc0t0sz8vvuywml
   # SSH host keys of the proxy nodes: ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub
   - &as3 age1fmyq2lkr79mwr7h3xq4pf7st9qwuthu357m3xydf7auhw27jzyqs3vdqzl
@@ -11,6 +12,7 @@ creation_rules:
     key_groups:
       - age:
           - *loliIsland
+          - *loliIslandYubikey
           - *loliIslandCanokey
           - *as3
           - *lax
@@ -20,10 +22,12 @@ creation_rules:
     key_groups:
       - age:
           - *loliIsland
+          - *loliIslandYubikey
           - *loliIslandCanokey
           - *lax
   - path_regex: ^secrets/.*\.ya?ml$
     key_groups:
       - age:
           - *loliIsland
+          - *loliIslandYubikey
           - *loliIslandCanokey

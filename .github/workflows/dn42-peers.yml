@@ -1,0 +1,26 @@
+# Checks a pull request that adds, changes or removes DN42 peers
+# (modules/nixos/services/dn42/peers/README.md) before it is merged; see
+# .github/dn42/check-peers.sh. Once it is, the node is deployed by hand, as in
+# the README's "Deploying with colmena". It runs the pull request's own code,
+# so it has no secrets and cannot write.
+name: DN42 peers
+
+on:
+  pull_request:
+    paths:
+      - modules/nixos/services/dn42/peers/**
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The merge commit and the branch it merges into.
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: cachix/install-nix-action@bb0495a1086c46893eee56f32fd192dfe4a15bb9 # v32.0.0
+      - run: .github/dn42/check-peers.sh

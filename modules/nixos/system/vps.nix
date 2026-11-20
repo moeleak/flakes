@@ -67,8 +67,9 @@ in
       ManageForeignRoutes = false;
       ManageForeignRoutingPolicyRules = false;
     };
-    # Keep resolv.conf listing `nameservers` for the host and the containers.
-    services.resolved.enable = false;
+    # resolv.conf lists `nameservers`, unless the host is on DN42 and runs
+    # resolved (modules/nixos/services/dn42).
+    services.resolved.enable = lib.mkDefault false;
     networking = {
       useDHCP = false;
       usePredictableInterfaceNames = false;
@@ -89,7 +90,12 @@ in
     ];
 
     services.tailscale.enable = true;
-    virtualisation.docker.enable = true;
+    virtualisation.docker = {
+      enable = true;
+      # The containers keep `nameservers` under resolved too, which would
+      # hand them all its servers, DN42's among them.
+      daemon.settings.dns = config.networking.nameservers;
+    };
 
     environment.systemPackages = with pkgs; [
       btop

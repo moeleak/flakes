@@ -204,6 +204,30 @@ in
       ) tunnels;
     };
 
+    # DN42's names, and the reverse names of its ranges, go to its anycast
+    # resolver; the rest goes to `nameservers` and the links' servers as
+    # before. A delegate rather than the servers of the link `dn42`: resolved
+    # sends a link's queries out of that link, and the dummy drops them.
+    services.resolved = {
+      enable = true;
+      settings.Resolve.LLMNR = false;
+      dnsDelegates.dn42.Delegate = {
+        DNS = [
+          "172.20.0.53"
+          "fd42:d42:d42:53::1"
+        ];
+        Domains = [
+          "~dn42"
+          "~10.in-addr.arpa"
+          "~20.172.in-addr.arpa"
+          "~21.172.in-addr.arpa"
+          "~22.172.in-addr.arpa"
+          "~23.172.in-addr.arpa"
+          "~d.f.ip6.arpa"
+        ];
+      };
+    };
+
     services.bird = {
       enable = true;
       config = birdConfig;

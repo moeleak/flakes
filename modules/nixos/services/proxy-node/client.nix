@@ -137,18 +137,14 @@ in
   ++ map (node: {
     type = "vless";
     tag = tag node;
-    server = "${node}.${proxy.domain}";
+    server = proxy.nodes.${node}.host;
     server_port = proxy.vless.port;
     uuid = secret "sing-box-users/${user}/uuid";
     inherit (proxy.vless) flow;
     packet_encoding = "xudp";
     tls = {
       enabled = true;
-      server_name = "${node}.${proxy.domain}";
-      utls = {
-        enabled = true;
-        fingerprint = "chrome";
-      };
+      server_name = proxy.nodes.${node}.host;
     };
   }) nodes
   ++ optionals lab [

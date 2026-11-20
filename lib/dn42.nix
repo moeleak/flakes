@@ -13,15 +13,15 @@
     "fd00::/8"
   ];
 
-  # The nodes, named as in lib/proxy.nix and reached as <name>.leak.moe. Each
-  # has its addresses on a dummy interface, a link-local address on its
-  # tunnels, and a WireGuard key (`dn42-wireguard/<name>` in
-  # secrets/dn42.yaml) whose public half is `publicKey`. The nodes peer with
-  # each other (iBGP) on `internalPort`, and each with its peers (eBGP) in
+  # The nodes, named and reached as in lib/proxy.nix (`host`). Each has its
+  # addresses on a dummy interface, a link-local address on its tunnels, and a
+  # WireGuard key (`dn42-wireguard/<name>` in secrets/dn42.yaml) whose public
+  # half is `publicKey`. The nodes peer with each other (iBGP) on
+  # `internalPort`, and each with its peers (eBGP) in
   # modules/nixos/services/dn42/peers/<name>/.
   internalPort = 23507;
   nodes = {
-    lax = {
+    an4 = {
       ipv4 = "172.23.122.65";
       ipv6 = "fdd0:3960:d30::1";
       linkLocal = "fe80::3507:1";

@@ -2,8 +2,9 @@
 # their users). It serves:
 #
 # - VLESS with XTLS Vision on TCP `vless.port`, over TLS with a Let's Encrypt
-#   certificate for <name>.leak.moe that sing-box obtains itself, answering the
-#   HTTP challenge behind Caddy's port 80;
+#   certificate for the node's host (and former hosts, lib/proxy.nix) that
+#   sing-box obtains itself, answering the HTTP challenge behind Caddy's port
+#   80;
 # - on the node named by `profiles.node` only:
 #   https://<profiles.host>/query?token=<token>, each user's sing-box profile
 #   with all of that user's nodes, behind Caddy; `&tailscale=true` adds a
@@ -23,7 +24,8 @@ let
   cfg = config.my.services.proxy-node;
   proxy = import ../../../../lib/proxy.nix;
 
-  fqdn = "${cfg.name}.${proxy.domain}";
+  node = proxy.nodes.${cfg.name};
+  fqdn = node.host;
   secret = name: { _secret = config.sops.secrets.${name}.path; };
   configPort = 8090;
   # Where sing-box answers the ACME HTTP challenge, forwarded from port 80.
@@ -122,7 +124,7 @@ in
           {
             type = "acme";
             tag = "acme";
-            domain = [ fqdn ];
+            domain = [ fqdn ] ++ node.formerHosts;
             data_directory = "/var/lib/sing-box/acme";
             # Caddy holds port 443.
             disable_tls_alpn_challenge = true;
@@ -239,14 +241,17 @@ in
     services.caddy = {
       enable = true;
       virtualHosts = {
-        "http://${fqdn}".extraConfig = ''
-          handle /.well-known/acme-challenge/* {
-            reverse_proxy 127.0.0.1:${toString acmePort}
-          }
-          handle {
-            respond 404
-          }
-        '';
+        "http://${fqdn}" = {
+          serverAliases = map (host: "http://${host}") node.formerHosts;
+          extraConfig = ''
+            handle /.well-known/acme-challenge/* {
+              reverse_proxy 127.0.0.1:${toString acmePort}
+            }
+            handle {
+              respond 404
+            }
+          '';
+        };
       }
       // lib.optionalAttrs serveProfiles {
         ${proxy.profiles.host} = {

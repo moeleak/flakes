@@ -8,7 +8,7 @@
 # The node's eBGP peers are the files in peers/<node>/, one a peer, named by
 # it:
 #
-#   # peers/lax/<name>.nix
+#   # peers/an4/<name>.nix
 #   {
 #     asn = 4242420000;
 #     endpoint = "host:port"; # left out if only they connect to us
@@ -44,7 +44,7 @@ let
   others = lib.mapAttrs (name: other: {
     internal = true;
     asn = dn42.asn;
-    endpoint = "${name}.${proxy.domain}:${toString dn42.internalPort}";
+    endpoint = "${proxy.nodes.${name}.host}:${toString dn42.internalPort}";
     port = dn42.internalPort;
     inherit (other) publicKey linkLocal;
   }) (removeAttrs dn42.nodes [ cfg.name ]);

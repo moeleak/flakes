@@ -103,14 +103,14 @@
       # Hosts in hosts/x86_64-linux that colmena deploys, as root over SSH
       # (my.programs.ssh pins their host keys); see the README.
       deployTargets = {
-        # Port 2333, like the `as3` and `lax` aliases.
+        # Port 2333, like the `as3` and `an4` aliases.
         LoliIsland-VPS-AS3 = {
-          targetHost = "as3.leak.moe";
+          targetHost = "lax-as3.leak.moe";
           targetPort = 2333;
           tags = [ "vps" ];
         };
-        LoliIsland-VPS-lax = {
-          targetHost = "lax.leak.moe";
+        LoliIsland-VPS-AN4 = {
+          targetHost = "lax-an4.leak.moe";
           targetPort = 2333;
           tags = [ "vps" ];
         };

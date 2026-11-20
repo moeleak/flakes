@@ -4,7 +4,7 @@ keys:
   - &loliIslandCanokey age1yubikey1qdt7dcx4973y9gj98yety02xf5dp9q4xpmkrp9tdwcntmc0t0sz8vvuywml
   # SSH host keys of the proxy nodes: ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub
   - &as3 age1fmyq2lkr79mwr7h3xq4pf7st9qwuthu357m3xydf7auhw27jzyqs3vdqzl
-  - &lax age12h6yc3xrqkjkgflpagtnlyqdzvxl4qlcna7j8cpg7a6ffz330ets8zfj08
+  - &an4 age12h6yc3xrqkjkgflpagtnlyqdzvxl4qlcna7j8cpg7a6ffz330ets8zfj08
 
 creation_rules:
   # Read by the clients and by the nodes.
@@ -15,7 +15,7 @@ creation_rules:
           - *loliIslandYubikey
           - *loliIslandCanokey
           - *as3
-          - *lax
+          - *an4
   # The Lab relay's password, also rendered into the profiles by the node
   # that serves them (profiles.node in lib/proxy.nix).
   - path_regex: ^secrets/sing-box-lab\.yaml$
@@ -24,7 +24,7 @@ creation_rules:
           - *loliIsland
           - *loliIslandYubikey
           - *loliIslandCanokey
-          - *lax
+          - *an4
   # The DN42 nodes' WireGuard keys (lib/dn42.nix).
   - path_regex: ^secrets/dn42\.yaml$
     key_groups:
@@ -33,7 +33,7 @@ creation_rules:
           - *loliIslandYubikey
           - *loliIslandCanokey
           - *as3
-          - *lax
+          - *an4
   - path_regex: ^secrets/.*\.ya?ml$
     key_groups:
       - age:

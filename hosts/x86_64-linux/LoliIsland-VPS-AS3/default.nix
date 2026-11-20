@@ -1,4 +1,4 @@
-# Proxy node as3.leak.moe.
+# Proxy node as3 (lax-as3.leak.moe).
 {
   imports = [
     ./hardware-configuration.nix
@@ -10,7 +10,7 @@
     services.dn42.name = "as3";
   };
 
-  networking.domain = "as3.leak.moe";
+  networking.domain = "lax-as3.leak.moe";
 
   system.stateVersion = "23.05";
 }

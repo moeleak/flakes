@@ -1,7 +1,7 @@
 # The proxy nodes and who may use them. Read by the sing-box client
 # (modules/common/services/sing-box) and by the nodes themselves
-# (modules/nixos/services/proxy-node). Node <name> is reachable as
-# <name>.leak.moe, so changing its address only takes a DNS update.
+# (modules/nixos/services/proxy-node). Each node is reached by its `host`, so
+# changing its address only takes a DNS update.
 {
   domain = "leak.moe";
 
@@ -26,45 +26,56 @@
   # `host` must point there.
   profiles = {
     host = "config.leak.moe";
-    node = "lax";
+    node = "an4";
   };
 
-  # Users besides this flake's own clients. Each one's VLESS UUID and profile
-  # token are under `sing-box-users.<user>` in secrets/sing-box.yaml.
+  # Each node's name, and its users besides this flake's own clients; a user's
+  # VLESS UUID and profile token are under `sing-box-users.<user>` in
+  # secrets/sing-box.yaml. `formerHosts` are the names a node went by until
+  # 2026-11-20 (an4 was lax): profiles downloaded before still use them, so
+  # its certificate covers them too until those profiles are gone.
   nodes = {
-    lax.users = [
-      "ada"
-      "cjh"
-      "dzf"
-      "hwl"
-      "kyn"
-      "lxz"
-      "mjz"
-      "syf"
-      "szh"
-      "wgr"
-      "wty"
-      "xzh"
-      "xzy"
-      "zyr"
-      "zyw"
-    ];
-    as3.users = [
-      "ada"
-      "cjh"
-      "dzf"
-      "hwl"
-      "kyn"
-      "lxz"
-      "mjz"
-      "syf"
-      "szh"
-      "wgr"
-      "wty"
-      "xzh"
-      "xzy"
-      "zyr"
-      "zyw"
-    ];
+    an4 = {
+      host = "lax-an4.leak.moe";
+      formerHosts = [ "lax.leak.moe" ];
+      users = [
+        "ada"
+        "cjh"
+        "dzf"
+        "hwl"
+        "kyn"
+        "lxz"
+        "mjz"
+        "syf"
+        "szh"
+        "wgr"
+        "wty"
+        "xzh"
+        "xzy"
+        "zyr"
+        "zyw"
+      ];
+    };
+    as3 = {
+      host = "lax-as3.leak.moe";
+      formerHosts = [ "as3.leak.moe" ];
+      users = [
+        "ada"
+        "cjh"
+        "dzf"
+        "hwl"
+        "kyn"
+        "lxz"
+        "mjz"
+        "syf"
+        "szh"
+        "wgr"
+        "wty"
+        "xzh"
+        "xzy"
+        "zyr"
+        "zyw"
+      ];
+    };
   };
 }

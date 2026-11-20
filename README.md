@@ -163,12 +163,13 @@ nix build .#checks.x86_64-linux.pi-rescue
 
 # Proxy
 
-The `proxy` selector uses VLESS with XTLS Vision over TLS on TCP 8443: `lax`
-is the default and `as3` the alternate. The client's TLS looks like Chrome's
-(uTLS), and the nodes have ordinary Let's Encrypt certificates for
-`<node>.leak.moe`. The clients connect by name, so a node's address changes
-with its DNS record alone. The existing Lab relay and `split` routing remain
-available.
+The `proxy` selector uses VLESS with XTLS Vision over TLS on TCP 8443: `an4`
+is the default and `as3` the alternate, both in Los Angeles. The clients use
+sing-box's own TLS, not uTLS (whose browser imitations are themselves easy to
+tell apart), and the nodes have ordinary Let's Encrypt certificates for their
+`host` in `lib/proxy.nix` (`lax-an4.leak.moe`, `lax-as3.leak.moe`). The
+clients connect by name, so a node's address changes with its DNS record
+alone. The existing Lab relay and `split` routing remain available.
 
 The cache file persists FakeIP mappings (`store_fakeip = true`) so DNS
 addresses cached by applications remain valid after a sing-box restart.
@@ -177,15 +178,21 @@ addresses cached by applications remain valid after a sing-box restart.
 
 `lib/proxy.nix` lists the nodes, the VLESS port and the users; the clients and
 `modules/nixos/services/proxy-node` both read it. Each node
-(`hosts/x86_64-linux/LoliIsland-VPS-{AS3,lax}`, `my.services.proxy-node`) runs
+(`hosts/x86_64-linux/LoliIsland-VPS-{AS3,AN4}`, `my.services.proxy-node`) runs
 sing-box with the VLESS inbound. sing-box obtains and renews its certificate
 itself (a `certificate_providers` entry); Caddy holds ports 80 and 443 and
-forwards `http://<node>.leak.moe/.well-known/acme-challenge/` to it.
+forwards `http://<host>/.well-known/acme-challenge/` to it.
+
+an4 was named lax, and the nodes were `lax.leak.moe` and `as3.leak.moe`, until
+2026-11-20. Those names still resolve and are each node's `formerHosts`: the
+certificates cover them, and Caddy answers their challenges, so profiles
+downloaded before keep working. The DN42 peers were given them too. Drop
+`formerHosts` once every user has downloaded a new profile.
 
 sing-box's VLESS inbound has no fallback: a connection that is not VLESS is
 closed after the TLS handshake instead of reaching a web server.
 
-The node named by `profiles.node` (LAX) also runs `proxy-config`
+The node named by `profiles.node` (an4) also runs `proxy-config`
 (`pkgs/proxy-config`) behind Caddy, which serves each user's sing-box profile
 at `https://config.leak.moe/query?token=<token>`. A user has one token, and the
 profile contains every node that lists the user (TUN, mainland China direct,
@@ -208,7 +215,7 @@ the JSON. The page uses Material Web, bundled with esbuild from
 `/assets/`. Profiles are rendered and
 checked with `sing-box check` when the service starts.
 `config.leak.moe` must resolve to that node (a DNS-only CNAME to
-`lax.leak.moe` in Cloudflare); to move it, change `profiles.node`, deploy both
+`lax-an4.leak.moe` in Cloudflare); to move it, change `profiles.node`, deploy both
 nodes and repoint the record.
 
 Secrets, in `secrets/sing-box.yaml` unless noted:
@@ -242,8 +249,8 @@ over SSH:
 
 | Node | Target | Tag |
 | --- | --- | --- |
-| `LoliIsland-VPS-AS3` | `root@as3.leak.moe:2333` | `vps` |
-| `LoliIsland-VPS-lax` | `root@lax.leak.moe:2333` | `vps` |
+| `LoliIsland-VPS-AS3` | `root@lax-as3.leak.moe:2333` | `vps` |
+| `LoliIsland-VPS-AN4` | `root@lax-an4.leak.moe:2333` | `vps` |
 | `biuh-lab` | `root@100.64.44.88` (Tailscale) | `lab` |
 | `lp4a` | `root@100.76.208.19:2333` (Tailscale) | |
 
@@ -252,13 +259,13 @@ Run it from the repository; without `colmena` installed, use
 
 ```bash
 colmena apply --on @vps                         # both VPS: build, copy, switch
-colmena apply --on LoliIsland-VPS-lax           # one host
+colmena apply --on LoliIsland-VPS-AN4           # one host
 colmena apply --on @vps,@lab                    # the VPS and Lab
 colmena apply --on @vps dry-activate            # what would restart, nothing changes
 colmena apply --on @vps boot                    # switch at the next boot
 colmena apply-local --sudo                      # on Lab, deploy Lab itself
 colmena exec --on @vps -- systemctl status sing-box
-colmena eval -E '{ nodes, ... }: nodes.LoliIsland-VPS-lax.config.networking.hostName'
+colmena eval -E '{ nodes, ... }: nodes.LoliIsland-VPS-AN4.config.networking.hostName'
 ```
 
 ### Choosing hosts
@@ -322,4 +329,4 @@ The provider (Proxmox) hands out each VPS's addresses on a cloud-init drive,
 and cloud-init writes them for systemd-networkd at every boot
 (`my.system.vps`). To change a node's IP, use the provider's panel, which
 needs the QEMU guest agent (running) and reboots the VPS with the new
-address, then update `<node>.leak.moe` in Cloudflare.
+address, then update the node's `host` in Cloudflare.

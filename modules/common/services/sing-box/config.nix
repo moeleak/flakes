@@ -27,11 +27,12 @@ let
   proxy = import ../../../../lib/proxy.nix;
   dn42 = import ../../../../lib/dn42.nix;
 
-  # VLESS with XTLS Vision; TLS looks like Chrome's.
+  # VLESS with XTLS Vision, over sing-box's own TLS: uTLS's imitations of
+  # browsers are themselves easy to tell apart.
   mkVless = node: {
     type = "vless";
     tag = node;
-    server = "${node}.${proxy.domain}";
+    server = proxy.nodes.${node}.host;
     server_port = proxy.vless.port;
     # Bootstrap the node without resolving it through the proxy itself.
     domain_resolver = "doh-cn";
@@ -40,11 +41,7 @@ let
     packet_encoding = "xudp";
     tls = {
       enabled = true;
-      server_name = "${node}.${proxy.domain}";
-      utls = {
-        enabled = true;
-        fingerprint = "chrome";
-      };
+      server_name = proxy.nodes.${node}.host;
     };
   };
 
@@ -257,11 +254,11 @@ in
       type = "selector";
       tag = "proxy";
       outbounds = [
-        "lax"
+        "an4"
         "as3"
         "direct"
       ];
-      default = "lax";
+      default = "an4";
     }
     {
       # The nodes on DN42.
@@ -282,7 +279,7 @@ in
       tag = "block";
     }
 
-    (mkVless "lax")
+    (mkVless "an4")
     (mkVless "as3")
   ]
   ++ lib.optionals isLabClient [

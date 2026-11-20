@@ -8,6 +8,7 @@
     system.vps = { };
     services.proxy-node.name = "as3";
     services.dn42.name = "as3";
+    services.apple-music = { };
   };
 
   networking.domain = "lax-as3.leak.moe";

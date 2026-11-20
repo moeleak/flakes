@@ -52,6 +52,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # The Apple Music bot that as3 runs (modules/nixos/services/apple-music):
+    # a private repository, so fetching it takes SSH access to GitHub.
+    apple-music-bot = {
+      url = "git+ssh://git@github.com/moeleak/apple-music-downloader-bot";
+      flake = false;
+    };
+
     # The same version as nixpkgs' colmena CLI, which reads `colmenaHive`.
     colmena = {
       url = "github:nix-community/colmena/v0.5.0";

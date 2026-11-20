@@ -93,8 +93,9 @@ Check with `nixos-rebuild build --flake .#<host>` before switching.
 # Secrets
 
 Secrets live in `secrets/*.yaml`, encrypted to the user's recipients in
-`.sops.yaml` (the SSH key, the YubiKey and the Canokey); `sing-box.yaml` is
-also encrypted to the VPS that read it. A
+`.sops.yaml` (the SSH key, the YubiKey and the Canokey); the files the VPS
+read (`sing-box.yaml`, `sing-box-lab.yaml`, `dn42.yaml`, `apple-music.yaml`)
+are also encrypted to them. A
 module declares the ones it needs by name and the file that contains the key is
 found automatically:
 
@@ -189,6 +190,11 @@ certificates cover them, and Caddy answers their challenges, so profiles
 downloaded before keep working. The DN42 peers were given them too. Drop
 `formerHosts` once every user has downloaded a new profile.
 
+as3 also runs the Apple Music Telegram bot (`my.services.apple-music`), as
+Docker containers from `virtualisation.oci-containers`, with its data in
+`/var/lib/apple-music-bot` and `/var/lib/apple-music-wrapper`; its module says
+how its images are made and how to log the wrapper in again.
+
 sing-box's VLESS inbound has no fallback: a connection that is not VLESS is
 closed after the TLS handshake instead of reaching a web server.
 
@@ -271,7 +277,8 @@ colmena eval -E '{ nodes, ... }: nodes.LoliIsland-VPS-AN4.config.networking.host
 ### Choosing hosts
 
 `--on` takes node names (comma-separated), tags (`@vps`, `@lab`) and globs
-(`'LoliIsland-VPS-*'`). Without `--on`, colmena deploys every node, including
+(`'LoliIsland-VPS-*'`). The names are the hosts' (`LoliIsland-VPS-AS3`, not
+`as3`); one that matches nothing deploys nothing, without an error. Without `--on`, colmena deploys every node, including
 `lp4a`, which is usually offline: always pass `--on`.
 
 ### Goals

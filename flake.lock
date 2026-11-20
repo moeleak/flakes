@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "apple-music-bot": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1790557331,
+        "narHash": "sha256-z+xmP3S3s0mLREfcPuG31eJBXJMArtlG1AvWSbv04rU=",
+        "ref": "refs/heads/main",
+        "rev": "12661eed4b0655df200089711f82fd25423fa4d4",
+        "revCount": 455,
+        "type": "git",
+        "url": "ssh://git@github.com/moeleak/apple-music-downloader-bot"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/moeleak/apple-music-downloader-bot"
+      }
+    },
     "colmena": {
       "inputs": {
         "flake-compat": "flake-compat",
@@ -400,6 +416,7 @@
     },
     "root": {
       "inputs": {
+        "apple-music-bot": "apple-music-bot",
         "colmena": "colmena",
         "firefox-addons": "firefox-addons",
         "home-manager": "home-manager",

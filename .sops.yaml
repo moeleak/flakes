@@ -34,6 +34,15 @@ creation_rules:
           - *loliIslandCanokey
           - *as3
           - *an4
+  # The Apple Music bot's tokens, settings and account, on as3
+  # (modules/nixos/services/apple-music).
+  - path_regex: ^secrets/apple-music\.yaml$
+    key_groups:
+      - age:
+          - *loliIsland
+          - *loliIslandYubikey
+          - *loliIslandCanokey
+          - *as3
   - path_regex: ^secrets/.*\.ya?ml$
     key_groups:
       - age:

@@ -13,7 +13,7 @@ Both are in Los Angeles, and both names resolve to IPv4 and IPv6.
   20207 for AS4242420207.
 - WireGuard's MTU is 1420.
 - My BGP is MP-BGP over the link-local addresses with Extended Next Hop,
-  carries both IPv4 and IPv6.
+  which carries both IPv4 and IPv6.
 
 ## Peering
 

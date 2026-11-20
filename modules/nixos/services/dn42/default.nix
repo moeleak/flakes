@@ -13,8 +13,10 @@
 #     asn = 4242420000;
 #     endpoint = "host:port"; # left out if only they connect to us
 #     publicKey = "…";
-#     linkLocal = "fe80::…";  # theirs; ours is the node's `linkLocal`
+#     linkLocal = "fe80::…";  # theirs
 #     port = 20000;           # ours; default 2 and their ASN's last 4 digits
+#     localLinkLocal = "fe80::…"; # ours, if not the node's `linkLocal`
+#     presharedKey = true;    # dn42-wireguard-psk/<name> in secrets/dn42.yaml
 #   }
 #
 # A peer's name becomes the interface dn42-<name>, so at most 10 characters.
@@ -24,7 +26,8 @@
 # https://dn42.dev/howto/Bird2: ROA-filtered eBGP. stayrtr serves BIRD the
 # registry's ROAs over RTR, from the export at dn42.burble.com, and BIRD
 # filters the peers' routes again whenever they change.
-# Secret: `dn42-wireguard/<name>`, the node's WireGuard private key.
+# Secrets: `dn42-wireguard/<name>`, the node's WireGuard private key, and
+# `dn42-wireguard-psk/<peer>` for a peer with `presharedKey`.
 {
   config,
   lib,
@@ -46,6 +49,8 @@ let
     asn = dn42.asn;
     endpoint = "${proxy.nodes.${name}.host}:${toString dn42.internalPort}";
     port = dn42.internalPort;
+    localLinkLocal = node.linkLocal;
+    presharedKey = false;
     inherit (other) publicKey linkLocal;
   }) (removeAttrs dn42.nodes [ cfg.name ]);
   peersDir = ./peers + "/${cfg.name}";
@@ -65,6 +70,8 @@ let
         endpoint = null;
         # 2 followed by the last four digits of their ASN.
         port = 20000 + lib.mod peer.asn 10000;
+        localLinkLocal = node.linkLocal;
+        presharedKey = false;
       }
       // peer
     )
@@ -72,6 +79,7 @@ let
   tunnels = others // peers;
 
   interface = name: "dn42-${name}";
+  pskSecret = name: "dn42-wireguard-psk/${name}";
   protocolName = name: lib.replaceStrings [ "-" ] [ "_" ] name;
 
   bgpSession =
@@ -127,12 +135,23 @@ in
       message = "dn42: the interface of peer ${name}, ${interface name}, is longer than 15 characters.";
     }) tunnels;
 
-    sops.secrets."dn42-wireguard/${cfg.name}" = {
-      owner = "systemd-network";
-      group = "systemd-network";
-      mode = "0400";
-      restartUnits = [ "systemd-networkd.service" ];
-    };
+    # The node's WireGuard key, and the preshared keys of the peers that use
+    # one.
+    sops.secrets =
+      let
+        secret = {
+          owner = "systemd-network";
+          group = "systemd-network";
+          mode = "0400";
+          restartUnits = [ "systemd-networkd.service" ];
+        };
+      in
+      {
+        "dn42-wireguard/${cfg.name}" = secret;
+      }
+      // lib.mapAttrs' (name: _: lib.nameValuePair (pskSecret name) secret) (
+        lib.filterAttrs (_: tunnel: tunnel.presharedKey) tunnels
+      );
 
     systemd.network = {
       # Forward between the tunnels; the RA client stays on, as set for eth0.
@@ -172,6 +191,9 @@ in
                 Endpoint = tunnel.endpoint;
                 PersistentKeepalive = 25;
               }
+              // lib.optionalAttrs tunnel.presharedKey {
+                PresharedKeyFile = config.sops.secrets.${pskSecret name}.path;
+              }
             )
           ];
         }
@@ -189,10 +211,10 @@ in
         };
       }
       // lib.mapAttrs' (
-        name: _:
+        name: tunnel:
         lib.nameValuePair "60-${interface name}" {
           matchConfig.Name = interface name;
-          address = [ "${node.linkLocal}/64" ];
+          address = [ "${tunnel.localLinkLocal}/64" ];
           networkConfig = {
             LinkLocalAddressing = "no";
             IPv6AcceptRA = false;

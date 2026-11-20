@@ -6,7 +6,9 @@
 # reaches DN42: sing-box (the proxy node) takes the clients there.
 #
 # The BIRD configuration follows https://dn42.dev/howto/Bird2: ROA-filtered
-# eBGP, with the ROA tables updated every 15 minutes from dn42.burble.com.
+# eBGP. stayrtr serves BIRD the registry's ROAs over RTR, from the export at
+# dn42.burble.com, and BIRD filters the peers' routes again whenever they
+# change.
 # Secret: `dn42-wireguard/<name>`, the node's WireGuard private key.
 {
   config,
@@ -20,12 +22,8 @@ let
   proxy = import ../../../../lib/proxy.nix;
   node = dn42.nodes.${cfg.name};
 
-  # Where BIRD includes the ROA tables from, relative to /etc/bird/bird.conf.
-  roaDir = "/var/lib/bird/roa";
-  roaFiles = {
-    v4 = "dn42_roa_bird2_4.conf";
-    v6 = "dn42_roa_bird2_6.conf";
-  };
+  # Where stayrtr serves the ROAs to BIRD.
+  rtrPort = 8282;
 
   # Every tunnel of this node: the other nodes, then its peers.
   others = lib.mapAttrs (name: other: {
@@ -113,14 +111,15 @@ let
     roa4 table dn42_roa;
     roa6 table dn42_roa_v6;
 
-    protocol static {
+    # stayrtr notifies BIRD of each change. If BIRD starts before stayrtr
+    # listens, it tries again soon, and if stayrtr goes away, it keeps the
+    # ROAs it has for two days.
+    protocol rpki rpki_dn42 {
       roa4 { table dn42_roa; };
-      include "roa/${roaFiles.v4}";
-    }
-
-    protocol static {
       roa6 { table dn42_roa_v6; };
-      include "roa/${roaFiles.v6}";
+      remote 127.0.0.1 port ${toString rtrPort};
+      retry keep 30;
+      expire keep 172800;
     }
 
     # Learned routes leave from this node's own address. The aggregates below
@@ -172,12 +171,15 @@ let
       ipv6;
     }
 
+    # Each channel keeps what the peer sends (`import table`): only then does
+    # BIRD run the import filter again when the ROA tables change.
     template bgp dnpeers {
       local as OWNAS;
       path metric on;
       enable extended messages on;
 
       ipv4 {
+        import table on;
         extended next hop on;
         import filter {
           if is_valid_network() && !is_self_net() then {
@@ -195,6 +197,7 @@ let
       };
 
       ipv6 {
+        import table on;
         import filter {
           if is_valid_network_v6() && !is_self_net_v6() then {
             if (roa_check(dn42_roa_v6, net, bgp_path.last) != ROA_VALID) then {
@@ -331,46 +334,20 @@ in
     services.bird = {
       enable = true;
       config = birdConfig;
-      # The ROA tables are only there at run time.
-      preCheckConfig = ''
-        mkdir roa
-        touch roa/${roaFiles.v4} roa/${roaFiles.v6}
-      '';
     };
 
-    environment.etc."bird/roa".source = roaDir;
-    systemd.tmpfiles.rules = [
-      "d ${roaDir} 0755 root root -"
-      "f ${roaDir}/${roaFiles.v4} 0644 root root -"
-      "f ${roaDir}/${roaFiles.v6} 0644 root root -"
-    ];
-
-    systemd.services.dn42-roa = {
-      description = "Update the DN42 ROA tables of BIRD";
+    # stayrtr fetches the ROAs again every 10 minutes. It serves no metrics,
+    # which would listen on every address.
+    systemd.services.dn42-rtr = {
+      description = "RTR server of the DN42 ROAs, for BIRD";
+      wantedBy = [ "multi-user.target" ];
       wants = [ "network-online.target" ];
-      after = [
-        "network-online.target"
-        "bird.service"
-      ];
-      path = [
-        pkgs.curl
-        config.services.bird.package
-      ];
-      serviceConfig.Type = "oneshot";
-      script =
-        lib.concatMapStrings (file: ''
-          curl -fsSL --retry 3 -o ${roaDir}/${file}.new https://dn42.burble.com/roa/${file}
-          mv ${roaDir}/${file}.new ${roaDir}/${file}
-        '') (lib.attrValues roaFiles)
-        + ''
-          birdc configure
-        '';
-    };
-    systemd.timers.dn42-roa = {
-      wantedBy = [ "timers.target" ];
-      timerConfig = {
-        OnBootSec = "1m";
-        OnUnitActiveSec = "15m";
+      after = [ "network-online.target" ];
+      serviceConfig = {
+        ExecStart = "${lib.getExe pkgs.stayrtr} -cache https://dn42.burble.com/roa/dn42_roa_46.json -bind 127.0.0.1:${toString rtrPort} -metrics.addr=";
+        DynamicUser = true;
+        Restart = "on-failure";
+        RestartSec = 30;
       };
     };
   };

@@ -5,10 +5,25 @@
 # node's own DN42 address as their source, so whatever the node itself opens
 # reaches DN42: sing-box (the proxy node) takes the clients there.
 #
-# The BIRD configuration follows https://dn42.dev/howto/Bird2: ROA-filtered
-# eBGP. stayrtr serves BIRD the registry's ROAs over RTR, from the export at
-# dn42.burble.com, and BIRD filters the peers' routes again whenever they
-# change.
+# The node's eBGP peers are the files in peers/<node>/, one a peer, named by
+# it:
+#
+#   # peers/lax/<name>.nix
+#   {
+#     asn = 4242420000;
+#     endpoint = "host:port"; # left out if only they connect to us
+#     publicKey = "…";
+#     linkLocal = "fe80::…";  # theirs; ours is the node's `linkLocal`
+#     port = 20000;           # ours; default 2 and their ASN's last 4 digits
+#   }
+#
+# A peer's name becomes the interface dn42-<name>, so at most 10 characters.
+#
+# BIRD's configuration is bird.conf, after this node's values as constants
+# and followed by a session per tunnel. It follows
+# https://dn42.dev/howto/Bird2: ROA-filtered eBGP. stayrtr serves BIRD the
+# registry's ROAs over RTR, from the export at dn42.burble.com, and BIRD
+# filters the peers' routes again whenever they change.
 # Secret: `dn42-wireguard/<name>`, the node's WireGuard private key.
 {
   config,
@@ -33,16 +48,27 @@ let
     port = dn42.internalPort;
     inherit (other) publicKey linkLocal;
   }) (removeAttrs dn42.nodes [ cfg.name ]);
-  peers = lib.mapAttrs (
-    _: peer:
-    {
-      internal = false;
-      endpoint = null;
-      # 2 followed by the last four digits of their ASN.
-      port = 20000 + lib.mod peer.asn 10000;
-    }
-    // peer
-  ) node.peers;
+  peersDir = ./peers + "/${cfg.name}";
+  peerFiles = lib.optionalAttrs (builtins.pathExists peersDir) (
+    lib.filterAttrs (file: type: type == "regular" && lib.hasSuffix ".nix" file) (
+      builtins.readDir peersDir
+    )
+  );
+  peers = lib.mapAttrs' (
+    file: _:
+    let
+      peer = import (peersDir + "/${file}");
+    in
+    lib.nameValuePair (lib.removeSuffix ".nix" file) (
+      {
+        internal = false;
+        endpoint = null;
+        # 2 followed by the last four digits of their ASN.
+        port = 20000 + lib.mod peer.asn 10000;
+      }
+      // peer
+    )
+  ) peerFiles;
   tunnels = others // peers;
 
   interface = name: "dn42-${name}";
@@ -65,177 +91,24 @@ let
         }
       '';
 
-  birdConfig = ''
-    define OWNAS = ${toString dn42.asn};
-    define OWNIP = ${node.ipv4};
-    define OWNIPv6 = ${node.ipv6};
-    define OWNNET = ${dn42.ipv4};
-    define OWNNETv6 = ${dn42.ipv6};
-    define OWNNETSET = [${dn42.ipv4}+];
-    define OWNNETSETv6 = [${dn42.ipv6}+];
-
-    router id OWNIP;
-
-    protocol device {
-      scan time 10;
-    }
-
-    function is_self_net() -> bool {
-      return net ~ OWNNETSET;
-    }
-
-    function is_self_net_v6() -> bool {
-      return net ~ OWNNETSETv6;
-    }
-
-    function is_valid_network() -> bool {
-      return net ~ [
-        172.20.0.0/14{21,29}, # dn42
-        172.20.0.0/24{28,32}, # dn42 Anycast
-        172.21.0.0/24{28,32}, # dn42 Anycast
-        172.22.0.0/24{28,32}, # dn42 Anycast
-        172.23.0.0/24{28,32}, # dn42 Anycast
-        172.31.0.0/16+,       # ChaosVPN
-        10.100.0.0/14+,       # ChaosVPN
-        10.127.0.0/16+,       # neonetwork
-        10.0.0.0/8{15,24}     # Freifunk.net
-      ];
-    }
-
-    function is_valid_network_v6() -> bool {
-      return net ~ [
-        fd00::/8{44,64} # ULA address space as per RFC 4193
-      ];
-    }
-
-    roa4 table dn42_roa;
-    roa6 table dn42_roa_v6;
-
-    # stayrtr notifies BIRD of each change. If BIRD starts before stayrtr
-    # listens, it tries again soon, and if stayrtr goes away, it keeps the
-    # ROAs it has for two days.
-    protocol rpki rpki_dn42 {
-      roa4 { table dn42_roa; };
-      roa6 { table dn42_roa_v6; };
-      remote 127.0.0.1 port ${toString rtrPort};
-      retry keep 30;
-      expire keep 172800;
-    }
-
-    # Learned routes leave from this node's own address. The aggregates below
-    # are only announced, and the node's addresses are on the dummy interface.
-    protocol kernel {
-      scan time 20;
-      ipv4 {
-        import none;
-        export filter {
-          if source ~ [RTS_STATIC, RTS_DEVICE] then reject;
-          krt_prefsrc = OWNIP;
-          accept;
-        };
-      };
-    }
-
-    protocol kernel {
-      scan time 20;
-      ipv6 {
-        import none;
-        export filter {
-          if source ~ [RTS_STATIC, RTS_DEVICE] then reject;
-          krt_prefsrc = OWNIPv6;
-          accept;
-        };
-      };
-    }
-
-    protocol static {
-      route OWNNET reject;
-      ipv4 {
-        import all;
-        export none;
-      };
-    }
-
-    protocol static {
-      route OWNNETv6 reject;
-      ipv6 {
-        import all;
-        export none;
-      };
-    }
-
-    # This node's addresses, announced to the other nodes.
-    protocol direct {
-      interface "dn42";
-      ipv4;
-      ipv6;
-    }
-
-    # Each channel keeps what the peer sends (`import table`): only then does
-    # BIRD run the import filter again when the ROA tables change.
-    template bgp dnpeers {
-      local as OWNAS;
-      path metric on;
-      enable extended messages on;
-
-      ipv4 {
-        import table on;
-        extended next hop on;
-        import filter {
-          if is_valid_network() && !is_self_net() then {
-            if (roa_check(dn42_roa, net, bgp_path.last) != ROA_VALID) then {
-              print "[dn42] ROA check failed for ", net, " ASN ", bgp_path.last;
-              reject;
-            } else accept;
-          } else reject;
-        };
-        export filter {
-          if is_valid_network() && source ~ [RTS_STATIC, RTS_BGP] then accept;
-          else reject;
-        };
-        import limit 9000 action block;
-      };
-
-      ipv6 {
-        import table on;
-        import filter {
-          if is_valid_network_v6() && !is_self_net_v6() then {
-            if (roa_check(dn42_roa_v6, net, bgp_path.last) != ROA_VALID) then {
-              print "[dn42] ROA check failed for ", net, " ASN ", bgp_path.last;
-              reject;
-            } else accept;
-          } else reject;
-        };
-        export filter {
-          if is_valid_network_v6() && source ~ [RTS_STATIC, RTS_BGP] then accept;
-          else reject;
-        };
-        import limit 9000 action block;
-      };
-    }
-
-    # The other nodes: everything learned, and each node's own addresses.
-    template bgp dnnodes {
-      local as OWNAS;
-      direct;
-      enable extended messages on;
-
-      ipv4 {
-        next hop self;
-        extended next hop on;
-        import all;
-        export where source ~ [RTS_BGP, RTS_DEVICE];
-      };
-
-      ipv6 {
-        next hop self;
-        import all;
-        export where source ~ [RTS_BGP, RTS_DEVICE];
-      };
-    }
-
-    ${lib.concatStringsSep "\n" (lib.mapAttrsToList bgpSession tunnels)}
-  '';
+  # The node's values as BIRD constants, the configuration they go into
+  # (bird.conf), then a session per tunnel.
+  birdConfig = lib.concatStringsSep "\n" (
+    [
+      ''
+        define OWNAS = ${toString dn42.asn};
+        define OWNIP = ${node.ipv4};
+        define OWNIPv6 = ${node.ipv6};
+        define OWNNET = ${dn42.ipv4};
+        define OWNNETv6 = ${dn42.ipv6};
+        define OWNNETSET = [${dn42.ipv4}+];
+        define OWNNETSETv6 = [${dn42.ipv6}+];
+        define RTRPORT = ${toString rtrPort};
+      ''
+      (builtins.readFile ./bird.conf)
+    ]
+    ++ lib.mapAttrsToList bgpSession tunnels
+  );
 in
 {
   options.my.services.dn42 = lib.mkOption {

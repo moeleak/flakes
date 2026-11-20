@@ -17,17 +17,8 @@
   # has its addresses on a dummy interface, a link-local address on its
   # tunnels, and a WireGuard key (`dn42-wireguard/<name>` in
   # secrets/dn42.yaml) whose public half is `publicKey`. The nodes peer with
-  # each other (iBGP) on `internalPort`, and each with its `peers` (eBGP):
-  #
-  #   <name> = {
-  #     asn = 4242420000;
-  #     endpoint = "host:port"; # or null if only they connect to us
-  #     publicKey = "…";
-  #     linkLocal = "fe80::…";  # theirs; ours is the node's `linkLocal`
-  #     port = 20000;           # ours; default 2 and their ASN's last 4 digits
-  #   };
-  #
-  # A peer's name becomes the interface dn42-<name>, so at most 10 characters.
+  # each other (iBGP) on `internalPort`, and each with its peers (eBGP) in
+  # modules/nixos/services/dn42/peers/<name>/.
   internalPort = 23507;
   nodes = {
     lax = {
@@ -35,14 +26,12 @@
       ipv6 = "fdd0:3960:d30::1";
       linkLocal = "fe80::3507:1";
       publicKey = "kbxzD1Hd6kr97/Ab8n1MI49r6LA2g2jARiWcsFNK6DU=";
-      peers = { };
     };
     as3 = {
       ipv4 = "172.23.122.66";
       ipv6 = "fdd0:3960:d30::2";
       linkLocal = "fe80::3507:2";
       publicKey = "IaF+I0Mk9+U+gF/nS/Yces+PydtLh3wYX1jtK/wBFx8=";
-      peers = { };
     };
   };
 }

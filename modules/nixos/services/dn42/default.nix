@@ -78,14 +78,14 @@ let
     name: tunnel:
     if tunnel.internal then
       ''
-        protocol bgp ibgp_${protocolName name} from dnnodes {
+        protocol bgp ibgp_${protocolName name} from ibgp_node {
           neighbor ${tunnel.linkLocal} as OWNAS;
           interface "${interface name}";
         }
       ''
     else
       ''
-        protocol bgp dn42_${protocolName name} from dnpeers {
+        protocol bgp ebgp_${protocolName name} from ebgp_peer {
           neighbor ${tunnel.linkLocal} as ${toString tunnel.asn};
           interface "${interface name}";
         }

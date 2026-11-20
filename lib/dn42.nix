@@ -6,6 +6,10 @@
   ipv4 = "172.23.122.64/26";
   ipv6 = "fdd0:3960:d30::/48";
 
+  # The zone that data/dns/moeleak.dn42 in the registry delegates to the
+  # nodes; each serves it as its `nameserver` (modules/nixos/services/dn42).
+  domain = "moeleak.dn42";
+
   # What the clients send to the nodes: DN42 itself. Its affiliates in
   # 10.0.0.0/8 stay out, as the campus network uses that range.
   routed = [
@@ -26,12 +30,14 @@
       ipv6 = "fdd0:3960:d30::1";
       linkLocal = "fe80::3507:1";
       publicKey = "kbxzD1Hd6kr97/Ab8n1MI49r6LA2g2jARiWcsFNK6DU=";
+      nameserver = "ns1";
     };
     as3 = {
       ipv4 = "172.23.122.66";
       ipv6 = "fdd0:3960:d30::2";
       linkLocal = "fe80::3507:2";
       publicKey = "IaF+I0Mk9+U+gF/nS/Yces+PydtLh3wYX1jtK/wBFx8=";
+      nameserver = "ns2";
     };
   };
 }

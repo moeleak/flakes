@@ -119,6 +119,8 @@ let
   );
 in
 {
+  imports = [ ./dns.nix ];
+
   options.my.services.dn42 = lib.mkOption {
     type = lib.types.nullOr (
       lib.types.submodule {

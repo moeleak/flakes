@@ -8,13 +8,7 @@
 let
   cfg = config.my.programs.zen-browser;
 
-  # DN42's root certificate alone. nixpkgs' file starts with `openssl x509
-  # -text` output, which the certificate policy cannot parse: it only strips
-  # what precedes the PEM header on the header's own line.
-  dn42Ca = pkgs.runCommandLocal "dn42-ca.pem" { } ''
-    sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' \
-      ${pkgs.dn42-cacert}/etc/ssl/certs/dn42-ca.crt > $out
-  '';
+  dn42Ca = pkgs.callPackage ../../../pkgs/dn42-ca.nix { };
 in
 {
   options.my.programs.zen-browser = lib.mkOption {

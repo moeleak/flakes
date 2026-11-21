@@ -12,7 +12,7 @@
 
 stdenv.mkDerivation rec {
   pname = "obs-bilibili-stream";
-  version = "2.1.5";
+  version = "2.1.6";
 
   src =
     if srcOverride != null then
@@ -22,7 +22,7 @@ stdenv.mkDerivation rec {
         owner = "Zarosmm";
         repo = "obs-bilibili-stream";
         rev = version;
-        hash = "sha256-cFIPbOHhafsH1YLV8wqnRZF+df3K/cEWP6h6KuZsqNc=";
+        hash = "sha256-WcoAqlBq45y3M4krx5hFeuNCxI88GsP287RBHmzEp5E=";
       };
 
   nativeBuildInputs = [

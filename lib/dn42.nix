@@ -14,7 +14,8 @@ in
   domain = "moeleak.dn42";
 
   # The node that takes the mail of `domain`, as mail.<domain>, the zone's MX
-  # (modules/nixos/services/dn42/mail.nix), and its mailboxes there, each with
+  # (modules/nixos/services/dn42/mail.nix), on addresses of its own there,
+  # which mail.<domain> names both ways; and its mailboxes there, each with
   # the hash of its password as `dn42-mail/<name>` in secrets/dn42.yaml. The
   # first also takes the mail of postmaster@, hostmaster@, abuse@ and root@.
   # Its mail is signed with DKIM under `dkim.selector`, whose public key, an
@@ -22,6 +23,10 @@ in
   # `dn42-dkim/<selector>` in secrets/dn42.yaml.
   mail = {
     node = "as3";
+    # At the top of the ranges, away from the nodes' addresses, which follow
+    # their `id`s; 25 as SMTP's port.
+    ipv4 = "172.23.122.125";
+    ipv6 = "fdd0:3960:d30::25";
     mailboxes = [ "i" ];
     dkim = {
       selector = "mail";

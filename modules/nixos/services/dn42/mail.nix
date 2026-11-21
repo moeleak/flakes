@@ -1,6 +1,8 @@
 # The mail of `domain` (lib/dn42.nix), on DN42 only. The node `mail.node`
-# takes it as mail.<domain>, the zone's MX (dns.nix), on its own DN42
-# addresses: Postfix on port 25 hands it to Dovecot (LMTP), which keeps the
+# takes it as mail.<domain>, the zone's MX (dns.nix), on the mail's own DN42
+# addresses (`mail.ipv4` and `mail.ipv6`), which it puts on its dummy `dn42`
+# beside its own, and sends from them, so that they, its name and its HELO
+# agree. Postfix on port 25 hands the mail to Dovecot (LMTP), which keeps the
 # mailboxes in /var/lib/vmail and serves them over IMAP with implicit TLS
 # (993); the mailboxes send through Postfix's submissions (465), with
 # Dovecot's logins, to .dn42 addresses only.
@@ -28,9 +30,9 @@
 let
   cfg = config.my.services.dn42;
   dn42 = import ../../../../lib/dn42.nix;
-  node = dn42.nodes.${cfg.name};
   inherit (dn42) domain;
-  inherit (dn42.mail) mailboxes dkim;
+  inherit (dn42) mail;
+  inherit (mail) mailboxes dkim;
 
   host = "mail.${domain}";
   address = name: "${name}@${domain}";
@@ -59,7 +61,13 @@ let
   '';
 in
 {
-  config = lib.mkIf (cfg != null && dn42.mail.node == cfg.name) {
+  config = lib.mkIf (cfg != null && mail.node == cfg.name) {
+    # BIRD gives them to the other nodes, as it does the node's own.
+    systemd.network.networks."60-dn42".address = [
+      "${mail.ipv4}/32"
+      "${mail.ipv6}/128"
+    ];
+
     sops = {
       secrets = lib.genAttrs (map (mailbox: "dn42-mail/${mailbox}") mailboxes) (_: { }) // {
         "dn42-dkim/${dkim.selector}" = {
@@ -139,11 +147,13 @@ in
         # The node's own mail is for root@<domain>.
         mydestination = [ "localhost" ];
         inet_interfaces = [
-          node.ipv4
-          "[${node.ipv6}]"
+          mail.ipv4
+          "[${mail.ipv6}]"
           "127.0.0.1"
           "[::1]"
         ];
+        smtp_bind_address = mail.ipv4;
+        smtp_bind_address6 = mail.ipv6;
         mynetworks = [
           "127.0.0.0/8"
           "[::1]/128"
@@ -187,8 +197,8 @@ in
           lmtp = true;
         };
         listen = [
-          node.ipv4
-          node.ipv6
+          mail.ipv4
+          mail.ipv6
         ];
         ssl = "required";
         ssl_server_cert_file = "${certificate}/fullchain.pem";

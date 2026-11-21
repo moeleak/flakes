@@ -3,11 +3,11 @@
     "apple-music-bot": {
       "flake": false,
       "locked": {
-        "lastModified": 1795268067,
-        "narHash": "sha256-ZEPlGgcdSEgfB3Iy3XN5sBCCZYU0QSbmHY/JQIIzozk=",
+        "lastModified": 1795274176,
+        "narHash": "sha256-97JyyuP/5tkFcjIX4O2/YTXGmQVQYdPvL/wyZqZcUAA=",
         "ref": "refs/heads/main",
-        "rev": "7dc394c14f9bb927dffdf5993a3e146f7aa8c99a",
-        "revCount": 457,
+        "rev": "0357b45b2a1056d299ab6f43a923bf99085d5612",
+        "revCount": 458,
         "type": "git",
         "url": "ssh://git@github.com/moeleak/apple-music-downloader-bot"
       },

@@ -1,6 +1,9 @@
 # DN42 (https://dn42.dev), AS4242423507 of MOELEAK-MNT in the registry. Read
 # by the nodes on it (modules/nixos/services/dn42) and by the sing-box clients
 # (modules/common/services/sing-box), which reach DN42 through them.
+let
+  proxy = import ./proxy.nix;
+in
 {
   asn = 4242423507;
   ipv4 = "172.23.122.64/26";
@@ -17,15 +20,37 @@
     "fd00::/8"
   ];
 
-  # The nodes, named and reached as in lib/proxy.nix (`host`). Each has its
-  # addresses on a dummy interface, a link-local address on its tunnels, and a
-  # WireGuard key (`dn42-wireguard/<name>` in secrets/dn42.yaml) whose public
-  # half is `publicKey`. The nodes peer with each other (iBGP) on
-  # `internalPort`, and each with its peers (eBGP) in
+  # Everything BIRD takes from the peers (is_valid_network in bird.conf),
+  # affiliates included. sing-box on a node leaves it, and the link-local
+  # addresses the sessions run on, to the kernel's routes: they stay out of
+  # its TUN (route_exclude_address).
+  ranges = [
+    "172.20.0.0/14"
+    "172.31.0.0/16"
+    "10.0.0.0/8"
+    "fd00::/8"
+  ];
+
+  # The nodes. Each has its addresses on a dummy interface, a link-local
+  # address on its tunnels, and a WireGuard key (`dn42-wireguard/<name>` in
+  # secrets/dn42.yaml) whose public half is `publicKey`. The nodes peer with
+  # each other (iBGP), and each with its peers (eBGP) in
   # modules/nixos/services/dn42/peers/<name>/.
+  #
+  # `endpoint` is where the other nodes reach a node, on the port of their
+  # tunnel to it; null for one they don't connect to, which connects to them
+  # instead while they wait for it. Both ends of the tunnel between
+  # two nodes listen on internalPort plus the sum of their `id`s minus 3 (an4
+  # and as3 on 23507, an4 and lp4a on 23508, as3 and lp4a on 23509): the sum is
+  # different for each of a node's tunnels, so none share a port.
+  #
+  # `nameserver` is its name in `domain` as one of the zone's nameservers,
+  # which the registry lists; null for a node that serves no DNS.
   internalPort = 23507;
   nodes = {
     an4 = {
+      id = 1;
+      endpoint = proxy.nodes.an4.host;
       ipv4 = "172.23.122.65";
       ipv6 = "fdd0:3960:d30::1";
       linkLocal = "fe80::3507:1";
@@ -33,11 +58,25 @@
       nameserver = "ns1";
     };
     as3 = {
+      id = 2;
+      endpoint = proxy.nodes.as3.host;
       ipv4 = "172.23.122.66";
       ipv6 = "fdd0:3960:d30::2";
       linkLocal = "fe80::3507:2";
       publicKey = "IaF+I0Mk9+U+gF/nS/Yces+PydtLh3wYX1jtK/wBFx8=";
       nameserver = "ns2";
+    };
+    # The LicheePi 4A (hosts/riscv64-linux/lp4a), in mainland China. It has
+    # IPv6, but an4's and as3's names have only IPv4 addresses, so it connects
+    # to them over IPv4.
+    lp4a = {
+      id = 3;
+      endpoint = null;
+      ipv4 = "172.23.122.67";
+      ipv6 = "fdd0:3960:d30::3";
+      linkLocal = "fe80::3507:3";
+      publicKey = "oGLhlsTOvNNAOUH9Ly0+my1ievtcdLWHOb6DbVa92UU=";
+      nameserver = null;
     };
   };
 }

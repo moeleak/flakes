@@ -5,6 +5,13 @@
 # node's own DN42 address as their source, so whatever the node itself opens
 # reaches DN42: sing-box (the proxy node) takes the clients there.
 #
+# A node without an `endpoint` (lib/dn42.nix) connects to the other nodes,
+# which wait for it. On a node that also runs the sing-box client, its
+# TUN leaves DN42 to these routes (route_exclude_address), and the tunnels
+# mark their packets as sing-box marks its own, so that auto_redirect lets
+# them out past the TUN. Their endpoints' names resolve to real addresses
+# there, not to sing-box's FakeIPs, which lead nowhere past the TUN.
+#
 # The node's eBGP peers are the files in peers/<node>/, one a peer, named by
 # it:
 #
@@ -37,22 +44,32 @@
 let
   cfg = config.my.services.dn42;
   dn42 = import ../../../../lib/dn42.nix;
-  proxy = import ../../../../lib/proxy.nix;
   node = dn42.nodes.${cfg.name};
 
   # Where stayrtr serves the ROAs to BIRD.
   rtrPort = 8282;
 
-  # Every tunnel of this node: the other nodes, then its peers.
-  others = lib.mapAttrs (name: other: {
-    internal = true;
-    asn = dn42.asn;
-    endpoint = "${proxy.nodes.${name}.host}:${toString dn42.internalPort}";
-    port = dn42.internalPort;
-    localLinkLocal = node.linkLocal;
-    presharedKey = false;
-    inherit (other) publicKey linkLocal;
-  }) (removeAttrs dn42.nodes [ cfg.name ]);
+  # sing-box's auto_redirect_output_mark (0x2024, its default), which its
+  # TUN lets out; see the top.
+  singBoxOutputMark = 8228;
+
+  # Every tunnel of this node: the other nodes, then its peers. Both ends of
+  # a tunnel between nodes listen on the same port (lib/dn42.nix).
+  others = lib.mapAttrs (
+    name: other:
+    let
+      port = dn42.internalPort + node.id + other.id - 3;
+    in
+    {
+      internal = true;
+      asn = dn42.asn;
+      endpoint = if other.endpoint == null then null else "${other.endpoint}:${toString port}";
+      inherit port;
+      localLinkLocal = node.linkLocal;
+      presharedKey = false;
+      inherit (other) publicKey linkLocal;
+    }
+  ) (removeAttrs dn42.nodes [ cfg.name ]);
   peersDir = ./peers + "/${cfg.name}";
   peerFiles = lib.optionalAttrs (builtins.pathExists peersDir) (
     lib.filterAttrs (file: type: type == "regular" && lib.hasSuffix ".nix" file) (
@@ -77,6 +94,15 @@ let
     )
   ) peerFiles;
   tunnels = others // peers;
+
+  # The tunnels' endpoints given by name rather than by address.
+  endpointHosts = lib.unique (
+    lib.filter (host: builtins.match "[0-9.]+|\\[.*]" host == null) (
+      map (tunnel: lib.head (builtins.match "(.*):[0-9]+" tunnel.endpoint)) (
+        lib.filter (tunnel: tunnel.endpoint != null) (lib.attrValues tunnels)
+      )
+    )
+  );
 
   interface = name: "dn42-${name}";
   pskSecret = name: "dn42-wireguard-psk/${name}";
@@ -132,10 +158,15 @@ in
   };
 
   config = lib.mkIf (cfg != null) {
-    assertions = lib.mapAttrsToList (name: _: {
-      assertion = lib.stringLength (interface name) <= 15;
-      message = "dn42: the interface of peer ${name}, ${interface name}, is longer than 15 characters.";
-    }) tunnels;
+    assertions =
+      lib.mapAttrsToList (name: _: {
+        assertion = lib.stringLength (interface name) <= 15;
+        message = "dn42: the interface of peer ${name}, ${interface name}, is longer than 15 characters.";
+      }) tunnels
+      ++ lib.mapAttrsToList (name: tunnel: {
+        assertion = lib.length (lib.filter (t: t.port == tunnel.port) (lib.attrValues tunnels)) == 1;
+        message = "dn42: tunnel ${name} of ${cfg.name} listens on port ${toString tunnel.port}, as another of its tunnels does.";
+      }) tunnels;
 
     # The node's WireGuard key, and the preshared keys of the peers that use
     # one.
@@ -178,6 +209,9 @@ in
           wireguardConfig = {
             PrivateKeyFile = config.sops.secrets."dn42-wireguard/${cfg.name}".path;
             ListenPort = tunnel.port;
+          }
+          // lib.optionalAttrs (config.my.services.sing-box != null) {
+            FirewallMark = singBoxOutputMark;
           };
           # No routes for AllowedIPs: BIRD installs them.
           wireguardPeers = [
@@ -256,6 +290,19 @@ in
       enable = true;
       config = birdConfig;
     };
+
+    # The endpoints' names, from the server the clients resolve the proxy
+    # nodes with, before sing-box's other rules hand out FakeIPs; see the top.
+    services.sing-box.settings.dns.rules =
+      lib.mkIf (config.my.services.sing-box != null && endpointHosts != [ ])
+        (
+          lib.mkBefore [
+            {
+              domain = endpointHosts;
+              server = "doh-cn";
+            }
+          ]
+        );
 
     # stayrtr fetches the ROAs again every 10 minutes. It serves no metrics,
     # which would listen on every address.

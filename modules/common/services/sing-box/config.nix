@@ -26,6 +26,8 @@ let
 
   proxy = import ../../../../lib/proxy.nix;
   dn42 = import ../../../../lib/dn42.nix;
+  # Whether this machine is itself a node on DN42 (NixOS only).
+  isDn42Node = (config.my.services.dn42 or null) != null;
 
   # VLESS with XTLS Vision, over sing-box's own TLS: uTLS's imitations of
   # browsers are themselves easy to tell apart.
@@ -210,6 +212,10 @@ in
       // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
         auto_redirect = true;
       }
+      // lib.optionalAttrs isDn42Node {
+        # BIRD's routes and its sessions (modules/nixos/services/dn42).
+        route_exclude_address = dn42.ranges ++ [ "fe80::/10" ];
+      }
     )
     {
       type = "direct";
@@ -261,10 +267,10 @@ in
       default = "an4";
     }
     {
-      # The nodes on DN42.
+      # The nodes on DN42 that are also proxy nodes.
       type = "selector";
       tag = "dn42";
-      outbounds = lib.attrNames dn42.nodes;
+      outbounds = lib.attrNames (lib.intersectAttrs proxy.nodes dn42.nodes);
     }
     {
       type = "direct";

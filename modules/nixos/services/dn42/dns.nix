@@ -49,14 +49,16 @@ let
       ''"${lib.substring 0 255 s}" '' + strings (lib.substring 255 (lib.stringLength s) s);
   inherit (dn42.mail) dkim;
 
-  # mail.<domain>, the MX, which alone sends the domain's mail (SPF) and signs
-  # it (DKIM); mail that passes neither is to be quarantined, and reports go
-  # to postmaster@ (DMARC).
+  # mail.<domain>, the MX, which alone sends the domain's mail (SPF) and greets
+  # with its own name (SPF of that name, which receivers may check as the
+  # HELO's), and signs it (DKIM); mail that passes neither is to be
+  # quarantined, and reports go to postmaster@ (DMARC).
   zone =
     start "${dn42.domain}."
     + ''
       @ MX 10 mail
       @ TXT "v=spf1 mx -all"
+      mail TXT "v=spf1 a -all"
       ${dkim.selector}._domainkey TXT ${strings "v=DKIM1; k=rsa; p=${dkim.publicKey}"}
       _dmarc TXT "v=DMARC1; p=quarantine; rua=mailto:postmaster@${dn42.domain}"
     ''

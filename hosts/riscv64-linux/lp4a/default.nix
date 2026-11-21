@@ -17,7 +17,10 @@
 
   my = {
     desktop.sway = { };
-    system.network = { };
+    # systemd-networkd below instead of NetworkManager.
+    system.network = null;
+    # A DN42 node (lib/dn42.nix); it connects to an4 and as3, which wait for it.
+    services.dn42.name = "lp4a";
 
     home = null;
     programs.fish = null;
@@ -45,8 +48,36 @@
   i18n.defaultLocale = "en_US.UTF-8";
 
   networking = {
+    useNetworkd = true;
+    useDHCP = false;
+    # Off, as my.system.network had it.
+    firewall.enable = false;
     wireless.enable = true;
-    interfaces.end0.useDHCP = true;
+  };
+
+  # Wired, or Wi-Fi through wpa_supplicant (networking.wireless), each with
+  # DHCP and, though the DN42 node forwards, router advertisements. Either
+  # one up is online.
+  systemd.network = {
+    wait-online.anyInterface = true;
+    networks = {
+      "30-end0" = {
+        matchConfig.Name = "end0";
+        networkConfig = {
+          DHCP = "yes";
+          IPv6AcceptRA = true;
+        };
+        linkConfig.RequiredForOnline = "routable";
+      };
+      "30-wlan" = {
+        matchConfig.Type = "wlan";
+        networkConfig = {
+          DHCP = "yes";
+          IPv6AcceptRA = true;
+        };
+        linkConfig.RequiredForOnline = "routable";
+      };
+    };
   };
 
   home-manager = {

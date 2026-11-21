@@ -7,7 +7,6 @@ in
     home = "/home/moeleak";
     extraGroups = [
       "users"
-      "networkmanager"
       "wheel"
       "docker"
       "video"
@@ -20,7 +19,6 @@ in
     home = "/home/junzhema";
     extraGroups = [
       "users"
-      "networkmanager"
       "docker"
     ];
     openssh.authorizedKeys.keys = [ publicKey ];

@@ -25,7 +25,8 @@ creation_rules:
           - *loliIslandYubikey
           - *loliIslandCanokey
           - *an4
-  # The DN42 nodes' WireGuard keys (lib/dn42.nix).
+  # The DN42 nodes' WireGuard keys, and the mailboxes' password hashes and DKIM
+  # key (lib/dn42.nix).
   - path_regex: ^secrets/dn42\.yaml$
     key_groups:
       - age:

@@ -3,8 +3,9 @@
 # the network's ranges, which its inetnum and inet6num delegate to them (their
 # `nserver`s). Each of them serves all of them with NSD on its own DN42
 # addresses, as that nameserver (ns1.moeleak.dn42, ...). Every node is in them
-# by name (an4.moeleak.dn42, ...). Nothing transfers the zones, so their serials
-# need not change with them.
+# by name (an4.moeleak.dn42, ...), and mail.moeleak.dn42, the domain's MX, has
+# the addresses of the node that takes its mail (mail.nix). Nothing transfers
+# the zones, so their serials need not change with them.
 #
 # DN42 delegates the reverse names of an IPv4 range smaller than a /24 as RFC
 # 2317 has it: 65.122.23.172.in-addr.arpa is a CNAME of
@@ -39,8 +40,27 @@ let
     ${name} A ${n.ipv4}
     ${name} AAAA ${n.ipv6}
   '';
+  # A TXT record's strings, of at most 255 characters each.
+  strings =
+    s:
+    if lib.stringLength s <= 255 then
+      ''"${s}"''
+    else
+      ''"${lib.substring 0 255 s}" '' + strings (lib.substring 255 (lib.stringLength s) s);
+  inherit (dn42.mail) dkim;
+
+  # The mail node's addresses as mail.<domain>, its MX, which alone sends its
+  # mail (SPF) and signs it (DKIM); mail that passes neither is to be
+  # quarantined, and reports go to postmaster@ (DMARC).
   zone =
     start "${dn42.domain}."
+    + ''
+      @ MX 10 mail
+      @ TXT "v=spf1 mx -all"
+      ${dkim.selector}._domainkey TXT ${strings "v=DKIM1; k=rsa; p=${dkim.publicKey}"}
+      _dmarc TXT "v=DMARC1; p=quarantine; rua=mailto:postmaster@${dn42.domain}"
+    ''
+    + addresses "mail" dn42.nodes.${dn42.mail.node}
     + lib.concatMapStrings (n: addresses n.nameserver n) nameservers
     + lib.concatStrings (lib.mapAttrsToList addresses dn42.nodes);
 

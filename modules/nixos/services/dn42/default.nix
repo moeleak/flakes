@@ -145,7 +145,10 @@ let
   );
 in
 {
-  imports = [ ./dns.nix ];
+  imports = [
+    ./dns.nix
+    ./mail.nix
+  ];
 
   options.my.services.dn42 = lib.mkOption {
     type = lib.types.nullOr (

@@ -13,6 +13,22 @@ in
   # nodes; each serves it as its `nameserver` (modules/nixos/services/dn42).
   domain = "moeleak.dn42";
 
+  # The node that takes the mail of `domain`, as mail.<domain>, the zone's MX
+  # (modules/nixos/services/dn42/mail.nix), and its mailboxes there, each with
+  # the hash of its password as `dn42-mail/<name>` in secrets/dn42.yaml. The
+  # first also takes the mail of postmaster@, hostmaster@, abuse@ and root@.
+  # Its mail is signed with DKIM under `dkim.selector`, whose public key, an
+  # RSA key in base64 DER, is in the zone; its private key is
+  # `dn42-dkim/<selector>` in secrets/dn42.yaml.
+  mail = {
+    node = "as3";
+    mailboxes = [ "i" ];
+    dkim = {
+      selector = "mail";
+      publicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqvMiSn1I9w7x8UrASJcDKRUaUMSihM9ZLsh7zzRpuh/Q+0swv8H/PTAd8doQ3X7MPiiy26K+XNr82vGFSrQL05CTckRKfAILS8UtVvo94lz0UUnJVjOzphRTcLKiEw3RJEypBa40d41sI5IJPNNcQdb9Mgm0+3HLMDvgojkDM76s5iaxoPYMtWi7B7EJhzkWOt96/FX5HvEqeO78pqxuRzVsG7MujwJn7Lhkrk0KZRWQ57GkivhXQVZ0XpQacZ5B/ys7ufPwpJC377jPLPQoY9ZO0vFHBoLi6zgqr7y3lxuXixISMzdR4KbJhTUJ9td16ArudkKi8/l5tuTu+Qne1QIDAQAB";
+    };
+  };
+
   # What the clients send to the nodes: DN42 itself. Its affiliates in
   # 10.0.0.0/8 stay out, as the campus network uses that range.
   routed = [

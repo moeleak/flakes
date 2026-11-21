@@ -285,16 +285,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1779571721,
-        "narHash": "sha256-g0wpI6Mpa+PkWT/dIddV664SBNtTEdHaYutbmlFaszY=",
+        "lastModified": 1795247981,
+        "narHash": "sha256-mYPrl6JCNwhFCzopsMFnkucfdN80f373iZgz1rmp6HU=",
         "owner": "moeleak",
         "repo": "nixos-licheepi4a",
-        "rev": "60908b533a82b632b244ef18d8a905e1f19059f2",
+        "rev": "e49fa338fe2f08ef7057348cc30c441b1d978723",
         "type": "github"
       },
       "original": {
         "owner": "moeleak",
-        "ref": "unstable-revy-linux-2026-05-23",
+        "ref": "unstable-revy-linux-2026-11-20",
         "repo": "nixos-licheepi4a",
         "type": "github"
       }
@@ -317,11 +317,11 @@
     },
     "nixpkgs-licheepi4a": {
       "locked": {
-        "lastModified": 1779349820,
-        "narHash": "sha256-cwGQgbMObY9VoWF2dC92rDxtdz46RbpvsjVl2hvuBvQ=",
+        "lastModified": 1795247647,
+        "narHash": "sha256-CzydUzlhJNTzg1is9qQg3HXlNvQkF1ZLnsXekDj27+c=",
         "owner": "moeleak",
         "repo": "nixpkgs",
-        "rev": "2a440167e824f844946126de02b38725b78ae67d",
+        "rev": "6d215a70cc7eb992409576303249e25a0199c687",
         "type": "github"
       },
       "original": {

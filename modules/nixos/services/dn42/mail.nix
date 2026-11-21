@@ -167,6 +167,17 @@ in
         ];
         smtpd_milters = [ milter ];
         non_smtpd_milters = [ milter ];
+        # Other servers must greet with a full name that resolves. The node
+        # itself and the logged-in mailboxes, whose clients greet with any
+        # name, may not: the check comes at RCPT, after the login.
+        smtpd_helo_required = true;
+        smtpd_helo_restrictions = [
+          "permit_mynetworks"
+          "permit_sasl_authenticated"
+          "reject_invalid_helo_hostname"
+          "reject_non_fqdn_helo_hostname"
+          "reject_unknown_helo_hostname"
+        ];
       };
     };
 

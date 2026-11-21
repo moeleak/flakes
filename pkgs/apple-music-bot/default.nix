@@ -8,7 +8,7 @@
 
 buildGoModule {
   pname = "apple-music-bot";
-  version = "0-unstable-2026-09-28";
+  version = "0-unstable-2026-11-21";
   inherit src;
 
   vendorHash = "sha256-qFgnCIby2kr/SHI1mDZ63uOItozgwpLRhMprwg8405U=";

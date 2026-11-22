@@ -388,11 +388,11 @@
     "obs-mac-voice-processing": {
       "flake": false,
       "locked": {
-        "lastModified": 1795348791,
-        "narHash": "sha256-aLwQq25ZxxLk6WFDE8KByDI61AVWCBQ4GKBmIBU5YtU=",
+        "lastModified": 1795350667,
+        "narHash": "sha256-lpe5ZRiWNUbrQefrF2Men1BSqPecwiixyCfLQCVFslo=",
         "owner": "moeleak",
         "repo": "obs-mac-voice-processing",
-        "rev": "4272f5265ada38fd1ccf595aa3c33a274671ea41",
+        "rev": "f15d40c13bdc3ac06865ce5c6c1c2666aff51438",
         "type": "github"
       },
       "original": {

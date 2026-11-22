@@ -29,6 +29,7 @@ in
         pkgs._64gram
         pkgs.thunderbird
         pkgs.pizarra-gpui
+        pkgs.maltoria
       ]
       ++ lib.optionals isLinux [
         pkgs.wemeet

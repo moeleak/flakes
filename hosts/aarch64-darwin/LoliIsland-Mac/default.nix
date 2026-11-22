@@ -5,6 +5,7 @@
     user = "lolimaster";
     sops.yubikey = true;
     services.sing-box.lab = "client";
+    programs.obs = { };
   };
 
   users.users.lolimaster = {

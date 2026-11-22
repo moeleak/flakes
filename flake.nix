@@ -59,6 +59,18 @@
       flake = false;
     };
 
+    # OBS plugins with a package.nix of their own (modules/common/programs/obs.nix):
+    # the voice processing filter on the Mac, and the moeleak fork of the
+    # Bilibili plugin, which adds its package.nix.
+    obs-mac-voice-processing = {
+      url = "github:moeleak/obs-mac-voice-processing";
+      flake = false;
+    };
+    obs-bilibili-stream = {
+      url = "github:moeleak/obs-bilibili-stream";
+      flake = false;
+    };
+
     # The same version as nixpkgs' colmena CLI, which reads `colmenaHive`.
     colmena = {
       url = "github:nix-community/colmena/v0.5.0";
@@ -148,7 +160,6 @@
     {
       overlays = {
         direnv = import ./overlays/direnv.nix;
-        obs-bilibili-stream = import ./overlays/obs-bilibili-stream.nix;
       };
 
       checks = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-darwin" ] (

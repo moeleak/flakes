@@ -301,11 +301,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1795343184,
-        "narHash": "sha256-MSHL7DvJkEZYq63umtd3Fm0JVlr0K5uPlEmAC2hxFmk=",
+        "lastModified": 1795347632,
+        "narHash": "sha256-jFrmYNf1jxc/oJBI5z1MxrzkwaynYx7nPic7eI9UR2U=",
         "owner": "moeleak",
         "repo": "nixpkgs",
-        "rev": "450ef02982275ef54b27c085904e849f944045c3",
+        "rev": "544bde6c9281eddb89500f5eb28c966193965c1c",
         "type": "github"
       },
       "original": {
@@ -369,6 +369,38 @@
         "type": "github"
       }
     },
+    "obs-bilibili-stream": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1795348269,
+        "narHash": "sha256-OkUvBjtoLN7fJpzbVBD7m23lz7DZ+ATBw28KPyizwwE=",
+        "owner": "moeleak",
+        "repo": "obs-bilibili-stream",
+        "rev": "08200df6ece6a916c1b97277dbe6f79aa03150a8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "moeleak",
+        "repo": "obs-bilibili-stream",
+        "type": "github"
+      }
+    },
+    "obs-mac-voice-processing": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1795348791,
+        "narHash": "sha256-aLwQq25ZxxLk6WFDE8KByDI61AVWCBQ4GKBmIBU5YtU=",
+        "owner": "moeleak",
+        "repo": "obs-mac-voice-processing",
+        "rev": "4272f5265ada38fd1ccf595aa3c33a274671ea41",
+        "type": "github"
+      },
+      "original": {
+        "owner": "moeleak",
+        "repo": "obs-mac-voice-processing",
+        "type": "github"
+      }
+    },
     "plasma-manager": {
       "inputs": {
         "home-manager": [
@@ -426,6 +458,8 @@
         "nixpkgs": "nixpkgs",
         "nixpkgs-licheepi4a": "nixpkgs-licheepi4a",
         "nixvim": "nixvim",
+        "obs-bilibili-stream": "obs-bilibili-stream",
+        "obs-mac-voice-processing": "obs-mac-voice-processing",
         "plasma-manager": "plasma-manager",
         "sops-nix": "sops-nix",
         "vscode-server": "vscode-server",

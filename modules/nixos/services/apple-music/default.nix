@@ -100,6 +100,15 @@ in
       "d /var/lib/apple-music-wrapper/data 0755 root root -"
     ];
 
+    # The wrapper dies on a FairPlay error it cannot recover from (as on
+    # 2026-11-23: KDCanProcessCKC -42786 while refreshing its decrypt
+    # context), yet its launcher exits 0, so oci-containers' on-failure never
+    # restarts it and the bot is left with nothing on 127.0.0.1:10020.
+    systemd.services.docker-apple-music-wrapper.serviceConfig = {
+      Restart = lib.mkForce "always";
+      RestartSec = 5;
+    };
+
     virtualisation.oci-containers = {
       backend = "docker";
       containers = {

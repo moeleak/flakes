@@ -70,10 +70,18 @@ in
   #
   # `endpoint` is where the other nodes reach a node, on the port of their
   # tunnel to it; null for one they don't connect to, which connects to them
-  # instead while they wait for it. Both ends of the tunnel between
-  # two nodes listen on internalPort plus the sum of their `id`s minus 3 (an4
-  # and as3 on 23507, an4 and lp4a on 23508, as3 and lp4a on 23509): the sum is
-  # different for each of a node's tunnels, so none share a port.
+  # instead while they wait for it. Two nodes without one have no tunnel
+  # between them: the nodes with one reflect their routes to each other
+  # (bird.conf's `rr client`). Both ends of the tunnel between two nodes
+  # listen on internalPort plus the sum of their `id`s minus 3 (an4 and as3 on
+  # 23507, an4 and lp4a on 23508, as3 and lp4a and an4 and lab on 23509, as3
+  # and lab on 23510): the sum is different for each of a node's tunnels, so
+  # none share a port.
+  #
+  # `viaProxy` is for a node that doesn't send its tunnels over plain UDP: its
+  # sing-box client takes its tunnels to them over VLESS, each to the proxy
+  # node (lib/proxy.nix) it leads to, which hands the packets to its own
+  # WireGuard. The others must all have an `endpoint` and be proxy nodes.
   #
   # `nameserver` is its name in `domain` as one of the zone's nameservers,
   # which the registry lists; null for a node that serves no DNS.
@@ -107,6 +115,18 @@ in
       ipv6 = "fdd0:3960:d30::3";
       linkLocal = "fe80::3507:3";
       publicKey = "oGLhlsTOvNNAOUH9Ly0+my1ievtcdLWHOb6DbVa92UU=";
+      nameserver = null;
+    };
+    # Lab (hosts/x86_64-linux/biuh-lab), on the campus network. It reaches
+    # an4 and as3 over VLESS.
+    lab = {
+      id = 4;
+      endpoint = null;
+      viaProxy = true;
+      ipv4 = "172.23.122.68";
+      ipv6 = "fdd0:3960:d30::4";
+      linkLocal = "fe80::3507:4";
+      publicKey = "kI0BouKNTOWe8mV2RwiyBSI/Eh+M1OU8k1nrLmP3PBg=";
       nameserver = null;
     };
   };

@@ -61,6 +61,8 @@ in
     variant = "server";
     hardware.nvidia.container32 = true;
     services.sing-box.lab = "server";
+    # A DN42 node (lib/dn42.nix), which reaches an4 and as3 over VLESS.
+    services.dn42.name = "lab";
     services.frp = {
       serverAddr = "47.107.83.180";
       proxies = [

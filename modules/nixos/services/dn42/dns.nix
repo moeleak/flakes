@@ -1,5 +1,7 @@
 # The zone `domain` (lib/dn42.nix), which data/dns/moeleak.dn42 in the DN42
-# registry delegates to the nodes with a `nameserver`, and the reverse zones of
+# registry delegates to the nodes with a `nameserver`, the zone of
+# `archive.domain`, which data/dns/archive.dn42 delegates to them too and
+# which names the node `archive.node` (archive.nix), and the reverse zones of
 # the network's ranges, which its inetnum and inet6num delegate to them (their
 # `nserver`s). Each of them serves all of them with NSD on its own DN42
 # addresses, as that nameserver (ns1.moeleak.dn42, ...). Every node is in them
@@ -66,6 +68,14 @@ let
     + lib.concatMapStrings (n: addresses n.nameserver n) nameservers
     + lib.concatStrings (lib.mapAttrsToList addresses dn42.nodes);
 
+  # The archive, at the zone's apex and as www, by its node's addresses.
+  archiveZone =
+    start "${dn42.archive.domain}."
+    + addresses "@" dn42.nodes.${dn42.archive.node}
+    + ''
+      www CNAME @
+    '';
+
   # Each node's addresses name it, in the reverse zones, and the mail's name
   # it.
   pointers =
@@ -114,6 +124,7 @@ in
       ipFreebind = true;
       zones = {
         "${dn42.domain}.".data = zone;
+        "${dn42.archive.domain}.".data = archiveZone;
         ${v6Origin}.data = v6Zone;
       };
       extraConfig = ''

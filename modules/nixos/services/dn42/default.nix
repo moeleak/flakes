@@ -146,6 +146,7 @@ let
 in
 {
   imports = [
+    ./archive.nix
     ./dns.nix
     ./mail.nix
   ];

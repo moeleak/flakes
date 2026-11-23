@@ -34,6 +34,16 @@ in
     };
   };
 
+  # archive.dn42, a domain of its own beside `domain`, which
+  # data/dns/archive.dn42 in the registry delegates to the same nameservers
+  # (dns.nix serves it). It names the node `archive.node` by that node's
+  # addresses, and the node serves it over HTTPS with Caddy, with a
+  # certificate from DN42's ACME CA (modules/nixos/services/dn42/archive.nix).
+  archive = {
+    domain = "archive.dn42";
+    node = "as3";
+  };
+
   # What the clients send to the nodes: DN42 itself. Its affiliates in
   # 10.0.0.0/8 stay out, as the campus network uses that range.
   routed = [

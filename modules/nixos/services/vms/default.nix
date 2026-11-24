@@ -90,7 +90,7 @@ let
           Name=${nodeLib.interface other}
 
           [WireGuard]
-          PrivateKeyFile=/etc/wireguard/dn42.key
+          PrivateKeyFile=/etc/systemd/network/dn42.key
           ListenPort=${toString tunnel.port}
 
           [WireGuardPeer]
@@ -160,7 +160,8 @@ let
         ++ lib.optionals isNode (
           lib.mapAttrsToList (path: content: file path content { }) networkd
           ++ [
-            (file "/etc/wireguard/dn42.key" "@WIREGUARD_KEY@\n" {
+            # Where networkd reads it: Debian keeps /etc/wireguard to root alone.
+            (file "/etc/systemd/network/dn42.key" "@WIREGUARD_KEY@\n" {
               owner = "root:systemd-network";
               permissions = "0640";
             })

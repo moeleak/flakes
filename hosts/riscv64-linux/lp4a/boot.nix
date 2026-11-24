@@ -55,7 +55,7 @@ in
       ln -s ${toplevel} ./files/nix/var/nix/profiles/system
     '';
     # To carry it to where it is flashed.
-    compressImage = true;
+    compressImage = lib.mkForce true;
   };
 
   # Machines installed before get this boot.scr on their first partition,

@@ -29,6 +29,40 @@ let
   # Whether this machine is itself a node on DN42 (NixOS only).
   isDn42Node = (config.my.services.dn42 or null) != null;
 
+  # The VMs this machine runs (lib/vms.nix), whose traffic comes through here.
+  # Each takes the rules below, but with its own `egress` as the proxy.
+  vms = lib.filter (vm: vm.host == config.networking.hostName) (
+    lib.attrValues (import ../../../../lib/vms.nix).vms
+  );
+  vmRules = lib.concatMap (
+    vm:
+    let
+      source.source_ip_cidr = [ "${vm.address}/32" ];
+    in
+    map (rule: source // rule) [
+      {
+        ip_is_private = true;
+        outbound = "direct";
+      }
+      {
+        domain_suffix = [
+          "leak.moe"
+          "ts.cherr.cc"
+          "office365.com"
+        ];
+        outbound = "direct";
+      }
+      {
+        rule_set = [
+          "geosite-cn"
+          "geoip-cn"
+        ];
+        outbound = "direct";
+      }
+      { outbound = vm.egress; }
+    ]
+  ) vms;
+
   # VLESS with XTLS Vision, over sing-box's own TLS: uTLS's imitations of
   # browsers are themselves easy to tell apart.
   mkVless = node: {
@@ -411,6 +445,8 @@ in
           outbound = "dn42";
         }
       ]
+      # The VMs, before the rules of this machine's own traffic.
+      ++ vmRules
       ++ lib.optionals isLabClient [
         {
           ip_is_private = true;

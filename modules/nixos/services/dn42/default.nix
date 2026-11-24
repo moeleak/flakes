@@ -40,7 +40,8 @@
 # A peer's name becomes the interface dn42-<name>, so at most 10 characters.
 #
 # BIRD's configuration is bird.conf, after this node's values as constants
-# and followed by a session per tunnel. It follows
+# and followed by stayrtr and a session per tunnel (lib/dn42-node.nix, which
+# the VMs on DN42 share; modules/nixos/services/vms). It follows
 # https://dn42.dev/howto/Bird2: ROA-filtered eBGP. stayrtr serves BIRD the
 # registry's ROAs over RTR, from the export at dn42.burble.com, and BIRD
 # filters the peers' routes again whenever they change.
@@ -55,10 +56,18 @@
 let
   cfg = config.my.services.dn42;
   dn42 = import ../../../../lib/dn42.nix;
-  node = dn42.nodes.${cfg.name};
-
-  # Where stayrtr serves the ROAs to BIRD.
-  rtrPort = 8282;
+  nodeLib = import ../../../../lib/dn42-node.nix {
+    inherit lib;
+    inherit (cfg) name;
+  };
+  inherit (nodeLib)
+    node
+    others
+    tunnels
+    interface
+    rtrPort
+    birdConfig
+    ;
 
   # sing-box's auto_redirect_output_mark (0x2024, its default), which its
   # TUN lets out; see the top.
@@ -66,53 +75,6 @@ let
 
   viaProxy = node.viaProxy or false;
   proxy = import ../../../../lib/proxy.nix;
-
-  # Every tunnel of this node: the other nodes, but those that wait for it as
-  # it waits for them, then its peers. Both ends of a tunnel between nodes
-  # listen on the same port (lib/dn42.nix).
-  reachable = _: other: node.endpoint != null || other.endpoint != null;
-  others = lib.mapAttrs (
-    name: other:
-    let
-      port = dn42.internalPort + node.id + other.id - 3;
-    in
-    {
-      internal = true;
-      # This node waits for the other, which connects to the others: it
-      # reflects that node's routes to them, and theirs to it.
-      reflect = node.endpoint != null && other.endpoint == null;
-      asn = dn42.asn;
-      endpoint = if other.endpoint == null then null else "${other.endpoint}:${toString port}";
-      inherit port;
-      localLinkLocal = node.linkLocal;
-      presharedKey = false;
-      inherit (other) publicKey linkLocal;
-    }
-  ) (lib.filterAttrs reachable (removeAttrs dn42.nodes [ cfg.name ]));
-  peersDir = ./peers + "/${cfg.name}";
-  peerFiles = lib.optionalAttrs (builtins.pathExists peersDir) (
-    lib.filterAttrs (file: type: type == "regular" && lib.hasSuffix ".nix" file) (
-      builtins.readDir peersDir
-    )
-  );
-  peers = lib.mapAttrs' (
-    file: _:
-    let
-      peer = import (peersDir + "/${file}");
-    in
-    lib.nameValuePair (lib.removeSuffix ".nix" file) (
-      {
-        internal = false;
-        endpoint = null;
-        # 2 followed by the last four digits of their ASN.
-        port = 20000 + lib.mod peer.asn 10000;
-        localLinkLocal = node.linkLocal;
-        presharedKey = false;
-      }
-      // peer
-    )
-  ) peerFiles;
-  tunnels = others // peers;
 
   # The tunnels' endpoints given by name rather than by address.
   endpointHosts = lib.unique (
@@ -123,46 +85,7 @@ let
     )
   );
 
-  interface = name: "dn42-${name}";
   pskSecret = name: "dn42-wireguard-psk/${name}";
-  protocolName = name: lib.replaceStrings [ "-" ] [ "_" ] name;
-
-  bgpSession =
-    name: tunnel:
-    if tunnel.internal then
-      ''
-        protocol bgp ibgp_${protocolName name} from ibgp_node {
-          neighbor ${tunnel.linkLocal} as OWNAS;
-          interface "${interface name}";
-          ${lib.optionalString tunnel.reflect "rr client;"}
-        }
-      ''
-    else
-      ''
-        protocol bgp ebgp_${protocolName name} from ebgp_peer {
-          neighbor ${tunnel.linkLocal} as ${toString tunnel.asn};
-          interface "${interface name}";
-        }
-      '';
-
-  # The node's values as BIRD constants, the configuration they go into
-  # (bird.conf), then a session per tunnel.
-  birdConfig = lib.concatStringsSep "\n" (
-    [
-      ''
-        define OWNAS = ${toString dn42.asn};
-        define OWNIP = ${node.ipv4};
-        define OWNIPv6 = ${node.ipv6};
-        define OWNNET = ${dn42.ipv4};
-        define OWNNETv6 = ${dn42.ipv6};
-        define OWNNETSET = [${dn42.ipv4}+];
-        define OWNNETSETv6 = [${dn42.ipv6}+];
-        define RTRPORT = ${toString rtrPort};
-      ''
-      (builtins.readFile ./bird.conf)
-    ]
-    ++ lib.mapAttrsToList bgpSession tunnels
-  );
 in
 {
   imports = [

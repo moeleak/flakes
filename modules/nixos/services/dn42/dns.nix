@@ -34,7 +34,7 @@ let
     ''
       $ORIGIN ${origin}
       $TTL 300
-      @ SOA ${fqdn node.nameserver} ${fqdn "hostmaster"} 2026112001 7200 1800 1209600 300
+      @ SOA ${fqdn node.nameserver} ${fqdn "hostmaster"} 2026112401 7200 1800 1209600 300
     ''
     + lib.concatMapStrings (n: "@ NS ${fqdn n.nameserver}\n") nameservers;
 

@@ -28,3 +28,13 @@ doesn't go through sing-box), `colmena apply-local --sudo` on Lab.
 
 The switch takes Lab off Tailscale for a minute or more; Docker, whose
 containers start slowly from the HDD, is the last to come up.
+
+## VMs on Lab
+
+The VMs are declared one file each in `modules/nixos/services/vms/<host>/`
+(see `lib/vms.nix`). `vm-<name>.service` runs each; a deploy never restarts
+it, so changes to a VM (its seed, cores, memory) apply on
+`systemctl restart vm-<name>`, which shuts it down over ACPI first. Its disk,
+`/var/lib/vms/<name>/disk.qcow2`, is made once and never recreated. On Lab,
+`vm-console <name>` is its serial console (Ctrl-] leaves), and
+`ssh root@192.168.233.<id>` reaches it.

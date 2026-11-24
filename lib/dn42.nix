@@ -3,6 +3,27 @@
 # (modules/common/services/sing-box), which reach DN42 through them.
 let
   proxy = import ./proxy.nix;
+
+  # The VMs on DN42 (lib/vms.nix): nodes like Lab, behind their host's
+  # sing-box, which takes their tunnels over VLESS (`viaProxy`). Their
+  # addresses follow their `id`s.
+  vms = (import ./vms.nix).vms;
+  vmNodes =
+    builtins.mapAttrs
+      (_: vm: {
+        inherit (vm) id;
+        endpoint = null;
+        viaProxy = true;
+        vm = vm.host;
+        ipv4 = "172.23.122.${toString (64 + vm.id)}";
+        ipv6 = "fdd0:3960:d30::${toString vm.id}";
+        linkLocal = "fe80::3507:${toString vm.id}";
+        inherit (vm.dn42) publicKey;
+        nameserver = null;
+      })
+      (
+        builtins.removeAttrs vms (builtins.filter (name: vms.${name}.dn42 == null) (builtins.attrNames vms))
+      );
 in
 {
   asn = 4242423507;
@@ -75,8 +96,8 @@ in
   # (bird.conf's `rr client`). Both ends of the tunnel between two nodes
   # listen on internalPort plus the sum of their `id`s minus 3 (an4 and as3 on
   # 23507, an4 and lp4a on 23508, as3 and lp4a and an4 and lab on 23509, as3
-  # and lab on 23510): the sum is different for each of a node's tunnels, so
-  # none share a port.
+  # and lab and an4 and vm1 on 23510, as3 and vm1 on 23511): the sum is
+  # different for each of a node's tunnels, so none share a port.
   #
   # `viaProxy` is for a node that doesn't send its tunnels over plain UDP: its
   # sing-box client takes its tunnels to them over VLESS, each to the proxy
@@ -129,5 +150,7 @@ in
       publicKey = "kI0BouKNTOWe8mV2RwiyBSI/Eh+M1OU8k1nrLmP3PBg=";
       nameserver = null;
     };
-  };
+  }
+  # And the VMs, whose `vm` is the host they run on.
+  // vmNodes;
 }

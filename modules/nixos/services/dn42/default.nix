@@ -17,7 +17,8 @@
 # A `viaProxy` node's tunnels to the other nodes go into the TUN instead,
 # unmarked, and sing-box takes each one, by its port, over VLESS to the proxy
 # node at its other end, whose sing-box hands it to WireGuard there. Its eBGP
-# peers' tunnels, if it had any, would take sing-box's default route.
+# peers' tunnels go by sing-box's other rules: directly for one in mainland
+# China (peers/lab/yukifia.nix).
 #
 # On a host whose network NetworkManager runs (Lab), systemd-networkd runs
 # beside it for the DN42 interfaces alone, which NetworkManager leaves to it,

@@ -134,7 +134,7 @@ in
       ipv4 = "172.23.122.67";
       ipv6 = "fdd0:3960:d30::3";
       linkLocal = "fe80::3507:3";
-      publicKey = "oGLhlsTOvNNAOUH9Ly0+my1ievtcdLWHOb6DbVa92UU=";
+      publicKey = "kI0BouKNTOWe8mV2RwiyBSI/Eh+M1OU8k1nrLmP3PBg=";
       nameserver = null;
     };
     # Lab (hosts/x86_64-linux/biuh-lab), on the campus network. It reaches
@@ -146,7 +146,7 @@ in
       ipv4 = "172.23.122.68";
       ipv6 = "fdd0:3960:d30::4";
       linkLocal = "fe80::3507:4";
-      publicKey = "kI0BouKNTOWe8mV2RwiyBSI/Eh+M1OU8k1nrLmP3PBg=";
+      publicKey = "gOmFlPBd4DVqRbF796548Kghe1s48rBKwxiB0sX1Fw4=";
       nameserver = null;
     };
   }

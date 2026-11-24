@@ -21,7 +21,9 @@
 # when the VM starts.
 #
 # The disk, /var/lib/vms/<name>/disk.qcow2, is made once, as a copy of the
-# image resized to `disk`; cloud-init grows the root filesystem. A change of
+# image resized to `disk`; cloud-init grows the root filesystem. The VMs boot
+# with UEFI (OVMF), their variables in vars.fd beside the disk: on Lab, the
+# images' GRUB under SeaBIOS resets the guest as it starts the kernel. A change of
 # the seed (the definition, the BIRD configuration) gives cloud-init a new
 # instance-id, and it runs again on the VM's next start; the host keys stay.
 # A deploy never restarts a VM: `systemctl restart vm-<name>` does, shutting
@@ -271,6 +273,11 @@ let
           qemu-img resize disk.qcow2.tmp ${toString vm.disk}G
           mv disk.qcow2.tmp disk.qcow2
         fi
+        # The firmware's variables (the boot entries), the VM's own.
+        if [ ! -e vars.fd ]; then
+          cp ${pkgs.OVMF.fd}/FV/OVMF_VARS.fd vars.fd
+          chmod u+w vars.fd
+        fi
 
         cd ${runDir name}
         rm -rf seed seed.iso
@@ -292,6 +299,8 @@ let
           -smp ${toString vm.cores} \
           -m ${toString vm.memory}G \
           -nodefaults -no-user-config -display none \
+          -drive if=pflash,format=raw,readonly=on,file=${pkgs.OVMF.fd}/FV/OVMF_CODE.fd \
+          -drive if=pflash,format=raw,file=${stateDir name}/vars.fd \
           -drive file=${stateDir name}/disk.qcow2,if=none,id=disk,format=qcow2,cache=none,aio=native,discard=unmap \
           -device virtio-blk-pci,drive=disk,bootindex=1 \
           -drive file=${runDir name}/seed.iso,if=none,id=seed,format=raw,readonly=on \

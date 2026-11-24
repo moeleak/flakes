@@ -12,6 +12,7 @@
   imports = [
     (inputs.nixos-licheepi4a + "/modules/licheepi4a.nix")
     (inputs.nixos-licheepi4a + "/modules/sd-image/sd-image-lp4a.nix")
+    ./boot.nix
     ./keyd.nix
     ./packages.nix
     ./services.nix

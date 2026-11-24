@@ -7,7 +7,7 @@
       leftmeta = overload(meta_mac, leftmeta)
     '';
     cmdLayer = {
-      # Cmd-1 … Cmd-9 switch workspaces in sway
+      # Cmd-1 … Cmd-9 send Meta-1 … Meta-9
       digits = "M";
       bindings = ''
         space = M-space

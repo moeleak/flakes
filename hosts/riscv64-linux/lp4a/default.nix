@@ -1,7 +1,13 @@
 # LicheePi 4A (RISC-V), cross-compiled on x86_64 and deployed with colmena.
 # It is built from its own nixpkgs (the nixos-licheepi4a input), so it keeps
 # its own nix settings and only a bare Home Manager profile.
-{ inputs, nixpkgs, ... }:
+{
+  inputs,
+  lib,
+  nixpkgs,
+  pkgs,
+  ...
+}:
 {
   imports = [
     (inputs.nixos-licheepi4a + "/modules/licheepi4a.nix")
@@ -16,7 +22,6 @@
   nixpkgs.crossSystem.system = "riscv64-linux";
 
   my = {
-    desktop.sway = { };
     # systemd-networkd below instead of NetworkManager.
     system.network = null;
     # A DN42 node (lib/dn42.nix); it connects to an4 and as3, which wait for it.
@@ -24,6 +29,9 @@
 
     home = null;
     programs.fish = null;
+    # The nixvim editor brings language servers (nodejs, boost, ...) to build
+    # for riscv64; bare Neovim below instead.
+    programs.neovim = null;
     system.nix = null;
   };
 
@@ -42,6 +50,16 @@
     nixPath = [ "/etc/nix/inputs" ];
   };
   environment.etc."nix/inputs/nixpkgs".source = "${nixpkgs}";
+
+  # Headless: what licheepi4a.nix adds for a desktop stays out, as it is all
+  # cross-compiled. Without graphics, no Mesa; and no fastfetch, which is
+  # always built against EFL and with it GTK, GStreamer and PipeWire.
+  hardware.graphics.enable = lib.mkForce false;
+  nixpkgs.overlays = [ (_: prev: { fastfetch = prev.emptyDirectory; }) ];
+  # Neovim without its wrapper, which brings Python and wl-clipboard (Perl,
+  # xdg-utils).
+  environment.systemPackages = [ pkgs.neovim-unwrapped ];
+  environment.variables.EDITOR = "nvim";
 
   time.timeZone = "Asia/Shanghai";
   services.timesyncd.enable = true;

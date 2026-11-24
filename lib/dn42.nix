@@ -58,11 +58,10 @@ in
   # archive.dn42, a domain of its own beside `domain`, which
   # data/dns/archive.dn42 in the registry delegates to the same nameservers
   # (dns.nix serves it). It names the node `archive.node` by that node's
-  # addresses, and the node serves it over HTTPS with Caddy, with a
-  # certificate from DN42's ACME CA (modules/nixos/services/dn42/archive.nix).
+  # addresses: vm1 (lib/vms.nix), which serves it itself.
   archive = {
     domain = "archive.dn42";
-    node = "as3";
+    node = "vm1";
   };
 
   # What the clients send to the nodes: DN42 itself. Its affiliates in

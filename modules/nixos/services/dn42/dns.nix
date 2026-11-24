@@ -1,7 +1,7 @@
 # The zone `domain` (lib/dn42.nix), which data/dns/moeleak.dn42 in the DN42
 # registry delegates to the nodes with a `nameserver`, the zone of
 # `archive.domain`, which data/dns/archive.dn42 delegates to them too and
-# which names the node `archive.node` (archive.nix), and the reverse zones of
+# which names the node `archive.node`, and the reverse zones of
 # the network's ranges, which its inetnum and inet6num delegate to them (their
 # `nserver`s). Each of them serves all of them with NSD on its own DN42
 # addresses, as that nameserver (ns1.moeleak.dn42, ...). Every node is in them
@@ -34,7 +34,7 @@ let
     ''
       $ORIGIN ${origin}
       $TTL 300
-      @ SOA ${fqdn node.nameserver} ${fqdn "hostmaster"} 2026112401 7200 1800 1209600 300
+      @ SOA ${fqdn node.nameserver} ${fqdn "hostmaster"} 2026112402 7200 1800 1209600 300
     ''
     + lib.concatMapStrings (n: "@ NS ${fqdn n.nameserver}\n") nameservers;
 

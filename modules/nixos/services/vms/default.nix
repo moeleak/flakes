@@ -51,8 +51,9 @@ let
   mac = vm: "52:54:00:35:07:${hex2 vm.id}";
 
   # What the seed holds: cloud-init's meta-data, network-config and
-  # user-data. In user-data, @WIREGUARD_KEY@ stands for the WireGuard key,
-  # which the unit fills in.
+  # user-data. In user-data, @WIREGUARD_KEY@ stands for the WireGuard key and
+  # @DN42_CA@ for DN42's root certificate (a build's output, in base64), which
+  # the unit fills in.
   seedFor =
     name: vm:
     let
@@ -102,7 +103,10 @@ let
             PersistentKeepalive=25
           ''}
         '';
-        # DN42's names go to its anycast resolver, through the tunnels.
+        # DN42's names go to its anycast resolver, through the tunnels. The
+        # node's addresses are on them too: resolved asks no link that has
+        # only link-local ones (the NixOS nodes delegate instead, which
+        # Debian 13's resolved can't).
         "/etc/systemd/network/60-${nodeLib.interface other}.network" = ''
           [Match]
           Name=${nodeLib.interface other}
@@ -112,6 +116,8 @@ let
 
           [Network]
           Address=${tunnel.localLinkLocal}/64
+          Address=${node.ipv4}/32
+          Address=${node.ipv6}/128
           LinkLocalAddressing=no
           IPv6AcceptRA=no
           IPv4ReversePathFilter=no
@@ -169,6 +175,13 @@ let
               owner = "bird:bird";
               permissions = "0640";
             })
+            # DN42's root certificate (modules/common/dn42-ca.nix), trusted
+            # as the hosts trust it.
+            {
+              path = "/usr/local/share/ca-certificates/dn42.crt";
+              encoding = "b64";
+              content = "@DN42_CA@";
+            }
           ]
         );
         runcmd = [
@@ -180,6 +193,7 @@ let
           ]
         ]
         ++ lib.optionals isNode [
+          [ "update-ca-certificates" ]
           [
             "systemctl"
             "restart"
@@ -288,6 +302,8 @@ let
         ${lib.optionalString (vm.dn42 != null) ''
           key=$(cat ${wireguardKey})
           sed -i "s|@WIREGUARD_KEY@|$key|" seed/user-data
+          ca=$(base64 -w0 ${config.my.system.dn42-ca.file})
+          sed -i "s|@DN42_CA@|$ca|" seed/user-data
         ''}
         xorriso -as mkisofs -quiet -output seed.iso -volid cidata -joliet -rock seed
         rm -rf seed

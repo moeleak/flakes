@@ -301,11 +301,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1795591730,
-        "narHash": "sha256-JqSUfXYSphLp5U0tILvDnYXnUAvfdSC62oUDhe/UsZo=",
+        "lastModified": 1795606214,
+        "narHash": "sha256-gBqZLp5QJAGIVz/IyrwzWMBWQDdwEL0apLyhLWN0/9w=",
         "owner": "moeleak",
         "repo": "nixpkgs",
-        "rev": "e684128b872dea249b6f1e2fdd11176a80ffbdd1",
+        "rev": "3a34a845806f0892547dd5d5b00ebee38e16b951",
         "type": "github"
       },
       "original": {

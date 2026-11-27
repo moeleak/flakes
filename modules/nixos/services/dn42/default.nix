@@ -254,10 +254,33 @@ in
     networking.networkmanager.unmanaged = [ "interface-name:dn42*" ];
 
     # Under resolved, the containers would get all its servers, DN42's among
-    # them; they keep `nameservers`.
-    virtualisation.docker.daemon.settings.dns = lib.mkIf config.virtualisation.docker.enable (
-      lib.mkDefault config.networking.nameservers
-    );
+    # them; they keep `nameservers`. Docker's networks, by default each a /16
+    # from 172.17.0.0 to 172.31.0.0, would take DN42's ranges (lib/dn42.nix),
+    # and Docker masquerades whatever leaves one of them for another
+    # interface: the node's own address and what it forwards for its peers
+    # would leave the tunnels as the host's. They take the rest of
+    # 172.16.0.0/12 instead, beside Docker's default 192.168.0.0/16.
+    virtualisation.docker.daemon.settings = lib.mkIf config.virtualisation.docker.enable {
+      dns = lib.mkDefault config.networking.nameservers;
+      default-address-pools =
+        map
+          (base: {
+            inherit base;
+            size = 16;
+          })
+          [
+            "172.16.0.0/14"
+            "172.24.0.0/14"
+            "172.28.0.0/15"
+            "172.30.0.0/16"
+          ]
+        ++ [
+          {
+            base = "192.168.0.0/16";
+            size = 20;
+          }
+        ];
+    };
 
     services.bird = {
       enable = true;

@@ -28,6 +28,15 @@ let
   dn42 = import ../../../../lib/dn42.nix;
   # Whether this machine is itself a node on DN42 (NixOS only).
   isDn42Node = (config.my.services.dn42 or null) != null;
+  # Its own addresses there, for what sing-box sends there.
+  dn42Bind =
+    let
+      node = dn42.nodes.${config.my.services.dn42.name};
+    in
+    {
+      inet4_bind_address = node.ipv4;
+      inet6_bind_address = node.ipv6;
+    };
 
   # The VMs this machine runs (lib/vms.nix), whose traffic comes through here.
   # Each takes the rules below, but with its own `egress` as the proxy.
@@ -160,6 +169,20 @@ in
         type = "dhcp";
         tag = "dns-dhcp";
       }
+    ]
+    ++ lib.optionals isDn42Node [
+      (
+        {
+          # DN42's anycast recursive resolver, by BIRD's routes as
+          # dn42-direct, for the names that come in to a node (route.rules).
+          # The local server asks resolved on the default interface's link,
+          # past its DN42 delegate.
+          type = "udp";
+          tag = "dns-dn42";
+          server = "172.20.0.53";
+        }
+        // dn42Bind
+      )
     ];
 
     rules = [
@@ -301,10 +324,13 @@ in
       default = "an4";
     }
     {
-      # The nodes on DN42 that are also proxy nodes.
+      # The nodes on DN42 that are also proxy nodes, and first, for Lab's
+      # clients, Lab: on DN42 itself and a hop away, it reaches the peers in
+      # mainland China without going through Los Angeles.
       type = "selector";
       tag = "dn42";
-      outbounds = lib.attrNames (lib.intersectAttrs proxy.nodes dn42.nodes);
+      outbounds =
+        lib.optional isLabClient "lab" ++ lib.attrNames (lib.intersectAttrs proxy.nodes dn42.nodes);
     }
     {
       type = "direct";
@@ -321,6 +347,18 @@ in
 
     (mkVless "an4")
     (mkVless "as3")
+  ]
+  ++ lib.optionals isDn42Node [
+    (
+      {
+        # DN42 by BIRD's routes, from the node's own addresses. Binding them
+        # keeps sing-box from binding the default interface
+        # (auto_detect_interface), which would take DN42 out of it.
+        type = "direct";
+        tag = "dn42-direct";
+      }
+      // dn42Bind
+    )
   ]
   ++ lib.optionals isLabClient [
     {
@@ -437,12 +475,23 @@ in
           domain_suffix = [ portalDomain ];
           outbound = "direct";
         }
+      ]
+      # DN42 through its nodes, before egress routing and the private
+      # addresses (its ranges are private), by name or by address. A node
+      # takes what comes in to it (Lab's clients) there itself, by BIRD's
+      # routes, with the names from DN42's resolver.
+      ++ lib.optionals isDn42Node [
         {
-          # DN42 through its nodes, before egress routing and the private
-          # addresses (its ranges are private), by name or by address.
+          domain_suffix = [ "dn42" ];
+          action = "resolve";
+          server = "dns-dn42";
+        }
+      ]
+      ++ [
+        {
           domain_suffix = [ "dn42" ];
           ip_cidr = dn42.routed;
-          outbound = "dn42";
+          outbound = if isDn42Node then "dn42-direct" else "dn42";
         }
       ]
       # The VMs, before the rules of this machine's own traffic.

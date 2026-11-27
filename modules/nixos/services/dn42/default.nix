@@ -3,7 +3,8 @@
 # interface `dn42-<name>` with a link-local address, over which BIRD speaks
 # MP-BGP (IPv4 with IPv6 next hops). BIRD installs the routes it learns with the
 # node's own DN42 address as their source, so whatever the node itself opens
-# reaches DN42: sing-box (the proxy node) takes the clients there.
+# reaches DN42: sing-box takes the clients there, on the proxy nodes and on
+# Lab for its campus clients (modules/common/services/sing-box).
 #
 # A node without an `endpoint` (lib/dn42.nix) connects to the other nodes,
 # which wait for it; two such nodes have no tunnel between them, and the nodes

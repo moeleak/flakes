@@ -324,13 +324,14 @@ in
       default = "an4";
     }
     {
-      # The nodes on DN42 that are also proxy nodes, and first, for Lab's
-      # clients, Lab: on DN42 itself and a hop away, it reaches the peers in
-      # mainland China without going through Los Angeles.
+      # The nodes on DN42 that are also proxy nodes, and, for Lab's clients,
+      # Lab, to choose on campus: on DN42 itself and a hop away, it reaches
+      # the peers in mainland China without going through Los Angeles. Off
+      # campus it can't be reached, so it isn't the default.
       type = "selector";
       tag = "dn42";
       outbounds =
-        lib.optional isLabClient "lab" ++ lib.attrNames (lib.intersectAttrs proxy.nodes dn42.nodes);
+        lib.attrNames (lib.intersectAttrs proxy.nodes dn42.nodes) ++ lib.optional isLabClient "lab";
     }
     {
       type = "direct";

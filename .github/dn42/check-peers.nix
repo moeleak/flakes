@@ -24,6 +24,7 @@ let
     "port"
     "localLinkLocal"
     "presharedKey"
+    "regions"
   ];
   required = [
     "asn"
@@ -124,6 +125,14 @@ let
       ++ optional (
         has "presharedKey" && !builtins.isBool peer.presharedKey
       ) "`presharedKey` is not true or false"
+      # DN42's region communities, (64511, 41) to (64511, 53).
+      ++ optional (
+        has "regions"
+        && !(
+          builtins.isList peer.regions
+          && builtins.all (region: builtins.isInt region && region >= 41 && region <= 53) peer.regions
+        )
+      ) "`regions` is not a list of DN42 regions, 41 to 53"
       ++
         optional ((peer.presharedKey or false) == true && !builtins.elem name pskNames)
           "`presharedKey` is set, but secrets/dn42.yaml has no dn42-wireguard-psk/${name}: leave it out and send the key privately";

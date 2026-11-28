@@ -59,6 +59,7 @@ let
         port = 20000 + lib.mod peer.asn 10000;
         localLinkLocal = node.linkLocal;
         presharedKey = false;
+        regions = null;
       }
       // peer
     )
@@ -83,8 +84,35 @@ let
         protocol bgp ebgp_${protocolName name} from ebgp_peer {
           neighbor ${tunnel.linkLocal} as ${toString tunnel.asn};
           interface "${interface name}";
+          ${lib.optionalString (tunnel.regions != null) (
+            lib.replaceStrings [ "\n" ] [ "\n  " ] (regionChannels tunnel)
+          )}
         }
       '';
+
+  # A peer with `regions`, far from the other nodes: its routes lose to
+  # theirs (a lower local preference, which the other nodes take over),
+  # but for its own and those from these DN42 regions, the communities
+  # (64511, <region>) of https://dn42.dev/howto/BGP-communities. Without
+  # it, BGP takes such a peer wherever its path is no longer than theirs, as
+  # an eBGP route wins over iBGP ones of the same length.
+  regionChannels =
+    tunnel:
+    let
+      near = lib.concatStringsSep " || " (
+        [ "bgp_path.last = ${toString tunnel.asn}" ]
+        ++ map (region: "(64511, ${toString region}) ~ bgp_community") tunnel.regions
+      );
+      channel = family: valid: ''
+        ${family} {
+          import filter {
+            if !${valid}() then reject;
+            if !(${near}) then bgp_local_pref = 50;
+            accept;
+          };
+        };'';
+    in
+    channel "ipv4" "ebgp_valid" + "\n" + channel "ipv6" "ebgp_valid_v6";
 
   # stayrtr notifies BIRD of each change. If BIRD starts before stayrtr
   # listens, it tries again soon, and if stayrtr goes away, it keeps the

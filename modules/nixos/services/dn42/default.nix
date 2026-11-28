@@ -36,6 +36,8 @@
 #     port = 20000;           # ours; default 2 and their ASN's last 4 digits
 #     localLinkLocal = "fe80::…"; # ours, if not the node's `linkLocal`
 #     presharedKey = true;    # dn42-wireguard-psk/<name> in secrets/dn42.yaml
+#     regions = [ 52 ];       # only their own routes and these regions' win
+#                             # over the other nodes' (lib/dn42-node.nix)
 #   }
 #
 # A peer's name becomes the interface dn42-<name>, so at most 10 characters.

@@ -9,4 +9,7 @@
   publicKey = "9Dc+k0Lh5LV62fF+z75sHX1AUxV5v6Y5SIaqHtKiOHs=";
   linkLocal = "fe80::1117";
   localLinkLocal = "fe80::3507";
+  # Asia-E: elsewhere, Shenzhen is farther than Los Angeles, as burble.dn42,
+  # 2 ms from as3, was 346 ms from Lab through cn04.
+  regions = [ 52 ];
 }

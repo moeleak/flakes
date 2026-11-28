@@ -107,6 +107,7 @@ let
         ${family} {
           import filter {
             if !${valid}() then reject;
+            ebgp_med();
             if !(${near}) then bgp_local_pref = 50;
             accept;
           };
@@ -140,6 +141,7 @@ let
           define OWNNETv6 = ${dn42.ipv6};
           define OWNNETSET = [${dn42.ipv4}+];
           define OWNNETSETv6 = [${dn42.ipv6}+];
+          define OWNREGION = ${toString (node.region or 0)};
         ''
         + lib.optionalString rtr ''
           define RTRPORT = ${toString rtrPort};

@@ -105,6 +105,11 @@ in
   #
   # `nameserver` is its name in `domain` as one of the zone's nameservers,
   # which the registry lists; null for a node that serves no DNS.
+  #
+  # `region` is where it is, as DN42's region communities number them
+  # (https://dn42.dev/howto/BGP-communities): 44 North America West, 52 Asia
+  # East. Of a network's paths of one length, BIRD takes those from its
+  # region (bird.conf); a VM, without peers of its own, has none.
   internalPort = 23507;
   nodes = {
     an4 = {
@@ -115,6 +120,7 @@ in
       linkLocal = "fe80::3507:1";
       publicKey = "kbxzD1Hd6kr97/Ab8n1MI49r6LA2g2jARiWcsFNK6DU=";
       nameserver = "ns1";
+      region = 44;
     };
     as3 = {
       id = 2;
@@ -124,6 +130,7 @@ in
       linkLocal = "fe80::3507:2";
       publicKey = "IaF+I0Mk9+U+gF/nS/Yces+PydtLh3wYX1jtK/wBFx8=";
       nameserver = "ns2";
+      region = 44;
     };
     # The LicheePi 4A (hosts/riscv64-linux/lp4a), in mainland China. It has
     # IPv6, but an4's and as3's names have only IPv4 addresses, so it connects
@@ -136,6 +143,7 @@ in
       linkLocal = "fe80::3507:3";
       publicKey = "kI0BouKNTOWe8mV2RwiyBSI/Eh+M1OU8k1nrLmP3PBg=";
       nameserver = null;
+      region = 52;
     };
     # Lab (hosts/x86_64-linux/biuh-lab), on the campus network. It reaches
     # an4 and as3 over VLESS.
@@ -148,6 +156,7 @@ in
       linkLocal = "fe80::3507:4";
       publicKey = "gOmFlPBd4DVqRbF796548Kghe1s48rBKwxiB0sX1Fw4=";
       nameserver = null;
+      region = 52;
     };
   }
   # And the VMs, whose `vm` is the host they run on.
